@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, X, Sparkles } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { firebaseService } from '../../services/firebaseService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useCalendar } from '../../contexts/CalendarContext';
-import { parseNaturalLanguageDate, parseNaturalLanguageTime } from '../../utils/dateUtils';
 import './AIChat.css';
 
 const AIChat = ({ isOpen, onClose }) => {
@@ -21,14 +21,28 @@ const AIChat = ({ isOpen, onClose }) => {
   
   const messagesEndRef = useRef(null);
   const { events, addEvent } = useEvents();
-  const { openEventModal } = useCalendar();
 
   useEffect(() => {
-    // Check if Gemini is initialized
-    const apiKey = localStorage.getItem('gemini-api-key');
-    if (apiKey && geminiService.initialize(apiKey)) {
-      setIsConnected(true);
-    }
+    const initializeAI = async () => {
+      // Try Firebase first
+      try {
+        const firebaseKey = await firebaseService.getApiKey();
+        if (firebaseKey && geminiService.initialize(firebaseKey)) {
+          setIsConnected(true);
+          return;
+        }
+      } catch (error) {
+        console.log('Could not load API key from Firebase:', error);
+      }
+      
+      // Fallback to localStorage
+      const apiKey = localStorage.getItem('gemini-api-key');
+      if (apiKey && geminiService.initialize(apiKey)) {
+        setIsConnected(true);
+      }
+    };
+
+    initializeAI();
   }, []);
 
   useEffect(() => {
@@ -65,7 +79,7 @@ const AIChat = ({ isOpen, onClose }) => {
       }
 
       // Create the event
-      const newEvent = addEvent(eventData);
+      addEvent(eventData);
       addMessage('ai', `Great! I've created your event "${eventData.title}" for ${new Date(eventData.start).toLocaleString()}. You can edit it by clicking on it in the calendar.`);
       
     } catch (error) {
