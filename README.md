@@ -73,6 +73,23 @@ npm run build
 npm run preview
 ```
 
+### Deployment
+
+**Quick Deploy to Vercel:**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yaegerbomb42/cal)
+
+**Manual Deployment:**
+```bash
+# Deploy to preview
+npm run deploy:preview
+
+# Deploy to production  
+npm run deploy
+```
+
+For detailed deployment instructions, see [DEPLOY.md](DEPLOY.md).
+
 ## 🔧 Configuration
 
 ### Getting a Gemini API Key
