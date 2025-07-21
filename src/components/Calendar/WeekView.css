@@ -1,0 +1,272 @@
+.week-view {
+  width: 100%;
+  height: calc(100vh - 200px);
+  overflow: hidden;
+}
+
+.week-header {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 1rem;
+}
+
+.time-gutter {
+  background: transparent;
+}
+
+.week-day-header {
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+}
+
+.week-day-header.today {
+  background: rgba(99, 102, 241, 0.2);
+  border: 2px solid var(--accent);
+}
+
+.day-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.day-date {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.week-day-header.today .day-date {
+  color: var(--accent);
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: 80px repeat(7, 1fr);
+  gap: 1px;
+  height: calc(100% - 100px);
+  overflow-y: auto;
+  background: var(--glass-border);
+  border-radius: 16px;
+}
+
+.time-column {
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+}
+
+.time-slot {
+  height: 60px;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.time-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  transform: translateY(-8px);
+}
+
+.day-column {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+}
+
+.hour-slot {
+  height: 60px;
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hour-slot:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.events-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.week-event {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  pointer-events: auto;
+  color: white;
+  font-size: 0.75rem;
+  overflow: hidden;
+  z-index: 1;
+  border: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.week-event:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.event-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.event-title {
+  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.event-description {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.event-time {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  margin-top: auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .week-view {
+    height: calc(100vh - 160px);
+  }
+
+  .week-header {
+    grid-template-columns: 60px repeat(7, 1fr);
+  }
+
+  .week-grid {
+    grid-template-columns: 60px repeat(7, 1fr);
+  }
+
+  .week-day-header {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .day-name {
+    font-size: 0.75rem;
+  }
+
+  .day-date {
+    font-size: 1.25rem;
+  }
+
+  .time-slot {
+    height: 50px;
+    padding: 0.25rem;
+  }
+
+  .hour-slot {
+    height: 50px;
+  }
+
+  .time-label {
+    font-size: 0.7rem;
+  }
+
+  .week-event {
+    left: 2px;
+    right: 2px;
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .event-title {
+    font-size: 0.75rem;
+  }
+
+  .event-description {
+    font-size: 0.65rem;
+  }
+
+  .event-time {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .week-header {
+    grid-template-columns: 50px repeat(7, 1fr);
+  }
+
+  .week-grid {
+    grid-template-columns: 50px repeat(7, 1fr);
+  }
+
+  .week-day-header {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .day-name {
+    font-size: 0.7rem;
+  }
+
+  .day-date {
+    font-size: 1rem;
+  }
+
+  .time-slot {
+    height: 40px;
+    padding: 0.125rem;
+  }
+
+  .hour-slot {
+    height: 40px;
+  }
+
+  .time-label {
+    font-size: 0.65rem;
+  }
+
+  .week-event {
+    left: 1px;
+    right: 1px;
+    padding: 0.125rem;
+    font-size: 0.65rem;
+  }
+
+  .event-title {
+    font-size: 0.7rem;
+  }
+
+  .event-description {
+    display: none;
+  }
+
+  .event-time {
+    font-size: 0.55rem;
+  }
+}
