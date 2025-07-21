@@ -48,6 +48,33 @@ export const getDayHours = () => {
   return hours;
 };
 
+export const getDayHoursWithHalf = () => {
+  const slots = [];
+  for (let i = 0; i < 24; i++) {
+    // Full hour
+    const hour = new Date();
+    hour.setHours(i, 0, 0, 0);
+    slots.push({ time: hour, isHalfHour: false });
+    
+    // Half hour
+    const halfHour = new Date();
+    halfHour.setHours(i, 30, 0, 0);
+    slots.push({ time: halfHour, isHalfHour: true });
+  }
+  return slots;
+};
+
+export const getCurrentTimePosition = () => {
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  return (minutes / 60) * 120; // 120px per hour slot
+};
+
+export const isBusinessHour = (hour) => {
+  const hourNum = hour.getHours();
+  return hourNum >= 9 && hourNum < 18; // 9 AM to 6 PM
+};
+
 export const isDateInRange = (date, start, end) => {
   return date >= start && date <= end;
 };
@@ -59,8 +86,8 @@ export const getEventPosition = (event, dayStart) => {
   const minutesFromDayStart = (eventStart.getHours() * 60) + eventStart.getMinutes();
   const duration = (eventEnd - eventStart) / (1000 * 60); // duration in minutes
   
-  const top = (minutesFromDayStart / 60) * 60; // 60px per hour
-  const height = Math.max((duration / 60) * 60, 20); // minimum 20px height
+  const top = (minutesFromDayStart / 60) * 120; // 120px per hour (increased from 60px)
+  const height = Math.max((duration / 60) * 120, 30); // minimum 30px height (increased from 20px)
   
   return { top, height };
 };

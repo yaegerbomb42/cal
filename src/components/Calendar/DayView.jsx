@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import { getDayHours, formatTime, getEventPosition, isToday } from '../../utils/dateUtils';
+import { getDayHours, getDayHoursWithHalf, formatTime, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn } from '../../utils/helpers';
+import { Clock } from 'lucide-react';
 import './DayView.css';
 
 const DayView = () => {
@@ -10,7 +11,10 @@ const DayView = () => {
   const { getEventsForDate } = useEvents();
 
   const dayHours = getDayHours();
+  const daySlots = getDayHoursWithHalf();
   const dayEvents = getEventsForDate(currentDate);
+  const showCurrentTime = isToday(currentDate);
+  const currentTimePosition = showCurrentTime ? getCurrentTimePosition() : null;
 
   const handleTimeSlotClick = (hour) => {
     const startTime = new Date(currentDate);
@@ -64,11 +68,23 @@ const DayView = () => {
       <div className="day-grid">
         {/* Time Column */}
         <div className="time-column">
-          {dayHours.map((hour) => (
-            <div key={hour.getHours()} className="time-slot">
-              <span className="time-label">
-                {formatTime(hour)}
-              </span>
+          {daySlots.map((slot, index) => (
+            <div 
+              key={index} 
+              className={cn(
+                'time-slot',
+                slot.isHalfHour && 'half-hour',
+                !slot.isHalfHour && isBusinessHour(slot.time) && 'business-hour'
+              )}
+            >
+              {!slot.isHalfHour && (
+                <span className="time-label">
+                  {formatTime(slot.time)}
+                </span>
+              )}
+              {slot.isHalfHour && (
+                <span className="time-label-half">30</span>
+              )}
             </div>
           ))}
         </div>
@@ -80,9 +96,25 @@ const DayView = () => {
             <div
               key={hour.getHours()}
               onClick={() => handleTimeSlotClick(hour)}
-              className="hour-slot"
+              className={cn(
+                'hour-slot',
+                isBusinessHour(hour) && 'business-hour'
+              )}
             />
           ))}
+
+          {/* Current Time Indicator */}
+          {showCurrentTime && currentTimePosition !== null && (
+            <div 
+              className="current-time-indicator"
+              style={{ top: `${currentTimePosition}px` }}
+            >
+              <div className="current-time-line"></div>
+              <div className="current-time-dot">
+                <Clock size={12} />
+              </div>
+            </div>
+          )}
 
           {/* Events Layer */}
           <div className="events-layer">
@@ -106,12 +138,12 @@ const DayView = () => {
                 >
                   <div className="event-content">
                     <div className="event-title">{event.title}</div>
-                    {event.description && (
+                    {event.description && height > 80 && (
                       <div className="event-description">
                         {event.description}
                       </div>
                     )}
-                    {event.location && (
+                    {event.location && height > 100 && (
                       <div className="event-location">
                         📍 {event.location}
                       </div>
