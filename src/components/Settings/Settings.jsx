@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { firebaseService } from '../../services/firebaseService';
 import { useEvents } from '../../contexts/EventsContext';
 import './Settings.css';
 
@@ -10,17 +11,39 @@ const Settings = ({ isOpen, onClose }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
-  const [exportData, setExportData] = useState('');
   
   const { events, addEvent } = useEvents();
 
   useEffect(() => {
-    // Load saved API key
-    const savedKey = localStorage.getItem('gemini-api-key');
-    if (savedKey) {
-      setApiKey(savedKey);
-      testConnection(savedKey);
-    }
+    const loadApiKey = async () => {
+      // Try Firebase first
+      try {
+        const firebaseKey = await firebaseService.getApiKey();
+        if (firebaseKey) {
+          setApiKey(firebaseKey);
+          testConnection(firebaseKey);
+          return;
+        }
+      } catch (error) {
+        console.log('Could not load API key from Firebase:', error);
+      }
+      
+      // Fallback to localStorage
+      const savedKey = localStorage.getItem('gemini-api-key');
+      if (savedKey) {
+        setApiKey(savedKey);
+        testConnection(savedKey);
+        
+        // Try to sync to Firebase if available
+        try {
+          await firebaseService.saveApiKey(savedKey);
+        } catch (error) {
+          console.log('Could not sync API key to Firebase:', error);
+        }
+      }
+    };
+
+    loadApiKey();
   }, []);
 
   const testConnection = async (key) => {
@@ -41,19 +64,39 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     if (apiKey.trim()) {
+      // Save to localStorage immediately
       localStorage.setItem('gemini-api-key', apiKey.trim());
+      
+      // Try to save to Firebase
+      try {
+        await firebaseService.saveApiKey(apiKey.trim());
+      } catch (error) {
+        console.log('Could not save API key to Firebase, localStorage backup available:', error);
+      }
+      
       testConnection(apiKey.trim());
     } else {
+      // Clear from both localStorage and Firebase
       localStorage.removeItem('gemini-api-key');
+      try {
+        await firebaseService.saveApiKey('');
+      } catch (error) {
+        console.log('Could not clear API key from Firebase:', error);
+      }
       setConnectionStatus(null);
     }
   };
 
-  const handleClearApiKey = () => {
+  const handleClearApiKey = async () => {
     setApiKey('');
     localStorage.removeItem('gemini-api-key');
+    try {
+      await firebaseService.saveApiKey('');
+    } catch (error) {
+      console.log('Could not clear API key from Firebase:', error);
+    }
     setConnectionStatus(null);
   };
 

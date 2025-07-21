@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { firebaseService } from '../services/firebaseService';
 
 const EventsContext = createContext();
 
@@ -13,14 +14,65 @@ export const useEvents = () => {
 const STORAGE_KEY = 'calendar-events';
 
 export const EventsProvider = ({ children }) => {
-  const [events, setEvents] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Initialize Firebase and load events
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-  }, [events]);
+    const initializeData = async () => {
+      setIsLoading(true);
+      
+      // Initialize Firebase
+      firebaseService.initialize();
+      
+      try {
+        // Try to load from Firebase first
+        const firebaseEvents = await firebaseService.getEvents();
+        
+        if (firebaseEvents && firebaseEvents.length > 0) {
+          setEvents(firebaseEvents);
+          // Sync to localStorage as backup
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(firebaseEvents));
+        } else {
+          // Fallback to localStorage
+          const localEvents = localStorage.getItem(STORAGE_KEY);
+          const parsedEvents = localEvents ? JSON.parse(localEvents) : [];
+          setEvents(parsedEvents);
+          
+          // If we have local events, sync them to Firebase
+          if (parsedEvents.length > 0) {
+            try {
+              await firebaseService.saveEvents(parsedEvents);
+            } catch (error) {
+              console.log('Could not sync local events to Firebase:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Firebase not available, using localStorage:', error);
+        // Fallback to localStorage only
+        const localEvents = localStorage.getItem(STORAGE_KEY);
+        setEvents(localEvents ? JSON.parse(localEvents) : []);
+      }
+      
+      setIsLoading(false);
+    };
+
+    initializeData();
+  }, []);
+
+  // Save events to both Firebase and localStorage
+  useEffect(() => {
+    if (!isLoading && events.length >= 0) {
+      // Save to localStorage immediately
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      
+      // Try to save to Firebase
+      firebaseService.saveEvents(events).catch(error => {
+        console.log('Could not save to Firebase, localStorage backup available:', error);
+      });
+    }
+  }, [events, isLoading]);
 
   const addEvent = (event) => {
     const newEvent = {
@@ -64,7 +116,8 @@ export const EventsProvider = ({ children }) => {
       updateEvent,
       deleteEvent,
       getEventsForDate,
-      getEventsForRange
+      getEventsForRange,
+      isLoading
     }}>
       {children}
     </EventsContext.Provider>

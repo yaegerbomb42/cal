@@ -58,7 +58,7 @@
 
 .day-grid {
   display: grid;
-  grid-template-columns: 100px 1fr;
+  grid-template-columns: 120px 1fr;
   height: calc(100% - 150px);
   overflow: hidden;
   border-radius: 16px;
@@ -70,22 +70,59 @@
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.time-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.time-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.time-column::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
 
 .time-slot {
-  height: 80px;
-  padding: 1rem;
+  height: 60px;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--glass-border);
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
+  position: relative;
+}
+
+.time-slot.half-hour {
+  height: 60px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 1rem;
+}
+
+.time-slot.business-hour {
+  background: rgba(99, 102, 241, 0.05);
 }
 
 .time-label {
-  font-size: 0.875rem;
-  color: var(--text-muted);
+  font-size: 0.95rem;
+  color: var(--text-primary);
   font-weight: 600;
   transform: translateY(-8px);
+  background: var(--glass-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+}
+
+.time-label-half {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+  transform: translateY(-4px);
 }
 
 .events-column {
@@ -94,17 +131,84 @@
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
   overflow-y: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.events-column::-webkit-scrollbar {
+  width: 8px;
+}
+
+.events-column::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.events-column::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.events-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .hour-slot {
-  height: 80px;
+  height: 120px;
   border-bottom: 1px solid var(--glass-border);
   cursor: pointer;
   transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.hour-slot.business-hour {
+  background: rgba(99, 102, 241, 0.02);
 }
 
 .hour-slot:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.hour-slot::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.current-time-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.current-time-line {
+  height: 2px;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+  border-radius: 1px;
+}
+
+.current-time-dot {
+  position: absolute;
+  top: -8px;
+  right: 1rem;
+  width: 16px;
+  height: 16px;
+  background: #ef4444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .events-layer {
@@ -227,21 +331,30 @@
   }
 
   .day-grid {
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 100px 1fr;
     height: calc(100% - 120px);
   }
 
   .time-slot {
-    height: 60px;
-    padding: 0.5rem;
+    height: 50px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .time-slot.half-hour {
+    height: 50px;
+    padding: 0.2rem 0.75rem;
   }
 
   .hour-slot {
-    height: 60px;
+    height: 100px;
   }
 
   .time-label {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .time-label-half {
+    font-size: 0.7rem;
   }
 
   .day-event {
@@ -270,6 +383,12 @@
     right: 1rem;
     font-size: 1.5rem;
   }
+
+  .current-time-dot {
+    width: 14px;
+    height: 14px;
+    top: -7px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -282,20 +401,30 @@
   }
 
   .day-grid {
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: 80px 1fr;
   }
 
   .time-slot {
-    height: 50px;
-    padding: 0.25rem;
+    height: 40px;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .time-slot.half-hour {
+    height: 40px;
+    padding: 0.15rem 0.5rem;
   }
 
   .hour-slot {
-    height: 50px;
+    height: 80px;
   }
 
   .time-label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .time-label-half {
+    font-size: 0.65rem;
   }
 
   .day-event {
@@ -315,5 +444,12 @@
   .event-location,
   .event-time {
     font-size: 0.7rem;
+  }
+
+  .current-time-dot {
+    width: 12px;
+    height: 12px;
+    top: -6px;
+    right: 0.5rem;
   }
 }
