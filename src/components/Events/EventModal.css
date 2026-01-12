@@ -53,6 +53,24 @@
   color: var(--text-primary);
 }
 
+.validation-errors {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-message:last-child {
+  margin-bottom: 0;
+}
+
 .modal-form {
   padding: 1rem 2rem 2rem 2rem;
 }

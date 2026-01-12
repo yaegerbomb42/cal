@@ -8,6 +8,7 @@ import Calendar from './components/Calendar/Calendar';
 import EventModal from './components/Events/EventModal';
 import AIChat from './components/AI/AIChat';
 import Settings from './components/Settings/Settings';
+import Toast from './components/Toast/Toast';
 import './App.css';
 
 function App() {
@@ -47,6 +48,8 @@ function App() {
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
               />
+              
+              <Toast />
             </motion.div>
           </div>
         </CalendarProvider>

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { firebaseService } from '../../services/firebaseService';
 import { useEvents } from '../../contexts/EventsContext';
+import { downloadICS } from '../../utils/icsExport';
+import { toastService } from '../../utils/toast';
 import './Settings.css';
 
 const Settings = ({ isOpen, onClose }) => {
@@ -119,6 +121,16 @@ const Settings = ({ isOpen, onClose }) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    toastService.success('Calendar data exported successfully');
+  };
+
+  const handleExportICS = () => {
+    try {
+      downloadICS(events, `calendar-${new Date().toISOString().split('T')[0]}.ics`);
+      toastService.success('Calendar exported as ICS file');
+    } catch (error) {
+      toastService.error('Failed to export ICS file');
+    }
   };
 
   const handleImportData = (event) => {
@@ -133,12 +145,12 @@ const Settings = ({ isOpen, onClose }) => {
           data.events.forEach(event => {
             addEvent(event);
           });
-          alert(`Successfully imported ${data.events.length} events!`);
+          toastService.success(`Successfully imported ${data.events.length} events!`);
         } else {
-          alert('Invalid file format. Please select a valid calendar data file.');
+          toastService.error('Invalid file format. Please select a valid calendar data file.');
         }
       } catch (error) {
-        alert('Error reading file. Please select a valid JSON file.');
+        toastService.error('Error reading file. Please select a valid JSON file.');
       }
     };
     reader.readAsText(file);
@@ -270,9 +282,19 @@ const Settings = ({ isOpen, onClose }) => {
                 <button
                   onClick={handleExportData}
                   className="btn"
+                  title="Export as JSON"
                 >
                   <Download size={16} />
-                  Export Data
+                  Export JSON
+                </button>
+
+                <button
+                  onClick={handleExportICS}
+                  className="btn"
+                  title="Export as ICS (for Google Calendar, Outlook, etc.)"
+                >
+                  <CalendarIcon size={16} />
+                  Export ICS
                 </button>
 
                 <label className="btn file-input-label">

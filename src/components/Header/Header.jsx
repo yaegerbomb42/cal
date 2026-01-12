@@ -1,13 +1,21 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight, Send, Sparkles } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
+import { useEvents } from '../../contexts/EventsContext';
 import { formatDate } from '../../utils/dateUtils';
+import { geminiService } from '../../services/geminiService';
+import { registerShortcut } from '../../utils/keyboardShortcuts';
+import SearchBar from '../Search/SearchBar';
 import './Header.css';
 
 const Header = ({ onOpenSettings, onOpenAI }) => {
+  const [quickInput, setQuickInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { addEvent } = useEvents();
   const { isDark, toggleTheme } = useTheme();
-  const { currentDate, view, setView, navigateDate, goToToday } = useCalendar();
+  const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
   const viewButtons = [
     { key: CALENDAR_VIEWS.DAY, label: 'Day' },
@@ -28,12 +36,72 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     }
   };
 
+  useEffect(() => {
+    // Register keyboard shortcuts
+    const unregisterN = registerShortcut('n', () => {
+      openEventModal();
+    }, { ctrl: true });
+
+    const unregisterT = registerShortcut('t', () => {
+      goToToday();
+    }, { ctrl: true });
+
+    return () => {
+      unregisterN();
+      unregisterT();
+    };
+  }, [openEventModal, goToToday]);
+
+  const handleQuickEventSubmit = async (e) => {
+    e.preventDefault();
+    if (!quickInput.trim() || isProcessing) return;
+
+    setIsProcessing(true);
+    const userInput = quickInput.trim();
+    setQuickInput('');
+
+    try {
+      const eventData = await geminiService.parseEventFromText(userInput, []);
+      addEvent(eventData, { allowConflicts: false });
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       className="header glass"
     >
+      {/* Quick Event Input */}
+      <div className="quick-event-bar">
+        <div className="container">
+          <form onSubmit={handleQuickEventSubmit} className="quick-event-form">
+            <Sparkles size={18} className="quick-event-icon" />
+            <input
+              type="text"
+              value={quickInput}
+              onChange={(e) => setQuickInput(e.target.value)}
+              placeholder="Quick add event... (e.g., 'Meeting tomorrow at 2pm' or 'Dentist appointment next Friday 10am')"
+              className="quick-event-input"
+              disabled={isProcessing}
+            />
+            <motion.button
+              type="submit"
+              disabled={!quickInput.trim() || isProcessing}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="quick-event-submit"
+            >
+              <Send size={16} />
+            </motion.button>
+          </form>
+        </div>
+      </div>
+
       <div className="container">
         <div className="header-content">
           {/* Logo and Title */}
@@ -100,6 +168,8 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
 
             {/* Action Buttons */}
             <div className="action-buttons">
+              <SearchBar />
+              
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

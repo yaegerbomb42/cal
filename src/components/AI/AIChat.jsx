@@ -23,26 +23,10 @@ const AIChat = ({ isOpen, onClose }) => {
   const { events, addEvent } = useEvents();
 
   useEffect(() => {
-    const initializeAI = async () => {
-      // Try Firebase first
-      try {
-        const firebaseKey = await firebaseService.getApiKey();
-        if (firebaseKey && geminiService.initialize(firebaseKey)) {
-          setIsConnected(true);
-          return;
-        }
-      } catch (error) {
-        console.log('Could not load API key from Firebase:', error);
-      }
-      
-      // Fallback to localStorage
-      const apiKey = localStorage.getItem('gemini-api-key');
-      if (apiKey && geminiService.initialize(apiKey)) {
-        setIsConnected(true);
-      }
-    };
-
-    initializeAI();
+    // API key is now hardcoded in geminiService
+    if (geminiService.isInitialized) {
+      setIsConnected(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -78,7 +62,7 @@ const AIChat = ({ isOpen, onClose }) => {
         return;
       }
 
-      // Create the event
+      // Create the event (notification is handled in addEvent)
       addEvent(eventData);
       addMessage('ai', `Great! I've created your event "${eventData.title}" for ${new Date(eventData.start).toLocaleString()}. You can edit it by clicking on it in the calendar.`);
       

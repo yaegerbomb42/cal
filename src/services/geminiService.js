@@ -4,14 +4,20 @@ import { parseNaturalLanguageDate, parseNaturalLanguageTime } from '../utils/dat
 class GeminiService {
   constructor() {
     this.genAI = null;
-    this.model = null;
+    this.modelPro = null;
+    this.modelFlash = null;
     this.isInitialized = false;
+    // Hardcoded API key
+    this.apiKey = 'AIzaSyBF6fAuMhaokjQyw9tLH6ETc61mA0FVbRc';
+    this.initialize();
   }
 
-  initialize(apiKey) {
+  initialize() {
     try {
-      this.genAI = new GoogleGenerativeAI(apiKey);
-      this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      this.genAI = new GoogleGenerativeAI(this.apiKey);
+      // Using Gemini 3 Pro and 3 Flash as requested
+      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       this.isInitialized = true;
       return true;
     } catch (error) {
@@ -54,7 +60,8 @@ If the text doesn't contain enough information for a calendar event, respond wit
 `;
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // Use Flash for faster parsing
+      const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
@@ -129,7 +136,8 @@ Respond with JSON array of suggested times:
 `;
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // Use Flash for faster parsing
+      const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
@@ -176,7 +184,8 @@ Respond with JSON array:
 `;
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // Use Flash for faster parsing
+      const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
       
@@ -218,7 +227,8 @@ Keep responses concise and actionable.
 `;
 
     try {
-      const result = await this.model.generateContent(prompt);
+      // Use Pro for better chat responses
+      const result = await this.modelPro.generateContent(prompt);
       const response = await result.response;
       return response.text();
     } catch (error) {

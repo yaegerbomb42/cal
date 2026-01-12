@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell } from 'lucide-react';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { formatDate, formatTime } from '../../utils/dateUtils';
 import { getEventColor } from '../../utils/helpers';
+import { validateEvent } from '../../utils/eventValidator';
+import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEvents';
+import { toastService } from '../../utils/toast';
 import './EventModal.css';
 
 const EventModal = () => {
@@ -18,10 +21,13 @@ const EventModal = () => {
     end: '',
     location: '',
     category: 'personal',
-    color: '#6366f1'
+    color: '#6366f1',
+    reminder: null,
+    recurring: { type: RECURRENCE_TYPES.NONE }
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
 
   useEffect(() => {
     if (selectedEvent) {
@@ -34,7 +40,9 @@ const EventModal = () => {
           end: new Date(selectedEvent.end).toISOString().slice(0, 16),
           location: selectedEvent.location || '',
           category: selectedEvent.category || 'personal',
-          color: selectedEvent.color || getEventColor(selectedEvent.category)
+          color: selectedEvent.color || getEventColor(selectedEvent.category),
+          reminder: selectedEvent.reminder || null,
+          recurring: selectedEvent.recurring || { type: RECURRENCE_TYPES.NONE }
         });
         setIsEditing(true);
       } else {
@@ -59,7 +67,10 @@ const EventModal = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!formData.title.trim()) return;
+    if (!formData.title.trim()) {
+      toastService.error('Event title is required');
+      return;
+    }
 
     const eventData = {
       ...formData,
@@ -68,13 +79,26 @@ const EventModal = () => {
       color: formData.color || getEventColor(formData.category)
     };
 
-    if (isEditing && selectedEvent.id) {
-      updateEvent(selectedEvent.id, eventData);
-    } else {
-      addEvent(eventData);
+    // Validate
+    const validation = validateEvent(eventData);
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      toastService.error(validation.errors[0]);
+      return;
     }
 
-    closeEventModal();
+    setValidationErrors([]);
+
+    try {
+      if (isEditing && selectedEvent.id) {
+        updateEvent(selectedEvent.id, eventData);
+      } else {
+        addEvent(eventData, { allowConflicts: false });
+      }
+      closeEventModal();
+    } catch (error) {
+      // Error already handled in addEvent
+    }
   };
 
   const handleDelete = () => {
@@ -206,6 +230,14 @@ const EventModal = () => {
               />
             </div>
 
+            {validationErrors.length > 0 && (
+              <div className="validation-errors">
+                {validationErrors.map((error, idx) => (
+                  <div key={idx} className="error-message">{error}</div>
+                ))}
+              </div>
+            )}
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="category">Category</label>
@@ -244,6 +276,45 @@ const EventModal = () => {
                     />
                   ))}
                 </div>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>
+                  <Repeat size={16} />
+                  Recurrence
+                </label>
+                <select
+                  value={formData.recurring?.type || RECURRENCE_TYPES.NONE}
+                  onChange={(e) => handleChange('recurring', { type: e.target.value })}
+                  className="input"
+                >
+                  {Object.values(RECURRENCE_TYPES).map(type => (
+                    <option key={type} value={type}>
+                      {formatRecurrenceText({ type })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <Bell size={16} />
+                  Reminder
+                </label>
+                <select
+                  value={formData.reminder || ''}
+                  onChange={(e) => handleChange('reminder', e.target.value || null)}
+                  className="input"
+                >
+                  <option value="">No reminder</option>
+                  <option value="5">5 minutes before</option>
+                  <option value="15">15 minutes before</option>
+                  <option value="30">30 minutes before</option>
+                  <option value="60">1 hour before</option>
+                  <option value="1440">1 day before</option>
+                </select>
               </div>
             </div>
 

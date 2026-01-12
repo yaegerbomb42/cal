@@ -1,5 +1,9 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { firebaseService } from '../services/firebaseService';
+import { debounce } from '../utils/helpers';
+import { validateEvent, checkEventConflicts } from '../utils/eventValidator';
+import { toastService } from '../utils/toast';
+import { reminderService } from '../services/reminderService';
 
 const EventsContext = createContext();
 
@@ -61,37 +65,149 @@ export const EventsProvider = ({ children }) => {
     initializeData();
   }, []);
 
+  // Debounced Firebase save function
+  const debouncedFirebaseSave = useCallback(
+    debounce(async (eventsToSave) => {
+      try {
+        await firebaseService.saveEvents(eventsToSave);
+      } catch (error) {
+        console.log('Could not save to Firebase, localStorage backup available:', error);
+        toastService.warning('Could not sync to cloud. Data saved locally.');
+      }
+    }, 1000),
+    []
+  );
+
   // Save events to both Firebase and localStorage
   useEffect(() => {
     if (!isLoading && events.length >= 0) {
       // Save to localStorage immediately
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
       
-      // Try to save to Firebase
-      firebaseService.saveEvents(events).catch(error => {
-        console.log('Could not save to Firebase, localStorage backup available:', error);
-      });
+      // Debounced Firebase save
+      debouncedFirebaseSave(events);
     }
-  }, [events, isLoading]);
+  }, [events, isLoading, debouncedFirebaseSave]);
 
-  const addEvent = (event) => {
+  const addEvent = (event, options = {}) => {
+    // Validate event
+    const validation = validateEvent(event);
+    if (!validation.isValid) {
+      toastService.error(validation.errors[0]);
+      throw new Error(validation.errors[0]);
+    }
+
+    // Check conflicts if not disabled
+    if (!options.skipConflictCheck) {
+      const conflicts = checkEventConflicts(event, events);
+      if (conflicts.length > 0 && !options.allowConflicts) {
+        toastService.warning(`This event conflicts with ${conflicts.length} existing event(s)`);
+        return null;
+      }
+    }
+
     const newEvent = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       createdAt: new Date().toISOString(),
       ...event
     };
+    
     setEvents(prev => [...prev, newEvent]);
+    toastService.success(`Event "${newEvent.title}" created successfully`);
+    
+    // Schedule reminder if set
+    if (newEvent.reminder) {
+      reminderService.updateEventReminders(newEvent);
+    }
+    
+    // Send notification (fire-and-forget)
+    import('../services/notificationService').then(({ notificationService }) => {
+      notificationService.sendEventNotification(newEvent).catch(error => {
+        console.log('Could not send notification:', error);
+      });
+    }).catch(error => {
+      console.log('Could not load notification service:', error);
+    });
+    
     return newEvent;
   };
 
   const updateEvent = (id, updates) => {
+    const existingEvent = events.find(e => e.id === id);
+    if (!existingEvent) {
+      toastService.error('Event not found');
+      return;
+    }
+
+    const updatedEvent = { ...existingEvent, ...updates };
+    const validation = validateEvent(updatedEvent);
+    
+    if (!validation.isValid) {
+      toastService.error(validation.errors[0]);
+      return;
+    }
+
+    // Check conflicts
+    const conflicts = checkEventConflicts(updatedEvent, events.filter(e => e.id !== id));
+    if (conflicts.length > 0) {
+      toastService.warning(`This update creates conflicts with ${conflicts.length} event(s)`);
+    }
+
     setEvents(prev => prev.map(event => 
-      event.id === id ? { ...event, ...updates } : event
+      event.id === id ? updatedEvent : event
     ));
+    
+    // Update reminders
+    reminderService.updateEventReminders(updatedEvent);
+    
+    toastService.success('Event updated successfully');
   };
 
   const deleteEvent = (id) => {
+    const event = events.find(e => e.id === id);
+    
+    // Cancel reminders
+    if (event) {
+      reminderService.cancelEventReminders(id);
+    }
+    
     setEvents(prev => prev.filter(event => event.id !== id));
+    if (event) {
+      toastService.success(`Event "${event.title}" deleted`);
+    }
+  };
+
+  const searchEvents = (query) => {
+    if (!query || !query.trim()) return events;
+    const lowerQuery = query.toLowerCase();
+    return events.filter(event => 
+      event.title?.toLowerCase().includes(lowerQuery) ||
+      event.description?.toLowerCase().includes(lowerQuery) ||
+      event.location?.toLowerCase().includes(lowerQuery) ||
+      event.category?.toLowerCase().includes(lowerQuery)
+    );
+  };
+
+  const filterEvents = (filters) => {
+    let filtered = events;
+
+    if (filters.category) {
+      filtered = filtered.filter(e => e.category === filters.category);
+    }
+
+    if (filters.startDate) {
+      filtered = filtered.filter(e => new Date(e.start) >= new Date(filters.startDate));
+    }
+
+    if (filters.endDate) {
+      filtered = filtered.filter(e => new Date(e.start) <= new Date(filters.endDate));
+    }
+
+    if (filters.search) {
+      filtered = searchEvents(filters.search);
+    }
+
+    return filtered;
   };
 
   const getEventsForDate = (date) => {
@@ -117,6 +233,8 @@ export const EventsProvider = ({ children }) => {
       deleteEvent,
       getEventsForDate,
       getEventsForRange,
+      searchEvents,
+      filterEvents,
       isLoading
     }}>
       {children}
