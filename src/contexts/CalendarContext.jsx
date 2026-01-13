@@ -18,7 +18,7 @@ export const CALENDAR_VIEWS = {
 
 export const CalendarProvider = ({ children }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState(CALENDAR_VIEWS.MONTH);
+  const [view, setView] = useState(CALENDAR_VIEWS.WEEK);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
