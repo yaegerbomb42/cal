@@ -12,6 +12,7 @@ import AIChat from './components/AI/AIChat';
 import Settings from './components/Settings/Settings';
 import Toast from './components/Toast/Toast';
 import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
+import ThemeBackground from './components/Common/ThemeBackground';
 import { geminiService } from './services/geminiService';
 import './App.css';
 
@@ -74,6 +75,7 @@ const MainLayout = () => {
         transition={{ duration: 0.5 }}
         className="app-container"
       >
+        <ThemeBackground />
         <Header
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenAI={() => setIsAIChatOpen(true)}

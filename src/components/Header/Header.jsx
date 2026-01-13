@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight, Send, Sparkles } from 'lucide-react';
+import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight, Send, Sparkles, Zap, Wind, User } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -14,7 +14,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
   const [quickInput, setQuickInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const { addEvent } = useEvents();
-  const { isDark, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
   const viewButtons = [
@@ -207,9 +207,14 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleTheme}
                 className="btn theme-btn"
-                title="Toggle Theme"
+                title={`Theme: ${theme}`}
               >
-                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                {theme === 'modern' && <Moon size={18} />}
+                {theme === 'neon' && <Sparkles size={18} style={{ color: '#00f2ff' }} />}
+                {theme === 'ceo' && <User size={18} style={{ color: '#eab308' }} />}
+                {theme === 'quantum' && <Zap size={18} className="animate-pulse" style={{ color: '#8b5cf6' }} />}
+                {theme === 'zen' && <Wind size={18} style={{ color: '#10b981' }} />}
+                {theme === 'light' && <Sun size={18} />}
               </motion.button>
 
               <motion.button
