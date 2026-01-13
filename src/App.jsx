@@ -12,6 +12,7 @@ import AIChat from './components/AI/AIChat';
 import Settings from './components/Settings/Settings';
 import Toast from './components/Toast/Toast';
 import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
+import { geminiService } from './services/geminiService';
 import './App.css';
 
 function App() {

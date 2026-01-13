@@ -7,23 +7,18 @@ class GeminiService {
     this.modelPro = null;
     this.modelFlash = null;
     this.isInitialized = false;
-    // Hardcoded API key
-    this.apiKey = 'AIzaSyDsErhKwzgqPNltgPjwVhGWMvZyc8VCUjU';
-    this.initialize();
+    this.apiKey = null;
   }
 
-  initialize(userEmail = null) {
+  initialize(apiKey) {
+    if (!apiKey) {
+      console.warn('Gemini API key not provided');
+      this.isInitialized = false;
+      return false;
+    }
+
     try {
-      // Access Control Check
-      const authorizedEmail = 'yaeger.james42@gmail.com';
-      this.isAuthorized = userEmail && userEmail === authorizedEmail;
-
-      if (!this.isAuthorized) {
-        console.warn('Gemini access restricted: Unauthorized user');
-        this.isInitialized = false;
-        return false;
-      }
-
+      this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       // Using Gemini 3 Pro and 3 Flash as requested
       this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
