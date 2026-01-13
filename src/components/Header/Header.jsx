@@ -103,7 +103,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               type="text"
               value={quickInput}
               onChange={(e) => setQuickInput(e.target.value)}
-              placeholder="Quick add event... (e.g., 'Meeting tomorrow at 2pm' or 'Dentist appointment next Friday 10am')"
+              placeholder="Ask AI or quick add... (e.g. 'Coffee with Sam tomorrow at 9am')"
               className="quick-event-input"
               disabled={isProcessing}
             />
@@ -129,7 +129,10 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               className="logo-section"
             >
               <Calendar className="logo-icon" size={28} />
-              <h1>CalAI</h1>
+              <div className="logo-text">
+                <h1>CalAI</h1>
+                <span className="current-date-badge">{formatDate(new Date(), 'MMM d, yyyy')}</span>
+              </div>
             </motion.div>
           </div>
 

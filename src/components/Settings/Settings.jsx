@@ -224,7 +224,6 @@ const Settings = ({ isOpen, onClose }) => {
                           <div className="pro-user-details">
                             <h3>{user?.displayName || 'User'}</h3>
                             <p>{user?.email}</p>
-                            <span className="badge-pro">Standard Access</span>
                           </div>
                         </div>
                       </div>
@@ -232,15 +231,15 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="stats-row">
                         <div className="mini-stat">
                           <span className="val">{events.length}</span>
-                          <span className="lbl">Events</span>
+                          <span className="lbl">Total Events</span>
                         </div>
                         <div className="mini-stat">
                           <span className="val">{events.filter(e => new Date(e.start) > new Date()).length}</span>
                           <span className="lbl">Upcoming</span>
                         </div>
                         <div className="mini-stat">
-                          <span className="val">3.0</span>
-                          <span className="lbl">Gemini</span>
+                          <span className="val">Pro</span>
+                          <span className="lbl">Engine</span>
                         </div>
                       </div>
                     </div>
@@ -302,15 +301,15 @@ const Settings = ({ isOpen, onClose }) => {
                           </div>
                           <div className="integration-meta">
                             <h4>Google Calendar</h4>
-                            <p>{isGoogleConnected ? 'Two-way synchronization active' : 'Connect to sync your schedules'}</p>
+                            <p>{googleCalendarService.isAuthorized ? 'Two-way synchronization active' : 'Connect to sync your schedules'}</p>
                           </div>
                         </div>
                         <button
                           onClick={handleGoogleCalendarSync}
-                          disabled={isSyncing || isGoogleConnected}
-                          className={`pro-button ${isGoogleConnected ? 'connected' : ''}`}
+                          disabled={isSyncing}
+                          className={`pro-button ${googleCalendarService.isAuthorized ? 'connected' : ''}`}
                         >
-                          {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : isGoogleConnected ? <CheckCircle size={16} /> : 'Connect Now'}
+                          {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : googleCalendarService.isAuthorized ? <CheckCircle size={16} /> : 'Connect Now'}
                         </button>
                       </div>
                     </div>
