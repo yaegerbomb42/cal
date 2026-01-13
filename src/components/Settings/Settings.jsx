@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
@@ -211,11 +211,12 @@ const Settings = ({ isOpen, onClose }) => {
         onClick={onClose}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.2 }}
           onClick={(e) => e.stopPropagation()}
-          className="settings-modal glass-card"
+          className="settings-modal"
         >
           <div className="settings-header">
             <h3>Settings</h3>
@@ -228,21 +229,20 @@ const Settings = ({ isOpen, onClose }) => {
             {/* Account */}
             <section className="settings-section">
               <h4>
-                <User size={18} />
-                Account
+                <User size={16} />
+                User Account
               </h4>
-              <div className="account-card glass-card">
+              <div className="account-card">
                 <div className="account-info">
                   <div className="user-avatar">
                     {user?.photoURL ? (
                       <img src={user.photoURL} alt="Profile" />
                     ) : (
-                      <div className="avatar-placeholder">
-                        {user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </div>
+                      user?.email?.charAt(0).toUpperCase() || 'U'
                     )}
                   </div>
                   <div className="user-details">
+                    <h5>Account Settings</h5>
                     <span className="user-email">{user?.email}</span>
                   </div>
                 </div>
@@ -256,11 +256,11 @@ const Settings = ({ isOpen, onClose }) => {
             {/* AI Configuration */}
             <section className="settings-section">
               <h4>
-                <Key size={18} />
-                AI Configuration
+                <Key size={16} />
+                Gemini Configuration
               </h4>
               <p className="section-description">
-                Enter your Google Gemini API key to enable AI features. The key is saved securely to your account.
+                Power your calendar with **Gemini 3.0 Pro**. Enter your API key below.
               </p>
 
               <div className="form-group">
@@ -296,7 +296,7 @@ const Settings = ({ isOpen, onClose }) => {
                 {connectionStatus === 'success' && (
                   <div className="status-badge success">
                     <CheckCircle size={14} />
-                    <span>Connected</span>
+                    <span>Gemini 3.0 Pro Connected</span>
                   </div>
                 )}
                 {connectionStatus === 'error' && (
@@ -308,48 +308,38 @@ const Settings = ({ isOpen, onClose }) => {
               </div>
 
               <div className="help-text">
-                Need an API key? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get one from Google AI Studio <ExternalLink size={12} /></a>
+                Need an API key? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio <ExternalLink size={12} /></a>
               </div>
             </section>
-
-
 
             {/* Integrations */}
             <section className="settings-section">
               <h4>
-                <RefreshCw size={18} />
+                <RefreshCw size={16} />
                 Integrations
               </h4>
-              <p className="section-description">
-                Connect with external services to sync your calendar.
-              </p>
-
               <div className="integrations-list">
-                <div className="integration-item glass-card">
+                <div className="integration-item">
                   <div className="integration-info">
                     <div className="integration-icon google-cal-icon">
                       <CalendarIcon size={20} />
                     </div>
-                    <div>
+                    <div className="user-details">
                       <h5>Google Calendar</h5>
-                      <p className="small-text">
-                        {isGoogleConnected ? 'Connected & Synced' : 'Sync events both ways'}
-                      </p>
+                      <span className="user-email">
+                        {isGoogleConnected ? 'Two-way sync active' : 'Connect your calendar'}
+                      </span>
                     </div>
                   </div>
                   <button
                     onClick={handleGoogleCalendarSync}
                     disabled={isSyncing || isGoogleConnected}
-                    className={`btn ${isGoogleConnected ? 'btn-success' : 'btn-primary'}`}
+                    className={`btn ${isGoogleConnected ? 'btn-success' : 'btn-primary'} btn-sm`}
                   >
                     {isSyncing ? (
-                      <span className="flex items-center gap-2">
-                        <RefreshCw className="animate-spin" size={14} /> Syncing...
-                      </span>
+                      <RefreshCw className="animate-spin" size={14} />
                     ) : isGoogleConnected ? (
-                      <span className="flex items-center gap-2">
-                        <CheckCircle size={14} /> Connected
-                      </span>
+                      <CheckCircle size={14} />
                     ) : (
                       'Connect'
                     )}
@@ -361,86 +351,41 @@ const Settings = ({ isOpen, onClose }) => {
             {/* Data Management */}
             <section className="settings-section">
               <h4>
-                <Download size={18} />
-                Data Management
+                <Download size={16} />
+                Data & Storage
               </h4>
-              <p className="section-description">
-                Export your calendar data for backup or import data from another calendar.
-              </p>
-
               <div className="data-actions">
-                <button
-                  onClick={handleExportData}
-                  className="btn"
-                  title="Export as JSON"
-                >
-                  <Download size={16} />
-                  Export JSON
+                <button onClick={handleExportData} className="btn">
+                  <Download size={16} /> JSON Export
                 </button>
-
-                <button
-                  onClick={handleExportICS}
-                  className="btn"
-                  title="Export as ICS (for Google Calendar, Outlook, etc.)"
-                >
-                  <CalendarIcon size={16} />
-                  Export ICS
-                </button>
-
-                <label className="btn file-input-label">
-                  <Upload size={16} />
-                  Import Data
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleImportData}
-                    className="file-input"
-                  />
-                </label>
-
-                <button
-                  onClick={handleClearAllData}
-                  className="btn btn-danger"
-                >
-                  <Trash2 size={16} />
-                  Clear All Data
+                <button onClick={handleExportICS} className="btn">
+                  <CalendarIcon size={16} /> ICS Export
                 </button>
               </div>
             </section>
 
             {/* Statistics */}
             <section className="settings-section">
-              <h4>Statistics</h4>
+              <h4>
+                <Sparkles size={16} />
+                Quick Stats
+              </h4>
               <div className="stats-grid">
-                <div className="stat-item glass-card">
-                  <div className="stat-number">{events.length}</div>
-                  <div className="stat-label">Total Events</div>
+                <div className="stat-item">
+                  <span className="stat-number">{events.length}</span>
+                  <span className="stat-label">Total Events</span>
                 </div>
-                <div className="stat-item glass-card">
-                  <div className="stat-number">
+                <div className="stat-item">
+                  <span className="stat-number">
                     {events.filter(e => new Date(e.start) > new Date()).length}
-                  </div>
-                  <div className="stat-label">Upcoming Events</div>
+                  </span>
+                  <span className="stat-label">Upcoming</span>
                 </div>
-                <div className="stat-item glass-card">
-                  <div className="stat-number">
-                    {Math.round(
-                      localStorage.getItem('calendar-events')?.length / 1024 || 0
-                    )}KB
-                  </div>
-                  <div className="stat-label">Storage Used</div>
+                <div className="stat-item">
+                  <span className="stat-number">3.0</span>
+                  <span className="stat-label">Gemini Core</span>
                 </div>
               </div>
-            </section>
-
-            {/* About */}
-            <section className="settings-section">
-              <h4>About CalAI</h4>
-              <p className="about-text">
-                CalAI is a modern, AI-powered calendar application built with React and powered by Google's Gemini AI.
-                It features a beautiful glassmorphism design, natural language event creation, and intelligent scheduling assistance.
-              </p>
-              <p className="version-text">Version 1.0.0</p>
             </section>
           </div>
         </motion.div>

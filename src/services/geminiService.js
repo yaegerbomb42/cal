@@ -20,9 +20,9 @@ class GeminiService {
     try {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      // Using Gemini 3 Pro and 3 Flash as requested
-      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      // Upgraded to Gemini 3.0 Pro and Flash (Latest frontier models)
+      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3.0-pro-preview' });
+      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3.0-flash' });
       this.isInitialized = true;
       return true;
     } catch (error) {
