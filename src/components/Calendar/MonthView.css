@@ -30,8 +30,8 @@
 }
 
 .month-day {
-  min-height: 120px;
-  padding: 0.75rem;
+  min-height: 85px;
+  padding: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;

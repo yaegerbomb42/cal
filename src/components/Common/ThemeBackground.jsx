@@ -19,19 +19,26 @@ const ThemeBackground = () => {
             canvas.height = window.innerHeight;
         };
 
-        window.addEventListener('resize', resize);
-        resize();
+        const mouse = { x: -1000, y: -1000 };
+
+        const handleMouseMove = (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
 
         // Particle system
         const particles = [];
-        const particleCount = theme === 'quantum' ? 60 : 30;
-        const color = theme === 'quantum' ? '139, 92, 246' : '0, 242, 255';
+        const isLiving = theme === 'living';
+        const particleCount = theme === 'quantum' ? 60 : (isLiving ? 100 : 30);
+        const color = theme === 'quantum' ? '139, 92, 246' : (isLiving ? '244, 114, 182' : '0, 242, 255');
 
         for (let i = 0; i < particleCount; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                size: Math.random() * 2 + 1,
+                size: Math.random() * (isLiving ? 3 : 2) + 1,
                 speedX: Math.random() * 0.5 - 0.25,
                 speedY: Math.random() * 0.5 - 0.25,
                 opacity: Math.random() * 0.5 + 0.2
@@ -45,6 +52,22 @@ const ThemeBackground = () => {
                 p.x += p.speedX;
                 p.y += p.speedY;
 
+                // Mouse interaction for living theme
+                if (isLiving) {
+                    const dx = mouse.x - p.x;
+                    const dy = mouse.y - p.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const forceDirectionX = dx / distance;
+                    const forceDirectionY = dy / distance;
+                    const maxDistance = 150;
+                    const force = (maxDistance - distance) / maxDistance;
+
+                    if (distance < maxDistance) {
+                        p.x -= forceDirectionX * force * 2;
+                        p.y -= forceDirectionY * force * 2;
+                    }
+                }
+
                 if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
                 if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
 
@@ -54,19 +77,21 @@ const ThemeBackground = () => {
                 ctx.fill();
 
                 // Lines between close particles
-                for (let j = i + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                if (!isLiving && theme === 'quantum') {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const p2 = particles[j];
+                        const dx = p.x - p2.x;
+                        const dy = p.y - p2.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (dist < 150) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(${color}, ${0.1 * (1 - dist / 150)})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
+                        if (dist < 150) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(${color}, ${0.1 * (1 - dist / 150)})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.stroke();
+                        }
                     }
                 }
             });
@@ -78,11 +103,12 @@ const ThemeBackground = () => {
 
         return () => {
             window.removeEventListener('resize', resize);
+            window.removeEventListener('mousemove', handleMouseMove);
             cancelAnimationFrame(animationFrameId);
         };
     }, [theme]);
 
-    if (theme !== 'quantum' && theme !== 'neon') return null;
+    if (theme !== 'quantum' && theme !== 'neon' && theme !== 'living') return null;
 
     return (
         <canvas

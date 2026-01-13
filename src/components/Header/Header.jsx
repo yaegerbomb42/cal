@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight, Send, Sparkles, Zap, Wind, User } from 'lucide-react';
+import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight, Send, Sparkles, Zap, Wind, User, Activity } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -213,6 +213,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 {theme === 'neon' && <Sparkles size={18} style={{ color: '#00f2ff' }} />}
                 {theme === 'ceo' && <User size={18} style={{ color: '#eab308' }} />}
                 {theme === 'quantum' && <Zap size={18} className="animate-pulse" style={{ color: '#8b5cf6' }} />}
+                {theme === 'living' && <Activity size={18} className="animate-pulse" style={{ color: '#f472b6' }} />}
                 {theme === 'zen' && <Wind size={18} style={{ color: '#10b981' }} />}
                 {theme === 'light' && <Sun size={18} />}
               </motion.button>

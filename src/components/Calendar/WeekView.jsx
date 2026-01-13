@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { getWeekDays, getDayHours, formatTime, isToday } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -19,70 +19,59 @@ const WeekView = () => {
     startTime.setHours(hour.getHours(), 0, 0, 0);
     const endTime = new Date(startTime);
     endTime.setHours(startTime.getHours() + 1);
-
-    openEventModal({
-      start: startTime,
-      end: endTime
-    });
+    openEventModal({ start: startTime, end: endTime });
   };
 
-  const handleEventClick = (event) => {
+  const handleEventClick = (event, e) => {
+    e.stopPropagation();
     openEventModal(event);
   };
 
+  const getScaleFactor = (hourNum) => {
+    if (hoveredHour === null) return 1;
+    const distance = Math.abs(hoveredHour - hourNum);
+    if (distance === 0) return 2.5;
+    if (distance === 1) return 1.5;
+    if (distance === 2) return 1.2;
+    return 0.8;
+  };
+
   return (
-    <div className="week-view">
-      {/* Week Header */}
-      <div className="week-header">
-        <div className="time-gutter"></div>
-        {weekDays.map((day, index) => (
-          <motion.div
-            key={day.toISOString()}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              'week-day-header',
-              isToday(day) && 'today'
-            )}
-          >
-            <div className="day-name">
-              {day.toLocaleDateString('en-US', { weekday: 'short' })}
-            </div>
-            <div className="day-date">
-              {day.getDate()}
-            </div>
-          </motion.div>
+    <div className="week-view-compact">
+      {/* Header */}
+      <div className="week-header-compact">
+        <div className="time-gutter-compact"></div>
+        {weekDays.map((day) => (
+          <div key={day.toISOString()} className={cn('day-header-compact', isToday(day) && 'today')}>
+            <span className="day-name-compact">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+            <span className="day-num-compact">{day.getDate()}</span>
+          </div>
         ))}
       </div>
 
-      {/* 24-Hour Fisheye Grid */}
-      <div
-        className="week-grid-fisheye"
-        onMouseLeave={() => setHoveredHour(null)}
-      >
+      {/* 24h Grid - No Scroll */}
+      <div className="week-grid-compact" onMouseLeave={() => setHoveredHour(null)}>
         {dayHours.map((hour) => {
           const hourNum = hour.getHours();
+          const scale = getScaleFactor(hourNum);
           const isFocused = hoveredHour === hourNum;
-          const isNear = hoveredHour !== null && Math.abs(hoveredHour - hourNum) === 1;
 
           return (
             <div
               key={hourNum}
-              className={cn(
-                "hour-row",
-                isFocused && "row-focused",
-                isNear && "row-near"
-              )}
+              className={cn('hour-row-compact', isFocused && 'focused')}
+              style={{
+                flex: scale,
+                transition: 'flex 0.2s ease-out'
+              }}
               onMouseEnter={() => setHoveredHour(hourNum)}
             >
-              {/* Time Label */}
-              <div className="time-cell">
-                <span className="time-label">
+              <div className="time-cell-compact">
+                <span className={cn('time-label-compact', isFocused && 'time-focused')}>
                   {formatTime(hour).replace(':00', '')}
                 </span>
               </div>
 
-              {/* Day Cells */}
               {weekDays.map((day) => {
                 const dayEvents = getEventsForDate(day).filter(e => {
                   const start = new Date(e.start);
@@ -92,23 +81,20 @@ const WeekView = () => {
                 return (
                   <div
                     key={day.toISOString()}
-                    className="day-cell"
+                    className="day-cell-compact"
                     onClick={() => handleTimeSlotClick(day, hour)}
                   >
                     {dayEvents.map((event) => (
                       <motion.div
                         key={event.id}
-                        layoutId={event.id}
-                        className="event-chip"
-                        style={{ '--event-color': event.color || '#6366f1' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEventClick(event);
-                        }}
+                        className="event-chip-compact"
+                        style={{ backgroundColor: event.color || 'var(--accent)' }}
+                        onClick={(e) => handleEventClick(event, e)}
+                        whileHover={{ scale: 1.05 }}
                       >
-                        <span className="event-title">{event.title}</span>
+                        <span className="event-title-compact">{event.title}</span>
                         {isFocused && event.description && (
-                          <span className="event-desc-preview">{event.description.substring(0, 30)}...</span>
+                          <span className="event-desc-compact">{event.description.slice(0, 50)}</span>
                         )}
                       </motion.div>
                     ))}

@@ -15,6 +15,7 @@ export const THEMES = {
   NEON: 'neon',        // Cyberpunk / Neon Mode
   CEO: 'ceo',          // High Tech CEO (Carbon / Gold / Slate)
   QUANTUM: 'quantum',  // Animated / Glow Mode
+  LIVING: 'living',    // Mouse-reactive / Gradient Mode
   ZEN: 'zen',          // Soft / Minimalist Mode
   LIGHT: 'light'       // Classic Light
 };

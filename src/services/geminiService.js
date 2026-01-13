@@ -20,16 +20,42 @@ class GeminiService {
     try {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      // Upgraded to Gemini 3.0 Pro and Flash (Latest frontier models)
-      // Correct model strings for SDK naming convention
-      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
-      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+      // Try latest models first, fallback to stable versions
+      try {
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      } catch {
+        // Fallback to known stable models
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      }
       this.isInitialized = true;
       return true;
     } catch (error) {
       console.error('Failed to initialize Gemini:', error);
       this.isInitialized = false;
       return false;
+    }
+  }
+
+  async testConnection() {
+    if (!this.isInitialized) {
+      throw new Error('Service not initialized - please add your API key');
+    }
+    try {
+      const result = await this.modelFlash.generateContent('Say "connected" in one word');
+      const response = await result.response;
+      return { success: true, message: response.text() };
+    } catch (error) {
+      const errorMsg = error.message || 'Unknown error';
+      if (errorMsg.includes('API_KEY_INVALID')) {
+        throw new Error('Invalid API key - please check your key in Settings');
+      } else if (errorMsg.includes('PERMISSION_DENIED')) {
+        throw new Error('API key lacks permissions - enable Gemini API in Google Cloud');
+      } else if (errorMsg.includes('QUOTA')) {
+        throw new Error('API quota exceeded - try again later or upgrade your plan');
+      }
+      throw new Error(`Connection failed: ${errorMsg}`);
     }
   }
 
