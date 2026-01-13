@@ -50,9 +50,16 @@ class GoogleCalendarService {
                         this.accessToken = resp.access_token;
                         this.isAuthorized = true;
                         localStorage.setItem('gcal_access_token', resp.access_token);
-                        // Setup expiry timer if needed
                     },
                 });
+
+                // Auto-recover from localStorage
+                const storedToken = localStorage.getItem('gcal_access_token');
+                if (storedToken) {
+                    this.accessToken = storedToken;
+                    this.isAuthorized = true;
+                }
+
                 this.gisInited = true;
                 if (this.gapiInited) resolve();
             };
