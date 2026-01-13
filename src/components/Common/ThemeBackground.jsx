@@ -28,20 +28,22 @@ const ThemeBackground = () => {
 
         window.addEventListener('mousemove', handleMouseMove);
 
-        // Particle system
+        // Particle system (Subtle & Ambient)
         const particles = [];
         const isLiving = theme === 'living';
-        const particleCount = theme === 'quantum' ? 60 : (isLiving ? 100 : 30);
+        // drastically reduced counts for "less chaos"
+        const particleCount = theme === 'quantum' ? 20 : (isLiving ? 25 : 15);
         const color = theme === 'quantum' ? '139, 92, 246' : (isLiving ? '244, 114, 182' : '0, 242, 255');
 
         for (let i = 0; i < particleCount; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                size: Math.random() * (isLiving ? 3 : 2) + 1,
-                speedX: Math.random() * 0.5 - 0.25,
-                speedY: Math.random() * 0.5 - 0.25,
-                opacity: Math.random() * 0.5 + 0.2
+                size: Math.random() * (isLiving ? 2.5 : 1.5) + 0.5,
+                // Slower, calmer movement
+                speedX: Math.random() * 0.2 - 0.1,
+                speedY: Math.random() * 0.2 - 0.1,
+                opacity: Math.random() * 0.3 + 0.1 // Lower opacity
             });
         }
 

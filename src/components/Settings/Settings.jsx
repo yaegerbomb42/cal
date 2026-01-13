@@ -22,7 +22,7 @@ const Settings = ({ isOpen, onClose }) => {
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   const [activeTab, setActiveTab] = useState('account');
-  const { events, addEvent } = useEvents();
+  const { events, addEvent, deleteEventsByFilter } = useEvents();
 
   const tabs = [
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
@@ -37,11 +37,15 @@ const Settings = ({ isOpen, onClose }) => {
     setConnectionStatus(null);
     geminiService.initialize(key);
     try {
-      await geminiService.chatResponse('Hello', []);
-      setConnectionStatus('success');
+      const result = await geminiService.testConnection();
+      if (result.success) {
+        setConnectionStatus('success');
+        toastService.success('Connection successful: ' + result.message);
+      }
     } catch (error) {
       console.error('Connection test failed:', error);
       setConnectionStatus('error');
+      toastService.error(error.message);
     } finally {
       setIsTestingConnection(false);
     }
@@ -85,6 +89,30 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleGoogleCalendarSync = async () => {
+    setIsSyncing(true);
+    try {
+      await googleCalendarService.handleAuthClick();
+      setTimeout(async () => {
+        try {
+          const gEvents = await googleCalendarService.listUpcomingEvents();
+          if (gEvents && gEvents.length > 0) {
+            gEvents.forEach(evt => {
+              const exists = events.some(e => e.gcalId === evt.gcalId || (e.title === evt.title && e.start === evt.start));
+              if (!exists) addEvent(evt);
+            });
+            toastService.success(`Synced ${gEvents.length} events!`);
+            setIsGoogleConnected(true);
+          }
+        } catch (e) { console.error(e); } finally { setIsSyncing(false); }
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+      toastService.error('Sync failed');
+      setIsSyncing(false);
+    }
+  };
+
   const handleExportData = () => {
     const data = { events, exportDate: new Date().toISOString(), version: '1.0' };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -113,27 +141,30 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleGoogleCalendarSync = async () => {
-    setIsSyncing(true);
-    try {
-      await googleCalendarService.handleAuthClick();
-      setTimeout(async () => {
-        try {
-          const gEvents = await googleCalendarService.listUpcomingEvents();
-          if (gEvents && gEvents.length > 0) {
-            gEvents.forEach(evt => {
-              const exists = events.some(e => e.gcalId === evt.gcalId || (e.title === evt.title && e.start === evt.start));
-              if (!exists) addEvent(evt);
-            });
-            toastService.success(`Synced ${gEvents.length} events!`);
-            setIsGoogleConnected(true);
-          }
-        } catch (e) { console.error(e); } finally { setIsSyncing(false); }
-      }, 2000);
-    } catch (error) {
-      console.error(error);
-      toastService.error('Sync failed');
-      setIsSyncing(false);
+  const handleCleanDuplicates = () => {
+    const uniqueKeys = new Set();
+    const duplicates = [];
+
+    // Sort by creation time to keep oldest
+    const sortedEvents = [...events].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+
+    sortedEvents.forEach(e => {
+      const key = `${e.title}-${new Date(e.start).getTime()}`;
+      if (uniqueKeys.has(key)) {
+        duplicates.push(e);
+      } else {
+        uniqueKeys.add(key);
+      }
+    });
+
+    if (duplicates.length === 0) {
+      toastService.info('No duplicates found.');
+      return;
+    }
+
+    if (window.confirm(`Found ${duplicates.length} duplicate events. Delete them?`)) {
+      const duplicateIds = new Set(duplicates.map(d => d.id));
+      deleteEventsByFilter(e => duplicateIds.has(e.id), 'Duplicate Events');
     }
   };
 
@@ -271,11 +302,20 @@ const Settings = ({ isOpen, onClose }) => {
                             </button>
                           </div>
                           <button
+                            onClick={() => testConnection(apiKey)}
+                            disabled={!apiKey || isTestingConnection}
+                            className="pro-btn-secondary"
+                            style={{ marginRight: '8px' }}
+                          >
+                            {isTestingConnection ? <RefreshCw className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                            Test
+                          </button>
+                          <button
                             onClick={handleSaveApiKey}
                             disabled={!apiKey || isTestingConnection}
                             className="pro-btn-primary"
                           >
-                            {isTestingConnection ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                            <Save size={16} />
                             Save
                           </button>
                         </div>
@@ -329,9 +369,14 @@ const Settings = ({ isOpen, onClose }) => {
                           <p>Export in universal calendar format.</p>
                         </div>
                       </div>
-                      <button onClick={handleClearAllData} className="danger-link">
-                        <Trash2 size={14} /> Clear Local Data
-                      </button>
+                      <div className="danger-zone">
+                        <button onClick={handleCleanDuplicates} className="btn-warning">
+                          <Sparkles size={14} /> Clean Up Duplicates
+                        </button>
+                        <button onClick={handleClearAllData} className="danger-link">
+                          <Trash2 size={14} /> Clear Local Data
+                        </button>
+                      </div>
                     </div>
                   )}
 
