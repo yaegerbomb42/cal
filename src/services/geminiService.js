@@ -214,8 +214,8 @@ Respond with JSON array:
     }
 
     const eventsContext = events.length > 0 ?
-      `Current events: ${JSON.stringify(events.slice(0, 10))}` :
-      'No current events';
+      `Current upcoming events: ${JSON.stringify(events.slice(0, 15).map(e => ({ title: e.title, start: e.start, category: e.category })))}` :
+      'No current upcoming events';
 
     const prompt = `
 You are a helpful calendar assistant. The user said: "${message}"
@@ -224,12 +224,19 @@ ${eventsContext}
 
 Current date: ${new Date().toISOString()}
 
-Respond naturally and helpfully. You can:
-- Help create, modify, or delete events
-- Provide scheduling suggestions
-- Answer questions about their calendar
-- Give productivity tips
+Respond in one of two ways:
+1. NATURAL RESPONSE: If the user is just chatting or asking a simple question.
+2. ACTION/QUERY JSON: If the user wants to PERFORM an action (delete, update) or QUERY their schedule (next appointment, free time, list birthdays).
 
+If it's an action or query, respond with a JSON object ONLY:
+{
+  "type": "query" | "action" | "text",
+  "intent": "next_appointment" | "delete_category" | "find_free_time" | "list_category" | "other",
+  "category": "birthday" (if applicable),
+  "answer": "Concise natural language answer/confirmation to show user"
+}
+
+Otherwise, respond with natural text.
 Keep responses concise and actionable.
 `;
 

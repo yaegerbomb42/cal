@@ -25,7 +25,16 @@ const AIChat = ({ isOpen, onClose }) => {
     if (geminiService.isInitialized) {
       setIsConnected(true);
     }
-  }, []);
+
+    const handlePing = (e) => {
+      const { text, response } = e.detail;
+      addMessage('user', text);
+      handleAIResponse(response);
+    };
+
+    window.addEventListener('calai-ping', handlePing);
+    return () => window.removeEventListener('calai-ping', handlePing);
+  }, [events]);
 
   useEffect(() => {
     scrollToBottom();
@@ -54,34 +63,64 @@ const AIChat = ({ isOpen, onClose }) => {
       const isEventRequest = eventKeywords.some(keyword => text.toLowerCase().includes(keyword)) || text.length > 20; // Assume longer text might be "paste" content
 
       if (isEventRequest) {
-        // Try to parse it
+        // ... (parsing logic remains similar but we handle the response more carefully)
         try {
           const eventData = await geminiService.parseEventFromText(text, events);
-
-          // Check for conflicts
           const conflicts = await geminiService.checkConflicts(eventData, events);
-
-          setPendingEvent({
-            ...eventData,
-            conflicts,
-            originalText: text
-          });
-
+          setPendingEvent({ ...eventData, conflicts, originalText: text });
           addMessage('ai', "I've drafted this event for you. Does it look correct?");
         } catch (error) {
-          // Fallback to chat if parsing fails but it seemed like an event
           const response = await geminiService.chatResponse(text, events);
-          addMessage('ai', response);
+          handleAIResponse(response);
         }
       } else {
-        // General chat
         const response = await geminiService.chatResponse(text, events);
-        addMessage('ai', response);
+        handleAIResponse(response);
       }
     } catch (error) {
+      console.error('AI Error:', error);
       addMessage('ai', "I encountered an error processing your request. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const { deleteEventsByCategory } = useEvents();
+
+  const handleAIResponse = (response) => {
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        if (data.type === 'action' && data.intent === 'delete_category' && data.category) {
+          addMessage('ai', data.answer || `Checking for ${data.category} events to delete...`);
+          setTimeout(() => deleteEventsByCategory(data.category), 500);
+          return;
+        }
+
+        if (data.type === 'query' && data.intent === 'next_appointment') {
+          const sorted = [...events]
+            .filter(e => new Date(e.start) > new Date())
+            .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+          if (sorted.length > 0) {
+            const next = sorted[0];
+            const timeStr = new Date(next.start).toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+            addMessage('ai', `Your next appointment is "${next.title}" on ${timeStr}.`);
+          } else {
+            addMessage('ai', "You don't have any upcoming appointments scheduled.");
+          }
+          return;
+        }
+
+        if (data.answer) {
+          addMessage('ai', data.answer);
+          return;
+        }
+      }
+      addMessage('ai', response);
+    } catch (e) {
+      addMessage('ai', response);
     }
   };
 

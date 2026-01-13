@@ -226,15 +226,41 @@ export const EventsProvider = ({ children }) => {
 
   const deleteEvent = (id) => {
     const event = events.find(e => e.id === id);
-
-    // Cancel reminders
     if (event) {
       reminderService.cancelEventReminders(id);
     }
-
     setEvents(prev => prev.filter(event => event.id !== id));
     if (event) {
       toastService.success(`Event "${event.title}" deleted`);
+    }
+  };
+
+  const deleteEventsByCategory = (category) => {
+    const toDelete = events.filter(e => e.category?.toLowerCase() === category.toLowerCase());
+    if (toDelete.length === 0) {
+      toastService.info(`No events found in category "${category}"`);
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete all ${toDelete.length} events in "${category}"?`)) {
+      toDelete.forEach(e => reminderService.cancelEventReminders(e.id));
+      setEvents(prev => prev.filter(e => e.category?.toLowerCase() !== category.toLowerCase()));
+      toastService.success(`Deleted ${toDelete.length} events from "${category}"`);
+    }
+  };
+
+  const deleteEventsByFilter = (filterFn, label) => {
+    const toDelete = events.filter(filterFn);
+    if (toDelete.length === 0) {
+      toastService.info(`No events found matching "${label}"`);
+      return;
+    }
+
+    if (window.confirm(`Are you sure you want to delete all ${toDelete.length} events matching "${label}"?`)) {
+      toDelete.forEach(e => reminderService.cancelEventReminders(e.id));
+      const idsToDelete = new Set(toDelete.map(e => e.id));
+      setEvents(prev => prev.filter(e => !idsToDelete.has(e.id)));
+      toastService.success(`Deleted ${toDelete.length} events matching "${label}"`);
     }
   };
 
@@ -292,6 +318,8 @@ export const EventsProvider = ({ children }) => {
       addEvent,
       updateEvent,
       deleteEvent,
+      deleteEventsByCategory,
+      deleteEventsByFilter,
       getEventsForDate,
       getEventsForRange,
       searchEvents,

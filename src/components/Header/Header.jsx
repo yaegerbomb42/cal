@@ -52,7 +52,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     };
   }, [openEventModal, goToToday]);
 
-  const handleQuickEventSubmit = async (e) => {
+  const handleAICommand = async (e) => {
     e.preventDefault();
     if (!quickInput.trim() || isProcessing) return;
 
@@ -61,10 +61,28 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     setQuickInput('');
 
     try {
-      const eventData = await geminiService.parseEventFromText(userInput, []);
-      addEvent(eventData, { allowConflicts: false });
+      // First, get AI's interpretation of the input
+      const aiResponse = await geminiService.chatResponse(userInput, events);
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+
+      if (jsonMatch) {
+        // If it's a query or high-intent action, open the sidebar and "ping" it
+        // We'll use a custom event or shared state if possible, but for now
+        // onOpenAI will trigger the sidebar, and we can rely on the user seeing the result there
+        // or actually, we can just open the AI chat which will see the new message
+        onOpenAI();
+        // The AIChat component will need to see this new interaction
+        // We can dispatch a custom event that AIChat listens to
+        window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput, response: aiResponse } }));
+      } else {
+        // If it looks like a simple event request, try parsing and adding directly
+        const eventData = await geminiService.parseEventFromText(userInput, []);
+        addEvent(eventData, { allowConflicts: false });
+      }
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error processing AI command:', error);
+      // Fallback: just open AI chat
+      onOpenAI();
     } finally {
       setIsProcessing(false);
     }
@@ -79,7 +97,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
       {/* Quick Event Input */}
       <div className="quick-event-bar">
         <div className="container">
-          <form onSubmit={handleQuickEventSubmit} className="quick-event-form">
+          <form onSubmit={handleAICommand} className="quick-event-form">
             <Sparkles size={18} className="quick-event-icon" />
             <input
               type="text"
@@ -169,7 +187,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
             {/* Action Buttons */}
             <div className="action-buttons">
               <SearchBar />
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
