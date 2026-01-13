@@ -21,8 +21,9 @@ class GeminiService {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       // Upgraded to Gemini 3.0 Pro and Flash (Latest frontier models)
-      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3.0-pro-preview' });
-      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3.0-flash' });
+      // Correct model strings for SDK naming convention
+      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
+      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
       this.isInitialized = true;
       return true;
     } catch (error) {
