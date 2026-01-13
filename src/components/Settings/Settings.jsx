@@ -244,16 +244,9 @@ const Settings = ({ isOpen, onClose }) => {
                   </div>
                   <div className="user-details">
                     <span className="user-email">{user?.email}</span>
-                    <span className="user-status">
-                      {/* Checking if authorized for Gemini */}
-                      {user?.email === 'yaeger.james42@gmail.com' ?
-                        <span className="badge badge-pro">Pro Access</span> :
-                        <span className="badge">Free Tier</span>
-                      }
-                    </span>
                   </div>
                 </div>
-                <button onClick={handleLogout} className="btn btn-danger btn-sm">
+                <button onClick={logout} className="btn btn-danger btn-sm">
                   <LogOut size={14} />
                   Sign Out
                 </button>
