@@ -32,11 +32,24 @@ const Settings = ({ isOpen, onClose }) => {
     { id: 'about', label: 'About', icon: CheckCircle, color: '#10b981' }
   ];
 
+  const testConnection = async (key) => {
+    setIsTestingConnection(true);
+    setConnectionStatus(null);
+    geminiService.initialize(key);
+    try {
+      await geminiService.chatResponse('Hello', []);
+      setConnectionStatus('success');
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('error');
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
   useEffect(() => {
-    // ... loadApiKey logic remains same
     googleCalendarService.initialize().catch(err => console.error("GCal init error", err));
     const loadApiKey = async () => {
-      // Try to get from Firebase first if logged in
       if (user) {
         const savedKey = await firebaseService.getApiKey();
         if (savedKey) {
@@ -54,8 +67,25 @@ const Settings = ({ isOpen, onClose }) => {
     loadApiKey();
   }, [user]);
 
-  // ... (keeping helper functions handleExportData, handleExportICS, etc.)
-  const handleExportData = () => { /* same as before */
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) return;
+    setIsTestingConnection(true);
+    try {
+      localStorage.setItem('gemini_api_key', apiKey);
+      if (user) {
+        await firebaseService.saveApiKey(apiKey);
+      }
+      await testConnection(apiKey);
+      toastService.success('API Key saved successfully!');
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+      toastService.error('Failed to save API key');
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
+  const handleExportData = () => {
     const data = { events, exportDate: new Date().toISOString(), version: '1.0' };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -76,6 +106,13 @@ const Settings = ({ isOpen, onClose }) => {
     } catch (error) { toastService.error('Failed to export ICS file'); }
   };
 
+  const handleClearAllData = () => {
+    if (window.confirm('Are you sure you want to clear all calendar data? This action cannot be undone.')) {
+      localStorage.removeItem('calendar-events');
+      window.location.reload();
+    }
+  };
+
   const handleGoogleCalendarSync = async () => {
     setIsSyncing(true);
     try {
@@ -93,7 +130,11 @@ const Settings = ({ isOpen, onClose }) => {
           }
         } catch (e) { console.error(e); } finally { setIsSyncing(false); }
       }, 2000);
-    } catch (error) { toastService.error('Sync failed'); setIsSyncing(false); }
+    } catch (error) {
+      console.error(error);
+      toastService.error('Sync failed');
+      setIsSyncing(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -115,7 +156,6 @@ const Settings = ({ isOpen, onClose }) => {
           onClick={(e) => e.stopPropagation()}
           className="settings-modal pro-theme"
         >
-          {/* Decorative Mesh Background */}
           <div className="mesh-gradient"></div>
 
           <aside className="settings-sidebar">
@@ -242,6 +282,9 @@ const Settings = ({ isOpen, onClose }) => {
                         </div>
                         {connectionStatus === 'success' && (
                           <div className="pro-status success"><CheckCircle size={14} /> Gemini 3.0 Connected</div>
+                        )}
+                        {connectionStatus === 'error' && (
+                          <div className="pro-status error" style={{ color: '#f43f5e' }}>X Connection Failed</div>
                         )}
                       </div>
                       <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="external-link-alt">
