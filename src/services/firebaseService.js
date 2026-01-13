@@ -29,8 +29,12 @@ class FirebaseService {
     this.isInitialized = false;
     this.userId = null;
 
-    // Auto-initialize
-    this.initialize();
+    // Auto-initialize with safety
+    try {
+      this.initialize();
+    } catch (e) {
+      console.error("Firebase auto-init failed", e);
+    }
   }
 
   initialize() {
