@@ -386,8 +386,10 @@ const Settings = ({ isOpen, onClose }) => {
                   <span className="stat-label">Gemini Core</span>
                 </div>
               </div>
-              <div className="help-text" style={{ marginTop: '2rem', textAlign: 'center' }}>
+              <div className="help-text" style={{ marginTop: '2rem', textAlign: 'center', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                 <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                <span style={{ opacity: 0.3 }}>|</span>
+                <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
               </div>
             </section>
           </div>

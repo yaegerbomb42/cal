@@ -130,6 +130,11 @@ const Login = () => {
                             {isLogin ? 'Sign Up' : 'Sign In'}
                         </button>
                     </p>
+                    <div className="legal-links">
+                        <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+                        <span className="dot">•</span>
+                        <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms</a>
+                    </div>
                 </div>
             </motion.div>
         </div>

@@ -241,3 +241,28 @@
 [data-theme="dark"] .input-field:focus {
     background: rgba(30, 41, 59, 0.8);
 }
+.legal-links {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.legal-links a {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+    opacity: 0.6;
+}
+
+.legal-links a:hover {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.legal-links .dot {
+    opacity: 0.2;
+    font-size: 0.75rem;
+}
