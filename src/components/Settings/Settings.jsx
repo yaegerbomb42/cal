@@ -386,6 +386,9 @@ const Settings = ({ isOpen, onClose }) => {
                   <span className="stat-label">Gemini Core</span>
                 </div>
               </div>
+              <div className="help-text" style={{ marginTop: '2rem', textAlign: 'center' }}>
+                <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+              </div>
             </section>
           </div>
         </motion.div>
