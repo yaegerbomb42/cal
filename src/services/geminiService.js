@@ -8,7 +8,7 @@ class GeminiService {
     this.modelFlash = null;
     this.isInitialized = false;
     // Hardcoded API key
-    this.apiKey = 'AIzaSyBF6fAuMhaokjQyw9tLH6ETc61mA0FVbRc';
+    this.apiKey = 'AIzaSyDsErhKwzgqPNltgPjwVhGWMvZyc8VCUjU';
     this.initialize();
   }
 
@@ -33,11 +33,11 @@ class GeminiService {
     }
 
     const prompt = `
-Parse the following text into a calendar event. Extract:
-- title (required)
-- description (optional)
+Parse the following text into a calendar event. The text might be a casual request, a pasted email, or a message. Extract the most relevant event details:
+- title (required, summarize the event if pasted from long text)
+- description (optional, include key details)
 - start date and time
-- end date and time (if not specified, assume 1 hour duration)
+- end date and time (if not specified, assume 1 hour duration unless context suggests otherwise)
 - location (optional)
 - category (work, personal, health, social, travel, or other)
 
@@ -55,6 +55,7 @@ Please respond with a JSON object in this exact format:
   "category": "personal"
 }
 
+If the text contains multiple potential events, just parse the first/primary one.
 If the text doesn't contain enough information for a calendar event, respond with:
 {"error": "Insufficient information for calendar event"}
 `;
@@ -64,24 +65,24 @@ If the text doesn't contain enough information for a calendar event, respond wit
       const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       // Extract JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('No valid JSON found in response');
       }
-      
+
       const parsedEvent = JSON.parse(jsonMatch[0]);
-      
+
       if (parsedEvent.error) {
         throw new Error(parsedEvent.error);
       }
-      
+
       // Validate required fields
       if (!parsedEvent.title || !parsedEvent.start || !parsedEvent.end) {
         throw new Error('Missing required event fields');
       }
-      
+
       return parsedEvent;
     } catch (error) {
       console.error('Error parsing event:', error);
@@ -96,11 +97,11 @@ If the text doesn't contain enough information for a calendar event, respond wit
 
     const newStart = new Date(newEvent.start);
     const newEnd = new Date(newEvent.end);
-    
+
     const conflicts = existingEvents.filter(event => {
       const existingStart = new Date(event.start);
       const existingEnd = new Date(event.end);
-      
+
       return (
         (newStart >= existingStart && newStart < existingEnd) ||
         (newEnd > existingStart && newEnd <= existingEnd) ||
@@ -140,12 +141,12 @@ Respond with JSON array of suggested times:
       const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return [];
       }
-      
+
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
       console.error('Error checking conflicts:', error);
@@ -188,12 +189,12 @@ Respond with JSON array:
       const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return [];
       }
-      
+
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
       console.error('Error suggesting events:', error);
@@ -206,8 +207,8 @@ Respond with JSON array:
       throw new Error('AI service not available');
     }
 
-    const eventsContext = events.length > 0 ? 
-      `Current events: ${JSON.stringify(events.slice(0, 10))}` : 
+    const eventsContext = events.length > 0 ?
+      `Current events: ${JSON.stringify(events.slice(0, 10))}` :
       'No current events';
 
     const prompt = `

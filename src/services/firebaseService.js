@@ -115,7 +115,7 @@ class FirebaseService {
   subscribeToEvents(callback) {
     // For Firestore, we'll implement this differently since real-time updates need different approach
     // For now, return a no-op function
-    return () => {};
+    return () => { };
   }
 
   async saveUserData(data) {

@@ -9,6 +9,7 @@ import EventModal from './components/Events/EventModal';
 import AIChat from './components/AI/AIChat';
 import Settings from './components/Settings/Settings';
 import Toast from './components/Toast/Toast';
+import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
 import './App.css';
 
 function App() {
@@ -26,29 +27,32 @@ function App() {
               transition={{ duration: 0.5 }}
               className="app-container"
             >
-              <Header 
+              <Header
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onOpenAI={() => setIsAIChatOpen(true)}
               />
-              
+
               <main className="main-content">
-                <div className="container">
+                <div className="sidebar-container">
+                  <UpcomingSidebar />
+                </div>
+                <div className="calendar-container">
                   <Calendar />
                 </div>
               </main>
-              
+
               <EventModal />
-              
-              <AIChat 
+
+              <AIChat
                 isOpen={isAIChatOpen}
                 onClose={() => setIsAIChatOpen(false)}
               />
-              
-              <Settings 
+
+              <Settings
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
               />
-              
+
               <Toast />
             </motion.div>
           </div>

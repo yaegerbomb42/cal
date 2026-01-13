@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { firebaseService } from '../../services/firebaseService';
 import { useEvents } from '../../contexts/EventsContext';
@@ -13,7 +13,7 @@ const Settings = ({ isOpen, onClose }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
-  
+
   const { events, addEvent } = useEvents();
 
   useEffect(() => {
@@ -29,13 +29,13 @@ const Settings = ({ isOpen, onClose }) => {
       } catch (error) {
         console.log('Could not load API key from Firebase:', error);
       }
-      
+
       // Fallback to localStorage
       const savedKey = localStorage.getItem('gemini-api-key');
       if (savedKey) {
         setApiKey(savedKey);
         testConnection(savedKey);
-        
+
         // Try to sync to Firebase if available
         try {
           await firebaseService.saveApiKey(savedKey);
@@ -70,14 +70,14 @@ const Settings = ({ isOpen, onClose }) => {
     if (apiKey.trim()) {
       // Save to localStorage immediately
       localStorage.setItem('gemini-api-key', apiKey.trim());
-      
+
       // Try to save to Firebase
       try {
         await firebaseService.saveApiKey(apiKey.trim());
       } catch (error) {
         console.log('Could not save API key to Firebase, localStorage backup available:', error);
       }
-      
+
       testConnection(apiKey.trim());
     } else {
       // Clear from both localStorage and Firebase
@@ -108,11 +108,11 @@ const Settings = ({ isOpen, onClose }) => {
       exportDate: new Date().toISOString(),
       version: '1.0'
     };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { 
-      type: 'application/json' 
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json'
     });
-    
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -163,6 +163,11 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleGoogleCalendarSync = () => {
+    // Placeholder for actual Google Calendar OAuth flow
+    toastService.info('Google Calendar Sync coming soon! This will allow 2-way sync.');
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -198,7 +203,7 @@ const Settings = ({ isOpen, onClose }) => {
               <p className="section-description">
                 Configure your Google Gemini API key to enable AI-powered features like natural language event creation and smart scheduling.
               </p>
-              
+
               <div className="form-group">
                 <label htmlFor="api-key">Gemini API Key</label>
                 <div className="api-key-input">
@@ -218,7 +223,7 @@ const Settings = ({ isOpen, onClose }) => {
                     {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                
+
                 <div className="api-key-actions">
                   <button
                     onClick={handleSaveApiKey}
@@ -228,7 +233,7 @@ const Settings = ({ isOpen, onClose }) => {
                     <Save size={16} />
                     {isTestingConnection ? 'Testing...' : 'Save & Test'}
                   </button>
-                  
+
                   <button
                     onClick={handleClearApiKey}
                     className="btn"
@@ -244,7 +249,7 @@ const Settings = ({ isOpen, onClose }) => {
                     animate={{ opacity: 1, y: 0 }}
                     className={`connection-status ${connectionStatus}`}
                   >
-                    {connectionStatus === 'success' 
+                    {connectionStatus === 'success'
                       ? '✅ API key is valid and working!'
                       : '❌ Invalid API key or connection failed.'
                     }
@@ -253,10 +258,10 @@ const Settings = ({ isOpen, onClose }) => {
 
                 <div className="api-help">
                   <p>
-                    Don't have a Gemini API key? 
-                    <a 
-                      href="https://aistudio.google.com/app/apikey" 
-                      target="_blank" 
+                    Don't have a Gemini API key?
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="api-link"
                     >
@@ -264,6 +269,39 @@ const Settings = ({ isOpen, onClose }) => {
                       <ExternalLink size={14} />
                     </a>
                   </p>
+                </div>
+              </div>
+            </section>
+
+
+
+            {/* Integrations */}
+            <section className="settings-section">
+              <h4>
+                <RefreshCw size={18} />
+                Integrations
+              </h4>
+              <p className="section-description">
+                Connect with external services to sync your calendar.
+              </p>
+
+              <div className="integrations-list">
+                <div className="integration-item glass-card">
+                  <div className="integration-info">
+                    <div className="integration-icon google-cal-icon">
+                      <CalendarIcon size={20} />
+                    </div>
+                    <div>
+                      <h5>Google Calendar</h5>
+                      <p className="small-text">Sync events both ways</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleGoogleCalendarSync}
+                    className="btn btn-primary"
+                  >
+                    Connect
+                  </button>
                 </div>
               </div>
             </section>
@@ -347,7 +385,7 @@ const Settings = ({ isOpen, onClose }) => {
             <section className="settings-section">
               <h4>About CalAI</h4>
               <p className="about-text">
-                CalAI is a modern, AI-powered calendar application built with React and powered by Google's Gemini AI. 
+                CalAI is a modern, AI-powered calendar application built with React and powered by Google's Gemini AI.
                 It features a beautiful glassmorphism design, natural language event creation, and intelligent scheduling assistance.
               </p>
               <p className="version-text">Version 1.0.0</p>
@@ -355,7 +393,7 @@ const Settings = ({ isOpen, onClose }) => {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence >
   );
 };
 
