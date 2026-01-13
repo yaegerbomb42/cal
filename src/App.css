@@ -12,13 +12,13 @@
 .main-content {
   flex: 1;
   padding: 0 2rem 2rem 2rem;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 320px 1fr;
   gap: 1.5rem;
-  height: calc(100vh - 80px);
-  /* Adjust based on header height */
+  height: calc(100vh - 140px);
   overflow: hidden;
 }
 
@@ -37,11 +37,11 @@
 /* Mobile adjustments */
 @media (max-width: 1024px) {
   .main-content {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     height: auto;
     overflow: visible;
     padding: 1rem;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   .sidebar-container {
@@ -52,10 +52,11 @@
   .sidebar-container .upcoming-sidebar {
     width: 100%;
     height: auto;
-    max-height: 300px;
+    max-height: 400px;
   }
 
   .calendar-container {
     height: auto;
+    width: 100%;
   }
 }
