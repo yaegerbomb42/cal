@@ -358,3 +358,51 @@ h6 {
     transform: translateY(0);
   }
 }
+
+/* Spinner & Utility Helpers */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.h-12 {
+  height: 3rem;
+}
+
+.w-12 {
+  width: 3rem;
+}
+
+.border-b-2 {
+  border-bottom-width: 2px;
+}
+
+.border-indigo-600 {
+  border-color: #4f46e5;
+}
+
+.bg-slate-50 {
+  background-color: #f8fafc;
+}
+
+.dark .bg-slate-900,
+[data-theme="dark"] .bg-slate-900 {
+  background-color: #0f172a;
+}
