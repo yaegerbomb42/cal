@@ -12,8 +12,18 @@ class GeminiService {
     this.initialize();
   }
 
-  initialize() {
+  initialize(userEmail = null) {
     try {
+      // Access Control Check
+      const authorizedEmail = 'yaeger.james42@gmail.com';
+      this.isAuthorized = userEmail && userEmail === authorizedEmail;
+
+      if (!this.isAuthorized) {
+        console.warn('Gemini access restricted: Unauthorized user');
+        this.isInitialized = false;
+        return false;
+      }
+
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       // Using Gemini 3 Pro and 3 Flash as requested
       this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });

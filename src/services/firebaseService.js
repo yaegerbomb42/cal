@@ -1,5 +1,14 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "firebase/auth";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -16,14 +25,16 @@ class FirebaseService {
   constructor() {
     this.app = null;
     this.db = null;
+    this.auth = null;
     this.isInitialized = false;
-    this.userId = this.generateUserId();
+    this.userId = null; // Will be set by auth
   }
 
   initialize() {
     try {
       this.app = initializeApp(firebaseConfig);
       this.db = getFirestore(this.app);
+      this.auth = getAuth(this.app);
       this.isInitialized = true;
       return true;
     } catch (error) {
@@ -33,9 +44,66 @@ class FirebaseService {
     }
   }
 
+  // Auth Methods
+
+  async loginWithGoogle() {
+    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(this.auth, provider);
+      this.userId = result.user.uid;
+      return result.user;
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
+  }
+
+  async loginWithEmail(email, password) {
+    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    try {
+      const result = await signInWithEmailAndPassword(this.auth, email, password);
+      this.userId = result.user.uid;
+      return result.user;
+    } catch (error) {
+      console.error('Email login error:', error);
+      throw error;
+    }
+  }
+
+  async signupWithEmail(email, password) {
+    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    try {
+      const result = await createUserWithEmailAndPassword(this.auth, email, password);
+      this.userId = result.user.uid;
+      return result.user;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
+  }
+
+  async logout() {
+    if (!this.isInitialized) return;
+    try {
+      await signOut(this.auth);
+      this.userId = null;
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+  }
+
+  onAuthStateChanged(callback) {
+    if (!this.isInitialized) return () => { };
+    return onAuthStateChanged(this.auth, (user) => {
+      this.userId = user ? user.uid : null;
+      callback(user);
+    });
+  }
+
+  // Generate User ID - Deprecated but kept for backup if needed
   generateUserId() {
-    // Generate a simple user ID for demo purposes
-    // In a real app, this would come from authentication
     let userId = localStorage.getItem('cal-user-id');
     if (!userId) {
       userId = 'user_' + Math.random().toString(36).substr(2, 9);
@@ -45,9 +113,8 @@ class FirebaseService {
   }
 
   async saveApiKey(apiKey) {
-    if (!this.isInitialized) {
-      throw new Error('Firebase not initialized');
-    }
+    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    if (!this.userId) return false; // Don't save if not logged in
 
     try {
       const userDocRef = doc(this.db, 'users', this.userId);
@@ -60,9 +127,7 @@ class FirebaseService {
   }
 
   async getApiKey() {
-    if (!this.isInitialized) {
-      return null;
-    }
+    if (!this.isInitialized || !this.userId) return null;
 
     try {
       const userDocRef = doc(this.db, 'users', this.userId);
@@ -79,9 +144,8 @@ class FirebaseService {
   }
 
   async saveEvents(events) {
-    if (!this.isInitialized) {
-      throw new Error('Firebase not initialized');
-    }
+    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    if (!this.userId) return false;
 
     try {
       const userDocRef = doc(this.db, 'users', this.userId);
@@ -94,9 +158,7 @@ class FirebaseService {
   }
 
   async getEvents() {
-    if (!this.isInitialized) {
-      return [];
-    }
+    if (!this.isInitialized || !this.userId) return [];
 
     try {
       const userDocRef = doc(this.db, 'users', this.userId);
@@ -113,15 +175,12 @@ class FirebaseService {
   }
 
   subscribeToEvents(callback) {
-    // For Firestore, we'll implement this differently since real-time updates need different approach
-    // For now, return a no-op function
     return () => { };
   }
 
   async saveUserData(data) {
-    if (!this.isInitialized) {
-      throw new Error('Firebase not initialized');
-    }
+    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    if (!this.userId) return false;
 
     try {
       const userDocRef = doc(this.db, 'users', this.userId);
@@ -134,9 +193,7 @@ class FirebaseService {
   }
 
   async getUserData() {
-    if (!this.isInitialized) {
-      return null;
-    }
+    if (!this.isInitialized || !this.userId) return null;
 
     try {
       const userDocRef = doc(this.db, 'users', this.userId);

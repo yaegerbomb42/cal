@@ -1,106 +1,55 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { firebaseService } from '../../services/firebaseService';
+import { googleCalendarService } from '../../services/googleCalendarService';
 import { useEvents } from '../../contexts/EventsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { downloadICS } from '../../utils/icsExport';
 import { toastService } from '../../utils/toast';
 import './Settings.css';
 
 const Settings = ({ isOpen, onClose }) => {
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
+  const { user, logout } = useAuth();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
+
+  // Google Sync State
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   const { events, addEvent } = useEvents();
 
   useEffect(() => {
-    const loadApiKey = async () => {
-      // Try Firebase first
+    // Initialize Google Service on mount
+    googleCalendarService.initialize().catch(err => console.error("GCal init error", err));
+
+    // Test Gemini connection on mount
+    const testGemini = async () => {
+      setIsTestingConnection(true);
       try {
-        const firebaseKey = await firebaseService.getApiKey();
-        if (firebaseKey) {
-          setApiKey(firebaseKey);
-          testConnection(firebaseKey);
-          return;
+        // Initialize with user email to check authorization
+        const success = geminiService.initialize(user?.email);
+        if (success) {
+          // Simple test
+          await geminiService.chatResponse('Hello', []);
+          setConnectionStatus('success');
+        } else {
+          setConnectionStatus('error');
         }
       } catch (error) {
-        console.log('Could not load API key from Firebase:', error);
-      }
-
-      // Fallback to localStorage
-      const savedKey = localStorage.getItem('gemini-api-key');
-      if (savedKey) {
-        setApiKey(savedKey);
-        testConnection(savedKey);
-
-        // Try to sync to Firebase if available
-        try {
-          await firebaseService.saveApiKey(savedKey);
-        } catch (error) {
-          console.log('Could not sync API key to Firebase:', error);
-        }
+        console.error("Gemini connection test failed", error);
+        setConnectionStatus('error');
+      } finally {
+        setIsTestingConnection(false);
       }
     };
 
-    loadApiKey();
-  }, []);
-
-  const testConnection = async (key) => {
-    setIsTestingConnection(true);
-    try {
-      const success = geminiService.initialize(key);
-      if (success) {
-        // Test with a simple request
-        await geminiService.chatResponse('Hello', []);
-        setConnectionStatus('success');
-      } else {
-        setConnectionStatus('error');
-      }
-    } catch (error) {
-      setConnectionStatus('error');
-    } finally {
-      setIsTestingConnection(false);
+    if (user) {
+      testGemini();
     }
-  };
-
-  const handleSaveApiKey = async () => {
-    if (apiKey.trim()) {
-      // Save to localStorage immediately
-      localStorage.setItem('gemini-api-key', apiKey.trim());
-
-      // Try to save to Firebase
-      try {
-        await firebaseService.saveApiKey(apiKey.trim());
-      } catch (error) {
-        console.log('Could not save API key to Firebase, localStorage backup available:', error);
-      }
-
-      testConnection(apiKey.trim());
-    } else {
-      // Clear from both localStorage and Firebase
-      localStorage.removeItem('gemini-api-key');
-      try {
-        await firebaseService.saveApiKey('');
-      } catch (error) {
-        console.log('Could not clear API key from Firebase:', error);
-      }
-      setConnectionStatus(null);
-    }
-  };
-
-  const handleClearApiKey = async () => {
-    setApiKey('');
-    localStorage.removeItem('gemini-api-key');
-    try {
-      await firebaseService.saveApiKey('');
-    } catch (error) {
-      console.log('Could not clear API key from Firebase:', error);
-    }
-    setConnectionStatus(null);
-  };
+  }, [user]);
 
   const handleExportData = () => {
     const data = {
@@ -163,9 +112,48 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleGoogleCalendarSync = () => {
-    // Placeholder for actual Google Calendar OAuth flow
-    toastService.info('Google Calendar Sync coming soon! This will allow 2-way sync.');
+  const handleGoogleCalendarSync = async () => {
+    setIsSyncing(true);
+    try {
+      // 1. Authorize
+      await googleCalendarService.handleAuthClick();
+
+      // Note: In a real implementation callback would handle this, but for now 
+      // we'll assume auth happens and we can try to fetch (or the user clicks again)
+      // Since handleAuthClick is async in the flow of popups, we might need a better flow signal
+      // But let's try to fetch immediately after a short delay or assume user authorized
+
+      // 2. Fetch Events
+      setTimeout(async () => {
+        try {
+          const gEvents = await googleCalendarService.listUpcomingEvents();
+          if (gEvents && gEvents.length > 0) {
+            gEvents.forEach(evt => {
+              // Simple dedup by ID check if possible, or just add
+              // Ideally we check if event with this gcalId exists
+              const exists = events.some(e => e.gcalId === evt.gcalId || (e.title === evt.title && e.start === evt.start));
+              if (!exists) {
+                addEvent(evt);
+              }
+            });
+            toastService.success(`Synced ${gEvents.length} events from Google Calendar!`);
+            setIsGoogleConnected(true);
+          } else {
+            toastService.info('No upcoming events found or access denied yet.');
+          }
+        } catch (e) {
+          console.error("Sync fetch error", e);
+          // Expected if auth failed or closed
+        } finally {
+          setIsSyncing(false);
+        }
+      }, 2000); // Give time for popup interaction (hacky but simple for now)
+
+    } catch (error) {
+      console.error("Sync error", error);
+      toastService.error('Failed to sync with Google Calendar. Check console.');
+      setIsSyncing(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -194,6 +182,41 @@ const Settings = ({ isOpen, onClose }) => {
           </div>
 
           <div className="settings-content">
+            {/* Account */}
+            <section className="settings-section">
+              <h4>
+                <User size={18} />
+                Account
+              </h4>
+              <div className="account-card glass-card">
+                <div className="account-info">
+                  <div className="user-avatar">
+                    {user?.photoURL ? (
+                      <img src={user.photoURL} alt="Profile" />
+                    ) : (
+                      <div className="avatar-placeholder">
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="user-details">
+                    <span className="user-email">{user?.email}</span>
+                    <span className="user-status">
+                      {/* Checking if authorized for Gemini */}
+                      {user?.email === 'yaeger.james42@gmail.com' ?
+                        <span className="badge badge-pro">Pro Access</span> :
+                        <span className="badge">Free Tier</span>
+                      }
+                    </span>
+                  </div>
+                </div>
+                <button onClick={handleLogout} className="btn btn-danger btn-sm">
+                  <LogOut size={14} />
+                  Sign Out
+                </button>
+              </div>
+            </section>
+
             {/* AI Configuration */}
             <section className="settings-section">
               <h4>
@@ -201,74 +224,23 @@ const Settings = ({ isOpen, onClose }) => {
                 AI Configuration
               </h4>
               <p className="section-description">
-                Configure your Google Gemini API key to enable AI-powered features like natural language event creation and smart scheduling.
+                AI features are powered by Google Gemini. The API key is securely configured.
               </p>
 
               <div className="form-group">
-                <label htmlFor="api-key">Gemini API Key</label>
-                <div className="api-key-input">
-                  <input
-                    id="api-key"
-                    type={showApiKey ? 'text' : 'password'}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Enter your Gemini API key"
-                    className="input"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="toggle-visibility-btn"
-                  >
-                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-
-                <div className="api-key-actions">
-                  <button
-                    onClick={handleSaveApiKey}
-                    disabled={isTestingConnection}
-                    className="btn btn-primary"
-                  >
-                    <Save size={16} />
-                    {isTestingConnection ? 'Testing...' : 'Save & Test'}
-                  </button>
-
-                  <button
-                    onClick={handleClearApiKey}
-                    className="btn"
-                  >
-                    <Trash2 size={16} />
-                    Clear
-                  </button>
-                </div>
-
-                {connectionStatus && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`connection-status ${connectionStatus}`}
-                  >
-                    {connectionStatus === 'success'
-                      ? '✅ API key is valid and working!'
-                      : '❌ Invalid API key or connection failed.'
-                    }
-                  </motion.div>
-                )}
-
-                <div className="api-help">
-                  <p>
-                    Don't have a Gemini API key?
-                    <a
-                      href="https://aistudio.google.com/app/apikey"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="api-link"
-                    >
-                      Get one free from Google AI Studio
-                      <ExternalLink size={14} />
-                    </a>
-                  </p>
+                <div className="api-status-card glass-card">
+                  <div className="status-indicator">
+                    <div className={`status-dot ${connectionStatus === 'success' ? 'success' : connectionStatus === 'error' ? 'error' : 'pending'}`}></div>
+                    <span className="status-text">
+                      {connectionStatus === 'success' ? 'AI Service Connected' :
+                        connectionStatus === 'error' ? 'Connection Error' : 'Checking connection...'}
+                    </span>
+                  </div>
+                  {connectionStatus === 'error' && (
+                    <p className="error-text small-text">
+                      Please check your network connection or contact support.
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
@@ -293,14 +265,27 @@ const Settings = ({ isOpen, onClose }) => {
                     </div>
                     <div>
                       <h5>Google Calendar</h5>
-                      <p className="small-text">Sync events both ways</p>
+                      <p className="small-text">
+                        {isGoogleConnected ? 'Connected & Synced' : 'Sync events both ways'}
+                      </p>
                     </div>
                   </div>
                   <button
                     onClick={handleGoogleCalendarSync}
-                    className="btn btn-primary"
+                    disabled={isSyncing || isGoogleConnected}
+                    className={`btn ${isGoogleConnected ? 'btn-success' : 'btn-primary'}`}
                   >
-                    Connect
+                    {isSyncing ? (
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="animate-spin" size={14} /> Syncing...
+                      </span>
+                    ) : isGoogleConnected ? (
+                      <span className="flex items-center gap-2">
+                        <CheckCircle size={14} /> Connected
+                      </span>
+                    ) : (
+                      'Connect'
+                    )}
                   </button>
                 </div>
               </div>

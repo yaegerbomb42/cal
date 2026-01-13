@@ -4,6 +4,7 @@ import { debounce } from '../utils/helpers';
 import { validateEvent, checkEventConflicts } from '../utils/eventValidator';
 import { toastService } from '../utils/toast';
 import { reminderService } from '../services/reminderService';
+import { googleCalendarService } from '../services/googleCalendarService';
 
 const EventsContext = createContext();
 
@@ -25,14 +26,14 @@ export const EventsProvider = ({ children }) => {
   useEffect(() => {
     const initializeData = async () => {
       setIsLoading(true);
-      
+
       // Initialize Firebase
       firebaseService.initialize();
-      
+
       try {
         // Try to load from Firebase first
         const firebaseEvents = await firebaseService.getEvents();
-        
+
         if (firebaseEvents && firebaseEvents.length > 0) {
           setEvents(firebaseEvents);
           // Sync to localStorage as backup
@@ -42,7 +43,7 @@ export const EventsProvider = ({ children }) => {
           const localEvents = localStorage.getItem(STORAGE_KEY);
           const parsedEvents = localEvents ? JSON.parse(localEvents) : [];
           setEvents(parsedEvents);
-          
+
           // If we have local events, sync them to Firebase
           if (parsedEvents.length > 0) {
             try {
@@ -58,7 +59,7 @@ export const EventsProvider = ({ children }) => {
         const localEvents = localStorage.getItem(STORAGE_KEY);
         setEvents(localEvents ? JSON.parse(localEvents) : []);
       }
-      
+
       setIsLoading(false);
     };
 
@@ -83,13 +84,13 @@ export const EventsProvider = ({ children }) => {
     if (!isLoading && events.length >= 0) {
       // Save to localStorage immediately
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-      
+
       // Debounced Firebase save
       debouncedFirebaseSave(events);
     }
   }, [events, isLoading, debouncedFirebaseSave]);
 
-  const addEvent = (event, options = {}) => {
+  const addEvent = async (event, options = {}) => {
     // Validate event
     const validation = validateEvent(event);
     if (!validation.isValid) {
@@ -111,15 +112,24 @@ export const EventsProvider = ({ children }) => {
       createdAt: new Date().toISOString(),
       ...event
     };
-    
+
     setEvents(prev => [...prev, newEvent]);
     toastService.success(`Event "${newEvent.title}" created successfully`);
-    
+
+    // Sync to Google Calendar if connected
+    if (googleCalendarService.isAuthorized) {
+      try {
+        await googleCalendarService.addEvent(newEvent);
+      } catch (error) {
+        console.error('Failed to sync to Google Calendar:', error);
+      }
+    }
+
     // Schedule reminder if set
     if (newEvent.reminder) {
       reminderService.updateEventReminders(newEvent);
     }
-    
+
     // Send notification (fire-and-forget)
     import('../services/notificationService').then(({ notificationService }) => {
       notificationService.sendEventNotification(newEvent).catch(error => {
@@ -128,7 +138,7 @@ export const EventsProvider = ({ children }) => {
     }).catch(error => {
       console.log('Could not load notification service:', error);
     });
-    
+
     return newEvent;
   };
 
@@ -141,7 +151,7 @@ export const EventsProvider = ({ children }) => {
 
     const updatedEvent = { ...existingEvent, ...updates };
     const validation = validateEvent(updatedEvent);
-    
+
     if (!validation.isValid) {
       toastService.error(validation.errors[0]);
       return;
@@ -153,24 +163,24 @@ export const EventsProvider = ({ children }) => {
       toastService.warning(`This update creates conflicts with ${conflicts.length} event(s)`);
     }
 
-    setEvents(prev => prev.map(event => 
+    setEvents(prev => prev.map(event =>
       event.id === id ? updatedEvent : event
     ));
-    
+
     // Update reminders
     reminderService.updateEventReminders(updatedEvent);
-    
+
     toastService.success('Event updated successfully');
   };
 
   const deleteEvent = (id) => {
     const event = events.find(e => e.id === id);
-    
+
     // Cancel reminders
     if (event) {
       reminderService.cancelEventReminders(id);
     }
-    
+
     setEvents(prev => prev.filter(event => event.id !== id));
     if (event) {
       toastService.success(`Event "${event.title}" deleted`);
@@ -180,7 +190,7 @@ export const EventsProvider = ({ children }) => {
   const searchEvents = (query) => {
     if (!query || !query.trim()) return events;
     const lowerQuery = query.toLowerCase();
-    return events.filter(event => 
+    return events.filter(event =>
       event.title?.toLowerCase().includes(lowerQuery) ||
       event.description?.toLowerCase().includes(lowerQuery) ||
       event.location?.toLowerCase().includes(lowerQuery) ||
