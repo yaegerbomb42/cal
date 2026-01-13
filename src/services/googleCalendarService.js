@@ -1,7 +1,7 @@
 /* global google, gapi */
 
-const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE'; // Placeholder - User to provide
-const API_KEY = 'YOUR_GOOGLE_API_KEY_HERE'; // User might need this or just use OAuth token
+const CLIENT_ID = '749125970287-9tc6qk0j8qjm9g5rqmm3ha92co8tr054.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyDsErhKwzgqPNltgPjwVhGWMvZyc8VCUjU';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/calendar';
 
