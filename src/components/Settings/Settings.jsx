@@ -141,30 +141,19 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleCleanDuplicates = () => {
-    const uniqueKeys = new Set();
-    const duplicates = [];
+  const handleDeleteByName = () => {
+    const nameToDelete = prompt("Enter the exact name of the events you want to delete (e.g., 'Happy Birthday'):");
+    if (!nameToDelete || !nameToDelete.trim()) return;
 
-    // Sort by creation time to keep oldest
-    const sortedEvents = [...events].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const count = events.filter(e => e.title?.toLowerCase() === nameToDelete.trim().toLowerCase()).length;
 
-    sortedEvents.forEach(e => {
-      const key = `${e.title}-${new Date(e.start).getTime()}`;
-      if (uniqueKeys.has(key)) {
-        duplicates.push(e);
-      } else {
-        uniqueKeys.add(key);
-      }
-    });
-
-    if (duplicates.length === 0) {
-      toastService.info('No duplicates found.');
+    if (count === 0) {
+      toastService.info(`No events found with name "${nameToDelete}"`);
       return;
     }
 
-    if (window.confirm(`Found ${duplicates.length} duplicate events. Delete them?`)) {
-      const duplicateIds = new Set(duplicates.map(d => d.id));
-      deleteEventsByFilter(e => duplicateIds.has(e.id), 'Duplicate Events');
+    if (window.confirm(`Found ${count} events named "${nameToDelete}". Are you sure you want to delete ALL of them? This action cannot be undone.`)) {
+      deleteEventsByFilter(e => e.title?.toLowerCase() === nameToDelete.trim().toLowerCase(), `"${nameToDelete}"`);
     }
   };
 
@@ -370,8 +359,8 @@ const Settings = ({ isOpen, onClose }) => {
                         </div>
                       </div>
                       <div className="danger-zone">
-                        <button onClick={handleCleanDuplicates} className="btn-warning">
-                          <Sparkles size={14} /> Clean Up Duplicates
+                        <button onClick={handleDeleteByName} className="btn-warning">
+                          <Trash2 size={14} /> Delete Events by Name
                         </button>
                         <button onClick={handleClearAllData} className="danger-link">
                           <Trash2 size={14} /> Clear Local Data
