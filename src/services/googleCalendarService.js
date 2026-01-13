@@ -158,6 +158,22 @@ class GoogleCalendarService {
             throw err;
         }
     }
+
+    async deleteEvent(gcalId) {
+        if (!this.gapiInited) throw new Error("GAPI not initialized");
+
+        try {
+            const request = gapi.client.calendar.events.delete({
+                'calendarId': 'primary',
+                'eventId': gcalId,
+            });
+            await request;
+            return true;
+        } catch (err) {
+            console.error("Error deleting event from Google", err);
+            throw err;
+        }
+    }
 }
 
 export const googleCalendarService = new GoogleCalendarService();

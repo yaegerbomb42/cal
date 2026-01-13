@@ -192,10 +192,11 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onOpenAI}
-                className="btn ai-btn"
+                className="btn ai-btn logo-btn"
                 title="AI Assistant"
               >
-                <span className="ai-icon">🤖</span>
+                <img src="/ai-logo.png" alt="AI" className="ai-btn-logo" />
+                <span className="ai-label">AI</span>
               </motion.button>
 
               <motion.button

@@ -178,20 +178,34 @@
   gap: 0.5rem;
 }
 
-.ai-btn {
-  padding: 0.5rem;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  border: none;
-  color: white;
+.ai-btn.logo-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  color: #818cf8;
 }
 
-.ai-btn:hover {
-  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+.ai-btn.logo-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: scale(1.05);
 }
 
-.ai-icon {
-  font-size: 1.125rem;
+.ai-btn-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.ai-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .theme-btn,

@@ -30,30 +30,31 @@ export const EventsProvider = ({ children }) => {
       if (googleCalendarService.isAuthorized) {
         try {
           const gEvents = await googleCalendarService.listUpcomingEvents();
-          if (gEvents && gEvents.length > 0) {
+          if (gEvents) {
             setEvents(prevEvents => {
-              const newEvents = [...prevEvents];
-              let hasChanges = false;
+              const googleEventIds = new Set(gEvents.map(ge => ge.gcalId));
+              const localGcalEvents = prevEvents.filter(e => e.gcalId);
 
-              gEvents.forEach(gEvent => {
-                // Check if event already exists (deduplication)
-                // We look for either a matching gcalId OR a matching title/start time pair
-                const exists = newEvents.some(e =>
-                  (e.gcalId && e.gcalId === gEvent.gcalId) ||
-                  (!e.gcalId && e.title === gEvent.title && e.start === gEvent.start)
-                );
+              // 1. Find local events that were deleted on Google
+              const deletedOnGoogle = localGcalEvents.filter(le => !googleEventIds.has(le.gcalId));
 
-                if (!exists) {
-                  newEvents.push(gEvent);
-                  hasChanges = true;
+              // 2. Find Google events that aren't local yet
+              const newOnGoogle = gEvents.filter(ge =>
+                !prevEvents.some(le => le.gcalId === ge.gcalId || (le.title === ge.title && le.start === ge.start))
+              );
+
+              if (deletedOnGoogle.length > 0 || newOnGoogle.length > 0) {
+                let updatedEvents = prevEvents.filter(le => !deletedOnGoogle.some(dl => dl.id === le.id));
+                updatedEvents = [...updatedEvents, ...newOnGoogle];
+
+                if (deletedOnGoogle.length > 0) {
+                  toastService.info(`Synced ${deletedOnGoogle.length} deletions from Google Calendar`);
                 }
-              });
+                if (newOnGoogle.length > 0) {
+                  toastService.success(`Synced ${newOnGoogle.length} new events from Google Calendar`);
+                }
 
-              if (hasChanges) {
-                // If we added events, trigger a save
-                // We can't call debouncedFirebaseSave directly inside the state updater safely without care
-                // So we just return the new state, and let the main useEffect handle persistence
-                return newEvents;
+                return updatedEvents;
               }
               return prevEvents;
             });
@@ -224,11 +225,22 @@ export const EventsProvider = ({ children }) => {
     toastService.success('Event updated successfully');
   };
 
-  const deleteEvent = (id) => {
+  const deleteEvent = async (id) => {
     const event = events.find(e => e.id === id);
     if (event) {
+      // Cancel local reminders
       reminderService.cancelEventReminders(id);
+
+      // Delete from Google Calendar if synced
+      if (googleCalendarService.isAuthorized && event.gcalId) {
+        try {
+          await googleCalendarService.deleteEvent(event.gcalId);
+        } catch (error) {
+          console.error('Failed to delete from Google Calendar:', error);
+        }
+      }
     }
+
     setEvents(prev => prev.filter(event => event.id !== id));
     if (event) {
       toastService.success(`Event "${event.title}" deleted`);
