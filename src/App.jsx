@@ -35,14 +35,22 @@ const MainLayout = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      // Initialize Gemini with user email for access control
-      const authorized = geminiService.initialize(user.email);
-      if (!authorized) {
-        // Optional: Show warning about restricted access
-        console.warn('AI features restricted for this account');
+    const initializeAI = async () => {
+      let key = localStorage.getItem('gemini_api_key');
+
+      // Using FirebaseService to fetch key if user is logged in
+      if (user && !key) {
+        // Dynamic import to avoid circular dependency issues if any, though here straightforward
+        const { firebaseService } = await import('./services/firebaseService');
+        key = await firebaseService.getApiKey();
       }
-    }
+
+      if (key) {
+        geminiService.initialize(key);
+      }
+    };
+
+    initializeAI();
   }, [user]);
 
   if (loading) {

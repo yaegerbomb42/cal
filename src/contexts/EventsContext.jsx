@@ -22,6 +22,57 @@ export const EventsProvider = ({ children }) => {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Poll Google Calendar for updates
+  useEffect(() => {
+    let intervalId;
+
+    const syncGoogleEvents = async () => {
+      if (googleCalendarService.isAuthorized) {
+        try {
+          const gEvents = await googleCalendarService.listUpcomingEvents();
+          if (gEvents && gEvents.length > 0) {
+            setEvents(prevEvents => {
+              const newEvents = [...prevEvents];
+              let hasChanges = false;
+
+              gEvents.forEach(gEvent => {
+                // Check if event already exists (deduplication)
+                // We look for either a matching gcalId OR a matching title/start time pair
+                const exists = newEvents.some(e =>
+                  (e.gcalId && e.gcalId === gEvent.gcalId) ||
+                  (!e.gcalId && e.title === gEvent.title && e.start === gEvent.start)
+                );
+
+                if (!exists) {
+                  newEvents.push(gEvent);
+                  hasChanges = true;
+                }
+              });
+
+              if (hasChanges) {
+                // If we added events, trigger a save
+                // We can't call debouncedFirebaseSave directly inside the state updater safely without care
+                // So we just return the new state, and let the main useEffect handle persistence
+                return newEvents;
+              }
+              return prevEvents;
+            });
+          }
+        } catch (error) {
+          console.error("Auto-sync failed", error);
+        }
+      }
+    };
+
+    // Initial sync
+    syncGoogleEvents();
+
+    // Poll every 5 minutes
+    intervalId = setInterval(syncGoogleEvents, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   // Initialize Firebase and load events
   useEffect(() => {
     const initializeData = async () => {

@@ -12,6 +12,8 @@ import './Settings.css';
 
 const Settings = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
 
@@ -25,31 +27,72 @@ const Settings = ({ isOpen, onClose }) => {
     // Initialize Google Service on mount
     googleCalendarService.initialize().catch(err => console.error("GCal init error", err));
 
-    // Test Gemini connection on mount
-    const testGemini = async () => {
-      setIsTestingConnection(true);
-      try {
-        // Initialize with user email to check authorization
-        const success = geminiService.initialize(user?.email);
-        if (success) {
-          // Simple test
-          await geminiService.chatResponse('Hello', []);
-          setConnectionStatus('success');
-        } else {
-          setConnectionStatus('error');
+    const loadApiKey = async () => {
+      // Try to get from Firebase first if logged in
+      if (user) {
+        const savedKey = await firebaseService.getApiKey();
+        if (savedKey) {
+          setApiKey(savedKey);
+          testConnection(savedKey);
+          return;
         }
-      } catch (error) {
-        console.error("Gemini connection test failed", error);
-        setConnectionStatus('error');
-      } finally {
-        setIsTestingConnection(false);
+      }
+
+      // Fallback to localStorage
+      const localKey = localStorage.getItem('gemini_api_key');
+      if (localKey) {
+        setApiKey(localKey);
+        testConnection(localKey);
       }
     };
 
-    if (user) {
-      testGemini();
-    }
+    loadApiKey();
   }, [user]);
+
+  const testConnection = async (key) => {
+    setIsTestingConnection(true);
+    setConnectionStatus(null);
+
+    // Initialize service
+    geminiService.initialize(key);
+
+    try {
+      // Simple test
+      await geminiService.chatResponse('Hello', []);
+      setConnectionStatus('success');
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setConnectionStatus('error');
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) return;
+
+    setIsTestingConnection(true);
+
+    try {
+      // 1. Save to localStorage
+      localStorage.setItem('gemini_api_key', apiKey);
+
+      // 2. Save to Firebase if logged in
+      if (user) {
+        await firebaseService.saveApiKey(apiKey);
+      }
+
+      // 3. Test connection
+      await testConnection(apiKey);
+
+      toastService.success('API Key saved successfully!');
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+      toastService.error('Failed to save API key');
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
 
   const handleExportData = () => {
     const data = {
@@ -224,24 +267,55 @@ const Settings = ({ isOpen, onClose }) => {
                 AI Configuration
               </h4>
               <p className="section-description">
-                AI features are powered by Google Gemini. The API key is securely configured.
+                Enter your Google Gemini API key to enable AI features. The key is saved securely to your account.
               </p>
 
               <div className="form-group">
-                <div className="api-status-card glass-card">
-                  <div className="status-indicator">
-                    <div className={`status-dot ${connectionStatus === 'success' ? 'success' : connectionStatus === 'error' ? 'error' : 'pending'}`}></div>
-                    <span className="status-text">
-                      {connectionStatus === 'success' ? 'AI Service Connected' :
-                        connectionStatus === 'error' ? 'Connection Error' : 'Checking connection...'}
-                    </span>
+                <div className="api-key-input-group">
+                  <div className="input-wrapper">
+                    <input
+                      type={showApiKey ? "text" : "password"}
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="Enter Gemini API Key"
+                      className="settings-input"
+                    />
+                    <button
+                      className="visibility-btn"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
+                      {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                   </div>
-                  {connectionStatus === 'error' && (
-                    <p className="error-text small-text">
-                      Please check your network connection or contact support.
-                    </p>
-                  )}
+                  <button
+                    onClick={handleSaveApiKey}
+                    className="btn btn-primary"
+                    disabled={!apiKey || isTestingConnection}
+                  >
+                    {isTestingConnection ? (
+                      <RefreshCw className="animate-spin" size={16} />
+                    ) : (
+                      <Save size={16} />
+                    )}
+                    Save
+                  </button>
                 </div>
+                {connectionStatus === 'success' && (
+                  <div className="status-badge success">
+                    <CheckCircle size={14} />
+                    <span>Connected</span>
+                  </div>
+                )}
+                {connectionStatus === 'error' && (
+                  <div className="status-badge error">
+                    <X size={14} />
+                    <span>Connection Failed</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="help-text">
+                Need an API key? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get one from Google AI Studio <ExternalLink size={12} /></a>
               </div>
             </section>
 
