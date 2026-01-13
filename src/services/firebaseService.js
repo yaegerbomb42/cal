@@ -27,10 +27,14 @@ class FirebaseService {
     this.db = null;
     this.auth = null;
     this.isInitialized = false;
-    this.userId = null; // Will be set by auth
+    this.userId = null;
+
+    // Auto-initialize
+    this.initialize();
   }
 
   initialize() {
+    if (this.isInitialized) return true;
     try {
       this.app = initializeApp(firebaseConfig);
       this.db = getFirestore(this.app);
@@ -47,7 +51,7 @@ class FirebaseService {
   // Auth Methods
 
   async loginWithGoogle() {
-    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    if (!this.isInitialized && !this.initialize()) throw new Error('Firebase not initialized');
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(this.auth, provider);
@@ -60,7 +64,7 @@ class FirebaseService {
   }
 
   async loginWithEmail(email, password) {
-    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    if (!this.isInitialized && !this.initialize()) throw new Error('Firebase not initialized');
     try {
       const result = await signInWithEmailAndPassword(this.auth, email, password);
       this.userId = result.user.uid;
@@ -72,7 +76,7 @@ class FirebaseService {
   }
 
   async signupWithEmail(email, password) {
-    if (!this.isInitialized) throw new Error('Firebase not initialized');
+    if (!this.isInitialized && !this.initialize()) throw new Error('Firebase not initialized');
     try {
       const result = await createUserWithEmailAndPassword(this.auth, email, password);
       this.userId = result.user.uid;
@@ -84,7 +88,7 @@ class FirebaseService {
   }
 
   async logout() {
-    if (!this.isInitialized) return;
+    if (!this.isInitialized && !this.initialize()) return;
     try {
       await signOut(this.auth);
       this.userId = null;
@@ -95,7 +99,11 @@ class FirebaseService {
   }
 
   onAuthStateChanged(callback) {
-    if (!this.isInitialized) return () => { };
+    if (!this.isInitialized && !this.initialize()) {
+      // If still not initialized, we have a problem, but let's not block forever
+      setTimeout(() => callback(null), 0);
+      return () => { };
+    }
     return onAuthStateChanged(this.auth, (user) => {
       this.userId = user ? user.uid : null;
       callback(user);
