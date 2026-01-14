@@ -14,90 +14,13 @@
   grid-template-columns: 60px repeat(7, 1fr);
   border-bottom: 1px solid var(--glass-border);
   background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--backdrop-blur);
   backdrop-filter: var(--backdrop-blur);
   z-index: 10;
   flex-shrink: 0;
 }
 
-.header-cell {
-  padding: 1rem 0.5rem;
-  text-align: center;
-  border-right: 1px solid var(--glass-border);
-  font-weight: 500;
-  color: var(--text-secondary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.header-cell.gutter {
-  border-right: 1px solid var(--glass-border);
-}
-
-.header-cell.today {
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.05);
-}
-
-.day-name {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.day-num {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.header-cell.today .day-num {
-  background: var(--accent);
-  color: white;
-  box-shadow: 0 0 10px var(--accent-glow);
-}
-
-/* Main Grid Body - The Fisheye Container */
-.week-grid {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  /* Stack hours vertically */
-  position: relative;
-  overflow: hidden;
-}
-
-/* Time Slots (Rows) - The Interactive Elements */
-/* Time Slots (Rows) - The Interactive Elements */
-.time-slot {
-  flex-grow: 1;
-  flex-basis: 0;
-  /* Critical: Allows shrinking below content size */
-  min-height: 0;
-  /* Allow shrinking */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  display: grid;
-  grid-template-columns: 60px repeat(7, 1fr);
-  transition: flex-grow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    background 0.2s ease;
-  position: relative;
-  overflow: hidden;
-  /* Hide content if completely compressed */
-}
-
-/* Hover Effect: Fisheye Zoom */
-.time-slot:hover {
-  flex-grow: 8;
-  /* Expand significantly on hover */
-  background: rgba(255, 255, 255, 0.03);
-}
+/* ... */
 
 /* Time Label (Left Column) */
 .time-label {
@@ -109,6 +32,7 @@
   align-items: center;
   justify-content: flex-end;
   border-right: 1px solid var(--glass-border);
+  -webkit-user-select: none;
   user-select: none;
   transition: font-size 0.2s, color 0.2s;
 }
