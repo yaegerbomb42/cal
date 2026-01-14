@@ -43,7 +43,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .day-num {
@@ -75,9 +75,11 @@
 }
 
 /* Time Slots (Rows) - The Interactive Elements */
+/* Time Slots (Rows) - The Interactive Elements */
 .time-slot {
   flex-grow: 1;
-  /* All hours share space equally by default */
+  flex-basis: 0;
+  /* Critical: Allows shrinking below content size */
   min-height: 0;
   /* Allow shrinking */
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
@@ -86,6 +88,8 @@
   transition: flex-grow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     background 0.2s ease;
   position: relative;
+  overflow: hidden;
+  /* Hide content if completely compressed */
 }
 
 /* Hover Effect: Fisheye Zoom */

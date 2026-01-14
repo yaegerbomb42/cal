@@ -91,18 +91,17 @@ export const EventsProvider = ({ children }) => {
           // Sync to localStorage as backup
           localStorage.setItem(STORAGE_KEY, JSON.stringify(firebaseEvents));
         } else {
-          // Fallback to localStorage
+          // Fallback to localStorage:
+          // If Firebase returns empty (could be no auth provided yet), we try to keep local data
           const localEvents = localStorage.getItem(STORAGE_KEY);
           const parsedEvents = localEvents ? JSON.parse(localEvents) : [];
-          setEvents(parsedEvents);
 
-          // If we have local events, sync them to Firebase
           if (parsedEvents.length > 0) {
-            try {
-              await firebaseService.saveEvents(parsedEvents);
-            } catch (error) {
-              console.log('Could not sync local events to Firebase:', error);
-            }
+            setEvents(parsedEvents);
+            // Optional: Try to sync back to Firebase if we think we are logged in?
+            // Leaving passive for now to avoid overwriting cloud with stale data if cloud was purposely empty.
+          } else {
+            setEvents([]);
           }
         }
       } catch (error) {
@@ -322,10 +321,16 @@ export const EventsProvider = ({ children }) => {
   };
 
   const getEventsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Robust local date comparison
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
     return events.filter(event => {
-      const eventDate = new Date(event.start).toISOString().split('T')[0];
-      return eventDate === dateStr;
+      const eventStart = new Date(event.start);
+      return eventStart >= startOfDay && eventStart <= endOfDay;
     });
   };
 
