@@ -21,15 +21,18 @@ export class GeminiService {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       // Try latest models first, fallback to stable versions
-      // User explicitly requested "Gemini 3" preview models
-      // Using the exact strings provided by the user
+      // User Request:
+      // 1. Primary: Gemini 3 Preview Models
+      // 2. Fallback: "Default .5b model" -> Mapping to gemini-1.5-flash-8b (Smallest/Fastest API model)
       try {
         this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
         this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
       } catch (e) {
-        console.warn("Gemini 3 Preview models failed, falling back to 2.0 Exp...", e);
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-pro-exp' });
+        console.warn("Gemini 3 Preview initialization failed, falling back to 1.5 Flash-8B...", e);
+        // Fallback for speed/reliability if previews are down
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
+        // Fallback for reasoning
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
       }
       this.isInitialized = true;
       return true;
