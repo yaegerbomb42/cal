@@ -1,49 +1,134 @@
+import { useState } from 'react';
 import { useEvents } from '../../contexts/EventsContext';
-import { Calendar, Trash2, Edit2 } from 'lucide-react';
+import { Calendar, Trash2, Archive, History, X, Search } from 'lucide-react';
 import './UpcomingSidebar.css';
 
 const UpcomingSidebar = () => {
-    const { events, deleteEvent, deleteEventsByCategory, updateEvent } = useEvents();
+    const { events, deleteEvent, deleteEventsByName, updateEvent } = useEvents();
+    const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' | 'archive'
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleteSearch, setDeleteSearch] = useState('');
 
-    // Sort events by start date (ascending) and filter out past events
-    const getTimeTil = (date) => {
-        const diff = new Date(date) - new Date();
-        const mins = Math.floor(diff / (1000 * 60));
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    // Sort events logic
+    const now = new Date();
+
+    const getTimeLabel = (date) => {
+        const diff = new Date(date) - now;
+        const isPast = diff < 0;
+        const absDiff = Math.abs(diff);
+
+        const mins = Math.floor(absDiff / (1000 * 60));
+        const hours = Math.floor(absDiff / (1000 * 60 * 60));
+        const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
         const years = Math.floor(days / 365);
 
-        if (years >= 1) return `${years}y+`;
-        if (days >= 1) return `${days}d til`;
-        if (hours >= 1) return `${hours}h til`;
-        return `${mins}m til`;
+        if (isPast) {
+            if (years >= 1) return `${years}y ago`;
+            if (days >= 1) return `${days}d ago`;
+            if (hours >= 1) return `${hours}h ago`;
+            return `${mins}m ago`;
+        } else {
+            if (years >= 1) return `${years}y+`;
+            if (days >= 1) return `${days}d til`;
+            if (hours >= 1) return `${hours}h til`;
+            return `${mins}m til`;
+        }
     };
 
-    const upcomingEvents = events
-        .filter(event => new Date(event.start) > new Date())
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
+    const displayEvents = events
+        .filter(event => {
+            const eventStart = new Date(event.start);
+            return viewMode === 'upcoming'
+                ? eventStart >= now
+                : eventStart < now;
+        })
+        .sort((a, b) => {
+            const dateA = new Date(a.start);
+            const dateB = new Date(b.start);
+            // Upcoming: Ascending (soonest first)
+            // Archive: Descending (most recent first)
+            return viewMode === 'upcoming'
+                ? dateA - dateB
+                : dateB - dateA;
+        });
 
-    const handleDelete = (id) => {
+    const handleDeleteClick = (id) => {
         if (window.confirm('Delete this event?')) {
             deleteEvent(id);
+        }
+    };
+
+    const handleBulkDelete = () => {
+        if (!deleteSearch.trim()) return;
+        if (window.confirm(`Delete ALL events matching "${deleteSearch}"? This cannot be undone.`)) {
+            deleteEventsByName(deleteSearch);
+            setDeleteSearch('');
+            setShowDeleteModal(false);
         }
     };
 
     return (
         <div className="upcoming-sidebar glass-card">
             <div className="sidebar-header">
-                <h3>Upcoming</h3>
-                <span className="event-count">{upcomingEvents.length}</span>
+                <div className="header-title-row">
+                    <h3>{viewMode === 'upcoming' ? 'Upcoming' : 'Archive'}</h3>
+                    <div className="header-actions">
+                        <button
+                            onClick={() => setViewMode(viewMode === 'upcoming' ? 'archive' : 'upcoming')}
+                            className={`icon-btn ${viewMode === 'archive' ? 'active' : ''}`}
+                            title={viewMode === 'upcoming' ? "View Past Events" : "View Upcoming"}
+                        >
+                            {viewMode === 'upcoming' ? <History size={16} /> : <Calendar size={16} />}
+                        </button>
+                        <button
+                            onClick={() => setShowDeleteModal(!showDeleteModal)}
+                            className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
+                            title="Delete by Name"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                </div>
+                {!showDeleteModal && (
+                    <span className="event-count">{displayEvents.length} events</span>
+                )}
             </div>
 
+            {/* Delete By Name Modal/Area */}
+            {showDeleteModal && (
+                <div className="delete-modal-area fade-in">
+                    <div className="delete-input-wrapper">
+                        <Search size={14} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Event name to delete..."
+                            value={deleteSearch}
+                            onChange={(e) => setDeleteSearch(e.target.value)}
+                            className="delete-input"
+                        />
+                        <button onClick={() => setShowDeleteModal(false)} className="close-btn">
+                            <X size={14} />
+                        </button>
+                    </div>
+                    <button
+                        disabled={!deleteSearch.trim()}
+                        onClick={handleBulkDelete}
+                        className="delete-confirm-btn"
+                    >
+                        Delete All Matches
+                    </button>
+                    <p className="delete-hint">Deletes ALL events with this title.</p>
+                </div>
+            )}
+
             <div className="upcoming-list">
-                {upcomingEvents.length === 0 ? (
+                {displayEvents.length === 0 ? (
                     <div className="no-events">
-                        <Calendar size={32} />
-                        <p>No upcoming events</p>
+                        {viewMode === 'upcoming' ? <Calendar size={32} /> : <Archive size={32} />}
+                        <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
                     </div>
                 ) : (
-                    upcomingEvents.map(event => (
+                    displayEvents.map(event => (
                         <div key={event.id} className="upcoming-event-item" style={{ '--category-color': event.category === 'work' ? '#6366f1' : '#10b981' }}>
                             <div className="event-date-badge">
                                 <span className="month">
@@ -57,7 +142,7 @@ const UpcomingSidebar = () => {
                             <div className="event-info">
                                 <div className="title-row">
                                     <h4>{event.title}</h4>
-                                    <span className="time-til">{getTimeTil(event.start)}</span>
+                                    <span className="time-til">{getTimeLabel(event.start)}</span>
                                 </div>
                                 <div className="info-meta">
                                     <p className="time">
@@ -70,18 +155,8 @@ const UpcomingSidebar = () => {
                             </div>
 
                             <div className="event-actions-hover">
-                                {event.category && (
-                                    <button
-                                        onClick={() => deleteEventsByCategory(event.category)}
-                                        className="action-btn bulk"
-                                        title={`Delete all ${event.category}`}
-                                    >
-                                        <Trash2 size={12} />
-                                        <span>All</span>
-                                    </button>
-                                )}
                                 <button
-                                    onClick={() => handleDelete(event.id)}
+                                    onClick={() => handleDeleteClick(event.id)}
                                     className="action-btn delete"
                                     title="Delete event"
                                 >

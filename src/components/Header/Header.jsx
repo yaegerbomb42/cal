@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, Moon, Sun, Menu, ChevronLeft, ChevronRight, Send, Sparkles, Zap, Wind, User, Activity } from 'lucide-react';
-import { useTheme } from '../../contexts/ThemeContext';
+import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles } from 'lucide-react';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { formatDate } from '../../utils/dateUtils';
@@ -13,8 +12,7 @@ import './Header.css';
 const Header = ({ onOpenSettings, onOpenAI }) => {
   const [quickInput, setQuickInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const { addEvent } = useEvents();
-  const { theme, toggleTheme } = useTheme();
+  const { addEvent, events } = useEvents(); // Added events to destructuring
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
   const viewButtons = [
@@ -26,7 +24,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
   const getHeaderTitle = () => {
     switch (view) {
       case CALENDAR_VIEWS.DAY:
-        return formatDate(currentDate, 'EEEE, MMMM d, yyyy');
+        return formatDate(currentDate, 'MMMM yyyy'); // Title checks month/year
       case CALENDAR_VIEWS.WEEK:
         return formatDate(currentDate, 'MMMM yyyy');
       case CALENDAR_VIEWS.MONTH:
@@ -34,6 +32,13 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
       default:
         return formatDate(currentDate, 'MMMM yyyy');
     }
+  };
+
+  const getSubTitle = () => {
+    if (view === CALENDAR_VIEWS.DAY) {
+      return formatDate(currentDate, 'EEEE, d');
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -66,22 +71,17 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
 
       if (jsonMatch) {
-        // If it's a query or high-intent action, open the sidebar and "ping" it
-        // We'll use a custom event or shared state if possible, but for now
-        // onOpenAI will trigger the sidebar, and we can rely on the user seeing the result there
-        // or actually, we can just open the AI chat which will see the new message
+        // If query/action, open AI sidebar
         onOpenAI();
-        // The AIChat component will need to see this new interaction
-        // We can dispatch a custom event that AIChat listens to
         window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput, response: aiResponse } }));
       } else {
-        // If it looks like a simple event request, try parsing and adding directly
+        // Direct event creation - NOW WITH POPUP CONFIRMATION (TODO: Link to new UI)
+        // For now, we'll keep the direct add but improving the service next is key
         const eventData = await geminiService.parseEventFromText(userInput, []);
         addEvent(eventData, { allowConflicts: false });
       }
     } catch (error) {
       console.error('Error processing AI command:', error);
-      // Fallback: just open AI chat
       onOpenAI();
     } finally {
       setIsProcessing(false);
@@ -122,7 +122,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
 
       <div className="container">
         <div className="header-content">
-          {/* Logo and Title */}
+          {/* Logo */}
           <div className="header-left">
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -131,43 +131,47 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               <Calendar className="logo-icon" size={28} />
               <div className="logo-text">
                 <h1>CalAI</h1>
-                <span className="current-date-badge">{formatDate(new Date(), 'MMM d, yyyy')}</span>
               </div>
             </motion.div>
           </div>
 
-          {/* Navigation Controls */}
+          {/* Navigation Controls & Title */}
           <div className="header-center">
-            <div className="nav-controls">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigateDate(-1)}
-                className="btn nav-btn"
-              >
-                <ChevronLeft size={20} />
-              </motion.button>
+            <div className="date-nav-wrapper">
+              <div className="nav-controls">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigateDate(-1)}
+                  className="btn nav-btn"
+                >
+                  <ChevronLeft size={20} />
+                </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={goToToday}
-                className="btn btn-primary today-btn"
-              >
-                Today
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={goToToday}
+                  className="btn btn-primary today-btn"
+                >
+                  Today
+                </motion.button>
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigateDate(1)}
-                className="btn nav-btn"
-              >
-                <ChevronRight size={20} />
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigateDate(1)}
+                  className="btn nav-btn"
+                >
+                  <ChevronRight size={20} />
+                </motion.button>
+              </div>
+
+              <div className="header-title-group">
+                <h2 className="header-title">{getHeaderTitle()}</h2>
+                {getSubTitle() && <span className="header-subtitle">{getSubTitle()}</span>}
+              </div>
             </div>
-
-            <h2 className="header-title">{getHeaderTitle()}</h2>
           </div>
 
           {/* View Controls and Actions */}
@@ -180,7 +184,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setView(key)}
-                  className={`view-btn ${view === key ? 'active' : ''}`}
+                  className={`view - btn ${view === key ? 'active' : ''} `}
                 >
                   {label}
                 </motion.button>
@@ -200,22 +204,6 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               >
                 <img src="/ai-logo.png" alt="AI" className="ai-btn-logo" />
                 <span className="ai-label">AI</span>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleTheme}
-                className="btn theme-btn"
-                title={`Theme: ${theme}`}
-              >
-                {theme === 'modern' && <Moon size={18} />}
-                {theme === 'neon' && <Sparkles size={18} style={{ color: '#00f2ff' }} />}
-                {theme === 'ceo' && <User size={18} style={{ color: '#eab308' }} />}
-                {theme === 'quantum' && <Zap size={18} className="animate-pulse" style={{ color: '#8b5cf6' }} />}
-                {theme === 'living' && <Activity size={18} className="animate-pulse" style={{ color: '#f472b6' }} />}
-                {theme === 'zen' && <Wind size={18} style={{ color: '#10b981' }} />}
-                {theme === 'light' && <Sun size={18} />}
               </motion.button>
 
               <motion.button

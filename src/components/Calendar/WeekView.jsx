@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { getWeekDays, getDayHours, formatTime, isToday } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
@@ -10,9 +10,26 @@ const WeekView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
   const [hoveredHour, setHoveredHour] = useState(null);
+  const containerRef = useRef(null);
 
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
+
+  // Current Time Indicator Logic
+  const [currentTimePos, setCurrentTimePos] = useState(null);
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      const percentage = (minutes / 1440) * 100;
+      setCurrentTimePos(percentage);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTimeSlotClick = (day, hour) => {
     const startTime = new Date(day);
@@ -30,47 +47,64 @@ const WeekView = () => {
   const getScaleFactor = (hourNum) => {
     if (hoveredHour === null) return 1;
     const distance = Math.abs(hoveredHour - hourNum);
-    if (distance === 0) return 2.5;
-    if (distance === 1) return 1.5;
-    if (distance === 2) return 1.2;
-    return 0.8;
+
+    // Fisheye Curve
+    if (distance === 0) return 6;    // Active
+    if (distance === 1) return 2.5;  // Neighbors
+    if (distance === 2) return 1.5;  // Far neighbors
+    return 0.5;                      // Compressed
   };
 
   return (
-    <div className="week-view-compact">
+    <div className="week-view" ref={containerRef}>
       {/* Header */}
-      <div className="week-header-compact">
-        <div className="time-gutter-compact"></div>
+      <div className="week-header glass-card">
+        <div className="header-cell gutter"></div>
         {weekDays.map((day) => (
-          <div key={day.toISOString()} className={cn('day-header-compact', isToday(day) && 'today')}>
-            <span className="day-name-compact">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-            <span className="day-num-compact">{day.getDate()}</span>
+          <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')}>
+            <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+            <span className="day-num">{day.getDate()}</span>
           </div>
         ))}
       </div>
 
-      {/* 24h Grid - No Scroll */}
-      <div className="week-grid-compact" onMouseLeave={() => setHoveredHour(null)}>
+      {/* 24h Fisheye Grid - Relative positioning for Time Indicator */}
+      <div className="week-grid" onMouseLeave={() => setHoveredHour(null)}>
+
+        {/* Red Line Time Indicator */}
         {dayHours.map((hour) => {
           const hourNum = hour.getHours();
           const scale = getScaleFactor(hourNum);
           const isFocused = hoveredHour === hourNum;
 
+          // Check if this hour contains the current time
+          const now = new Date();
+          const isCurrentHour = isToday(currentDate) && now.getHours() === hourNum;
+          // Calculate percentage for top position (0-100%)
+          const currentMinPercent = isCurrentHour ? (now.getMinutes() / 60) * 100 : 0;
+
           return (
             <div
               key={hourNum}
-              className={cn('hour-row-compact', isFocused && 'focused')}
+              className={cn('time-slot', isFocused && 'focused')}
               style={{
-                flex: scale,
-                transition: 'flex 0.2s ease-out'
+                flexGrow: scale,
               }}
               onMouseEnter={() => setHoveredHour(hourNum)}
             >
-              <div className="time-cell-compact">
-                <span className={cn('time-label-compact', isFocused && 'time-focused')}>
-                  {formatTime(hour).replace(':00', '')}
-                </span>
+              <div className="time-label">
+                {formatTime(hour).replace(':00', '')}
               </div>
+
+              {/* Time Line (only if current hour) */}
+              {isCurrentHour && (
+                <div
+                  className="current-time-line"
+                  style={{ top: `${currentMinPercent}%` }}
+                >
+                  <div className="current-time-circle" />
+                </div>
+              )}
 
               {weekDays.map((day) => {
                 const dayEvents = getEventsForDate(day).filter(e => {
@@ -81,21 +115,23 @@ const WeekView = () => {
                 return (
                   <div
                     key={day.toISOString()}
-                    className="day-cell-compact"
+                    className="day-column"
                     onClick={() => handleTimeSlotClick(day, hour)}
                   >
                     {dayEvents.map((event) => (
                       <motion.div
                         key={event.id}
-                        className="event-chip-compact"
-                        style={{ backgroundColor: event.color || 'var(--accent)' }}
+                        className="event-chip"
+                        style={{
+                          backgroundColor: event.color || (event.category === 'work' ? '#6366f1' : '#10b981')
+                        }}
                         onClick={(e) => handleEventClick(event, e)}
-                        whileHover={{ scale: 1.05 }}
+                        layout // Animate layout changes
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ scale: 1.02 }}
                       >
-                        <span className="event-title-compact">{event.title}</span>
-                        {isFocused && event.description && (
-                          <span className="event-desc-compact">{event.description.slice(0, 50)}</span>
-                        )}
+                        {event.title}
                       </motion.div>
                     ))}
                   </div>

@@ -11,43 +11,29 @@ export const useTheme = () => {
 };
 
 export const THEMES = {
-  MODERN: 'modern',    // Refined Dark (Default)
-  NEON: 'neon',        // Cyberpunk / Neon Mode
-  CEO: 'ceo',          // High Tech CEO (Carbon / Gold / Slate)
-  QUANTUM: 'quantum',  // Animated / Glow Mode
-  LIVING: 'living',    // Mouse-reactive / Gradient Mode
-  ZEN: 'zen',          // Soft / Minimalist Mode
-  LIGHT: 'light'       // Classic Light
+  PRO: 'pro'
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('calai-theme');
-    return saved || THEMES.MODERN;
-  });
+  // Always default to PRO, ignore localStorage
+  const [theme] = useState(THEMES.PRO);
 
   useEffect(() => {
-    localStorage.setItem('calai-theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-
-    // Support legacy isDark for components that haven't migrated yet
-    const isDark = theme !== THEMES.LIGHT;
-    document.documentElement.classList.toggle('dark', isDark);
-  }, [theme]);
+    document.documentElement.setAttribute('data-theme', 'pro');
+    document.documentElement.classList.add('dark');
+  }, []);
 
   const toggleTheme = () => {
-    const themes = Object.values(THEMES);
-    const currentIndex = themes.indexOf(theme);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
+    // No-op or toast could go here, but UI button will be removed
+    console.log("Theme is locked to Pro");
   };
 
   return (
     <ThemeContext.Provider value={{
       theme,
-      setTheme,
+      setTheme: () => { }, // No-op
       toggleTheme,
-      isDark: theme !== THEMES.LIGHT
+      isDark: true
     }}>
       {children}
     </ThemeContext.Provider>

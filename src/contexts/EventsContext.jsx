@@ -324,6 +324,14 @@ export const EventsProvider = ({ children }) => {
     });
   };
 
+  const deleteEventsByName = (name) => {
+    if (!name) return;
+    deleteEventsByFilter(
+      e => e.title.toLowerCase().includes(name.toLowerCase()),
+      name
+    );
+  };
+
   return (
     <EventsContext.Provider value={{
       events,
@@ -331,6 +339,7 @@ export const EventsProvider = ({ children }) => {
       updateEvent,
       deleteEvent,
       deleteEventsByCategory,
+      deleteEventsByName,
       deleteEventsByFilter,
       getEventsForDate,
       getEventsForRange,

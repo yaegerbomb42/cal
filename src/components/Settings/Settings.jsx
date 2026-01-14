@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { localBrainService } from '../../services/localBrainService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 import { useEvents } from '../../contexts/EventsContext';
@@ -20,6 +21,32 @@ const Settings = ({ isOpen, onClose }) => {
   // Google Sync State
   const [isSyncing, setIsSyncing] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+
+  // Local Brain State
+  const [localBrainProgress, setLocalBrainProgress] = useState(null);
+  const [isLocalBrainLoaded, setIsLocalBrainLoaded] = useState(false);
+
+  const handleInitLocalBrain = async () => {
+    try {
+      setLocalBrainProgress({ text: "Starting...", progress: 0 });
+      await localBrainService.initialize((report) => {
+        setLocalBrainProgress(report);
+      });
+      setIsLocalBrainLoaded(true);
+      setLocalBrainProgress(null);
+      toastService.success("Offline Backup Brain Ready!");
+    } catch (error) {
+      console.error(error);
+      toastService.error("Failed to load offline brain: " + error.message);
+      setLocalBrainProgress(null);
+    }
+  };
+
+  const handleUnloadBrain = async () => {
+    await localBrainService.unload();
+    setIsLocalBrainLoaded(false);
+    toastService.info("Offline brain unloaded to free memory.");
+  };
 
   const [activeTab, setActiveTab] = useState('account');
   const { events, addEvent, deleteEventsByFilter } = useEvents();
@@ -318,6 +345,45 @@ const Settings = ({ isOpen, onClose }) => {
                       <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="external-link-alt">
                         Get your key from Google AI Studio <ExternalLink size={14} />
                       </a>
+
+                      <div className="info-box" style={{ marginTop: '16px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Sparkles size={20} className="sparkle-icon" style={{ color: '#6366f1' }} />
+                          <div>
+                            <h4>Offline Backup Brain (Beta)</h4>
+                            <p>Run a small AI model directly in your browser. Perfect for when internet is down.</p>
+                          </div>
+                        </div>
+
+                        {!isLocalBrainLoaded && !localBrainProgress && (
+                          <div style={{ marginTop: '12px' }}>
+                            <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px' }}>
+                              Requires ~400MB download (first time only). Uses your device's GPU.
+                            </p>
+                            <button onClick={handleInitLocalBrain} className="pro-btn-secondary">
+                              <Download size={14} /> Initialize Backup Brain
+                            </button>
+                          </div>
+                        )}
+
+                        {localBrainProgress && (
+                          <div style={{ marginTop: '12px' }}>
+                            <div className="pro-progress-bar">
+                              <div className="progress-fill" style={{ width: `${localBrainProgress.progress * 100}%` }}></div>
+                            </div>
+                            <p style={{ fontSize: '11px', marginTop: '4px', color: '#ccc' }}>{localBrainProgress.text}</p>
+                          </div>
+                        )}
+
+                        {isLocalBrainLoaded && (
+                          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 0.5B)</div>
+                            <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
+                              Unload
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 

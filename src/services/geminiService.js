@@ -1,9 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { parseNaturalLanguageDate, parseNaturalLanguageTime } from '../utils/dateUtils';
+import { localBrainService } from './localBrainService';
 
-class GeminiService {
-  constructor() {
-    this.genAI = null;
+export class GeminiService {
+  constructor(apiKey) {
+    this.apiKey = apiKey;
     this.modelPro = null;
     this.modelFlash = null;
     this.isInitialized = false;
@@ -21,13 +21,15 @@ class GeminiService {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       // Try latest models first, fallback to stable versions
+      // User explicitly requested "Gemini 3" preview models
+      // Using the exact strings provided by the user
       try {
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      } catch {
-        // Fallback to known stable models
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
+      } catch (e) {
+        console.warn("Gemini 3 Preview models failed, falling back to 2.0 Exp...", e);
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-pro-exp' });
       }
       this.isInitialized = true;
       return true;
@@ -60,10 +62,11 @@ class GeminiService {
   }
 
   async parseEventFromText(text, existingEvents = []) {
-    if (!this.isInitialized) {
-      throw new Error('Gemini service not initialized');
+    if (!this.isInitialized && !localBrainService.isLoaded) {
+      throw new Error('AI service not initialized. Connect Gemini API or load Offline Brain.');
     }
 
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
 Parse the following text into a calendar event. The text might be a casual request, a pasted email, or a message. Extract the most relevant event details:
 - title (required, summarize the event if pasted from long text)
@@ -75,14 +78,21 @@ Parse the following text into a calendar event. The text might be a casual reque
 
 Text: "${text}"
 
-Current date and time: ${new Date().toISOString()}
+Current ISO Time: ${new Date().toISOString()}
+User Timezone: ${timeZone}
+
+CRITICAL INSTRUCTION:
+- The user is in ${timeZone}.
+- If the user says "8am", they mean 8:00 AM in ${timeZone}.
+- Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
+- Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
 
 Please respond with a JSON object in this exact format:
 {
   "title": "Event Title",
   "description": "Event description",
-  "start": "2024-01-01T09:00:00.000Z",
-  "end": "2024-01-01T10:00:00.000Z",
+  "start": "2024-01-01T14:00:00.000Z",
+  "end": "2024-01-01T15:00:00.000Z",
   "location": "Location if specified",
   "category": "personal"
 }
@@ -117,7 +127,19 @@ If the text doesn't contain enough information for a calendar event, respond wit
 
       return parsedEvent;
     } catch (error) {
-      console.error('Error parsing event:', error);
+      console.error('Error parsing event with Gemini:', error);
+
+      // FALLBACK: Local Brain
+      if (localBrainService.isLoaded) {
+        console.log('Falling back to Offline Brain...');
+        try {
+          const localResult = await localBrainService.parseEvent(text);
+          return localResult;
+        } catch (localError) {
+          console.error('Offline Brain failed:', localError);
+        }
+      }
+
       throw error;
     }
   }
@@ -145,12 +167,15 @@ If the text doesn't contain enough information for a calendar event, respond wit
       return [];
     }
 
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
 I have a scheduling conflict. Here's the new event:
 ${JSON.stringify(newEvent, null, 2)}
 
 And here are the conflicting events:
 ${JSON.stringify(conflicts, null, 2)}
+
+User Timezone: ${timeZone}
 
 Please suggest alternative times for the new event that don't conflict. Consider:
 - Keep the same day if possible
@@ -191,11 +216,13 @@ Respond with JSON array of suggested times:
       return [];
     }
 
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
 Based on the following context, suggest 3-5 relevant calendar events:
 
 Context: "${context}"
 Current date: ${new Date().toISOString()}
+User Timezone: ${timeZone}
 
 Consider:
 - Time of day and week
@@ -243,12 +270,14 @@ Respond with JSON array:
       `Current upcoming events: ${JSON.stringify(events.slice(0, 15).map(e => ({ title: e.title, start: e.start, category: e.category })))}` :
       'No current upcoming events';
 
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
 You are a helpful calendar assistant. The user said: "${message}"
 
 ${eventsContext}
 
 Current date: ${new Date().toISOString()}
+User Timezone: ${timeZone}
 
 Respond in one of two ways:
 1. NATURAL RESPONSE: If the user is just chatting or asking a simple question.

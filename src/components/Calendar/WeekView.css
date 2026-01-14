@@ -1,144 +1,180 @@
-.week-view-compact {
-  height: 100%;
+/* Week View Container */
+.week-view {
   display: flex;
   flex-direction: column;
-  background: var(--glass-bg);
-  border-radius: 16px;
+  height: 100%;
   overflow: hidden;
+  /* No scroll allowed for fisheye */
+  background: transparent;
 }
 
-.week-header-compact {
+/* Header Grid */
+.week-header {
   display: grid;
-  grid-template-columns: 50px repeat(7, 1fr);
-  background: rgba(0, 0, 0, 0.2);
+  grid-template-columns: 60px repeat(7, 1fr);
   border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur);
+  z-index: 10;
   flex-shrink: 0;
 }
 
-.time-gutter-compact {
-  width: 50px;
-}
-
-.day-header-compact {
-  padding: 8px 4px;
+.header-cell {
+  padding: 1rem 0.5rem;
   text-align: center;
-  border-left: 1px solid var(--glass-border);
-}
-
-.day-header-compact.today .day-num-compact {
-  background: var(--accent);
-  color: white;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: inline-flex;
+  border-right: 1px solid var(--glass-border);
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.day-name-compact {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  display: block;
-}
-
-.day-num-compact {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-/* 24h Grid - No Scroll */
-.week-grid-compact {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.hour-row-compact {
-  display: grid;
-  grid-template-columns: 50px repeat(7, 1fr);
-  min-height: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.hour-row-compact:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.hour-row-compact.focused {
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.08);
-  border-color: rgba(var(--accent-rgb, 99, 102, 241), 0.2);
-}
-
-.time-cell-compact {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 2px 6px 0 0;
+.header-cell.gutter {
   border-right: 1px solid var(--glass-border);
 }
 
-.time-label-compact {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  opacity: 0.6;
-  transition: all 0.2s;
+.header-cell.today {
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.05);
 }
 
-.time-label-compact.time-focused {
-  font-size: 0.85rem;
-  opacity: 1;
+.day-name {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.day-num {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.header-cell.today .day-num {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Main Grid Body - The Fisheye Container */
+.week-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* Stack hours vertically */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Time Slots (Rows) - The Interactive Elements */
+.time-slot {
+  flex-grow: 1;
+  /* All hours share space equally by default */
+  min-height: 0;
+  /* Allow shrinking */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  transition: flex-grow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background 0.2s ease;
+  position: relative;
+}
+
+/* Hover Effect: Fisheye Zoom */
+.time-slot:hover {
+  flex-grow: 8;
+  /* Expand significantly on hover */
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Time Label (Left Column) */
+.time-label {
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-right: 1px solid var(--glass-border);
+  user-select: none;
+  transition: font-size 0.2s, color 0.2s;
+}
+
+.time-slot:hover .time-label {
+  font-size: 1rem;
   color: var(--accent);
 }
 
-.day-cell-compact {
-  border-left: 1px solid rgba(255, 255, 255, 0.02);
-  padding: 1px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  overflow: hidden;
+/* Day Columns (Cells) within the Time Slot */
+.day-column {
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  position: relative;
+  height: 100%;
+  width: 100%;
+  padding: 2px;
 }
 
-/* Event Chips */
-.event-chip-compact {
-  border-radius: 4px;
-  padding: 2px 6px;
-  color: white;
-  font-size: 0.6rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.day-column:hover {
+  background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  min-height: 14px;
 }
 
-.focused .event-chip-compact {
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  white-space: normal;
-  min-height: auto;
+/* Current Time Indicator */
+.current-time-line {
+  position: absolute;
+  left: 60px;
+  right: 0;
+  height: 2px;
+  background: #ef4444;
+  z-index: 50;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
 }
 
-.event-title-compact {
-  display: block;
+.current-time-circle {
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: -4px;
+}
+
+/* Events in Grid */
+.event-chip {
+  background: var(--accent);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  color: white;
+  margin-bottom: 2px;
+  cursor: pointer;
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s;
 }
 
-.event-desc-compact {
-  font-size: 0.55rem;
-  opacity: 0.8;
-  font-weight: 400;
-  margin-top: 2px;
+.time-slot:hover .event-chip {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  white-space: normal;
+}
+
+.event-chip:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
