@@ -142,6 +142,18 @@ export const EventsProvider = ({ children }) => {
     }
   }, [events, isLoading, debouncedFirebaseSave]);
 
+  // Handle Online/Offline Sync
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("Network restored. Syncing to cloud...");
+      toastService.success("Back online! Syncing events...");
+      debouncedFirebaseSave(events);
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [events, debouncedFirebaseSave]);
+
   const addEvent = async (event, options = {}) => {
     // Validate event
     const validation = validateEvent(event);

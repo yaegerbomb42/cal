@@ -13,8 +13,26 @@ export const localBrainService = {
      * @param {function} progressCallback - (progress) => void
      */
     async initialize(progressCallback) {
-        if (this.engine) return;
+        if (this.isLoaded) return;
 
+        // 1. Try Chrome Built-in AI (window.ai) - Zero Download
+        // Note: As of early 2025, usage is `await window.ai.languageModel.create()`
+        if (window.ai && window.ai.languageModel) {
+            try {
+                const capabilities = await window.ai.languageModel.capabilities();
+                if (capabilities.available !== 'no') {
+                    this.engine = await window.ai.languageModel.create();
+                    this.type = 'window.ai';
+                    this.isLoaded = true;
+                    console.log("Local Brain: Using Chrome Built-in AI (Gemini Nano)");
+                    return;
+                }
+            } catch (e) {
+                console.warn("Chrome AI failed, falling back to WebLLM", e);
+            }
+        }
+
+        // 2. Fallback to WebLLM (Downloadable Weights)
         // Check for WebGPU support
         if (!navigator.gpu) {
             throw new Error("WebGPU is not supported in this browser.");
@@ -33,8 +51,9 @@ export const localBrainService = {
                     }
                 }
             );
+            this.type = 'webllm';
             this.isLoaded = true;
-            console.log("Local Brain initialized successfully!");
+            console.log("Local Brain: Using WebLLM (Qwen 0.5B)");
         } catch (error) {
             console.error("Failed to initialize Local Brain:", error);
             throw error;
@@ -58,9 +77,17 @@ export const localBrainService = {
      * @param {Array} history - Optional previous messages
      */
     async chat(userMessage, systemInstruction = "You are a helpful assistant.") {
-        if (!this.engine) throw new Error("Local Brain not loaded. Call initialize() first.");
+        if (!this.isLoaded) throw new Error("Local Brain not loaded. Call initialize() first.");
 
         try {
+            // Case 1: Chrome Built-in AI
+            if (this.type === 'window.ai') {
+                // window.ai doesn't always support system prompt in v1, usually just prompt
+                // We prepend system instruction
+                return await this.engine.prompt(`${systemInstruction}\n\nUser: ${userMessage}`);
+            }
+
+            // Case 2: WebLLM
             const messages = [
                 { role: "system", content: systemInstruction },
                 { role: "user", content: userMessage }
@@ -103,7 +130,7 @@ export const localBrainService = {
                 return JSON.parse(jsonMatch[0]);
             }
             return JSON.parse(response);
-        } catch (e) {
+        } catch {
             console.error("Failed to parse local brain response as JSON", response);
             throw new Error("Local model failed to generate valid JSON");
         }

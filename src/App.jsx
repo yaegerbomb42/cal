@@ -14,6 +14,7 @@ import Toast from './components/Toast/Toast';
 import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
 import ThemeBackground from './components/Common/ThemeBackground';
 import { geminiService } from './services/geminiService';
+import { localBrainService } from './services/localBrainService';
 import './App.css';
 
 function App() {
@@ -50,6 +51,10 @@ const MainLayout = () => {
       if (key) {
         geminiService.initialize(key);
       }
+
+      // Attempt to initialize Local Brain (checks for Chrome Built-in AI)
+      // This is a zero-cost check if window.ai exists.
+      localBrainService.initialize();
     };
 
     initializeAI();

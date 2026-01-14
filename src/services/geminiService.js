@@ -23,16 +23,13 @@ export class GeminiService {
       // Try latest models first, fallback to stable versions
       // User Request:
       // 1. Primary: Gemini 3 Preview Models
-      // 2. Fallback: "Default .5b model" -> Mapping to gemini-1.5-flash-8b (Smallest/Fastest API model)
+      // 2. Fallback: Local Offline Brain (handled in method calls, not here)
       try {
         this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
         this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
       } catch (e) {
-        console.warn("Gemini 3 Preview initialization failed, falling back to 1.5 Flash-8B...", e);
-        // Fallback for speed/reliability if previews are down
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
-        // Fallback for reasoning
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        console.warn("Gemini 3 Preview initialization failed. Service will rely on Offline Brain if loaded.", e);
+        // No API fallback. We want true offline behavior if primary fails.
       }
       this.isInitialized = true;
       return true;
@@ -64,7 +61,7 @@ export class GeminiService {
     }
   }
 
-  async parseEventFromText(text, existingEvents = []) {
+  async parseEventFromText(text) {
     if (!this.isInitialized && !localBrainService.isLoaded) {
       throw new Error('AI service not initialized. Connect Gemini API or load Offline Brain.');
     }
