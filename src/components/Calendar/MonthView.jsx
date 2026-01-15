@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { getMonthDays, isSameMonth, isToday } from '../../utils/dateUtils';
+import { getMonthDays, isSameMonth, isToday, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -11,6 +11,9 @@ const MonthView = () => {
 
   const monthDays = getMonthDays(currentDate);
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthEventsCount = monthDays.reduce((total, day) => {
+    return isSameMonth(day, currentDate) ? total + getEventsForDate(day).length : total;
+  }, 0);
 
   const handleDayClick = (day) => {
     setCurrentDate(day);
@@ -31,6 +34,14 @@ const MonthView = () => {
 
   return (
     <div className="month-view">
+      <div className="month-summary glass-card">
+        <div className="month-summary-title">This Month</div>
+        <div className="month-summary-stat">
+          <span className="stat-number">{monthEventsCount}</span>
+          <span className="stat-label">Events</span>
+        </div>
+      </div>
+
       {/* Week Day Headers */}
       <div className="month-header">
         {weekDays.map((day) => (
@@ -68,7 +79,7 @@ const MonthView = () => {
               </div>
 
               <div className="day-events">
-                {dayEvents.slice(0, 3).map((event) => (
+                {dayEvents.slice(0, 4).map((event) => (
                   <motion.div
                     key={event.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -78,15 +89,14 @@ const MonthView = () => {
                     className="day-event"
                     style={{ backgroundColor: event.color || getEventColor(event.category) }}
                   >
-                    <span className="event-title">
-                      {event.title}
-                    </span>
+                    <span className="event-time">{formatTime24(new Date(event.start))}</span>
+                    <span className="event-title">{event.title}</span>
                   </motion.div>
                 ))}
                 
-                {dayEvents.length > 3 && (
+                {dayEvents.length > 4 && (
                   <div className="more-events">
-                    +{dayEvents.length - 3} more
+                    +{dayEvents.length - 4} more
                   </div>
                 )}
               </div>

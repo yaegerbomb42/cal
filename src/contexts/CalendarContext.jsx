@@ -13,7 +13,8 @@ export const useCalendar = () => {
 export const CALENDAR_VIEWS = {
   DAY: 'day',
   WEEK: 'week',
-  MONTH: 'month'
+  MONTH: 'month',
+  YEAR: 'year'
 };
 
 export const CalendarProvider = ({ children }) => {
@@ -34,6 +35,9 @@ export const CalendarProvider = ({ children }) => {
           break;
         case CALENDAR_VIEWS.MONTH:
           newDate.setMonth(newDate.getMonth() + direction);
+          break;
+        case CALENDAR_VIEWS.YEAR:
+          newDate.setFullYear(newDate.getFullYear() + direction);
           break;
       }
       return newDate;

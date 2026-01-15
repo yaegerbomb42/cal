@@ -15,7 +15,8 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
   const viewButtons = [
     { key: CALENDAR_VIEWS.DAY, label: 'Day' },
     { key: CALENDAR_VIEWS.WEEK, label: 'Week' },
-    { key: CALENDAR_VIEWS.MONTH, label: 'Month' }
+    { key: CALENDAR_VIEWS.MONTH, label: 'Month' },
+    { key: CALENDAR_VIEWS.YEAR, label: 'Year' }
   ];
 
   const getHeaderTitle = () => {
@@ -26,6 +27,8 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
         return formatDate(currentDate, 'MMMM yyyy');
       case CALENDAR_VIEWS.MONTH:
         return formatDate(currentDate, 'MMMM yyyy');
+      case CALENDAR_VIEWS.YEAR:
+        return formatDate(currentDate, 'yyyy');
       default:
         return formatDate(currentDate, 'MMMM yyyy');
     }
@@ -33,7 +36,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
 
   const getSubTitle = () => {
     if (view === CALENDAR_VIEWS.DAY) {
-      return formatDate(currentDate, 'EEEE, d');
+      return formatDate(currentDate, 'EEEE, MMMM d, yyyy');
     }
     return null;
   };
@@ -166,7 +169,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setView(key)}
-                  className={`view - btn ${view === key ? 'active' : ''} `}
+                  className={`view-btn ${view === key ? 'active' : ''} `}
                 >
                   {label}
                 </motion.button>

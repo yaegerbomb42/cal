@@ -1,13 +1,156 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft } from 'lucide-react';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { getEventColor } from '../../utils/helpers';
 import { validateEvent } from '../../utils/eventValidator';
 import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEvents';
 import { toastService } from '../../utils/toast';
+import { formatTime24, isToday } from '../../utils/dateUtils';
 import './EventModal.css';
+
+const padTime = (value) => String(value).padStart(2, '0');
+
+const toLocalInputValue = (date) => {
+  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
+};
+
+const toLocalDateInput = (date) => {
+  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}`;
+};
+
+const roundToNearestFiveMinutes = (date) => {
+  const rounded = new Date(date);
+  const minutes = Math.round(rounded.getMinutes() / 5) * 5;
+  rounded.setMinutes(minutes === 60 ? 0 : minutes, 0, 0);
+  if (minutes === 60) {
+    rounded.setHours(rounded.getHours() + 1);
+  }
+  return rounded;
+};
+
+const ClockTimePicker = ({ label, value, onChange }) => {
+  const clockRef = useRef(null);
+  const [mode, setMode] = useState('hour');
+  const [isDragging, setIsDragging] = useState(false);
+
+  const dateValue = value ? new Date(value) : new Date();
+  const hour = dateValue.getHours();
+  const minute = dateValue.getMinutes();
+
+  const hourAngle = ((hour % 12) / 12) * 360;
+  const minuteAngle = (minute / 60) * 360;
+
+  const updateTime = (nextHour, nextMinute) => {
+    onChange({ hours: nextHour, minutes: nextMinute });
+  };
+
+  const handleSelect = (clientX, clientY, targetMode = mode) => {
+    if (!clockRef.current) return;
+    const rect = clockRef.current.getBoundingClientRect();
+    const x = clientX - rect.left - rect.width / 2;
+    const y = clientY - rect.top - rect.height / 2;
+    const angle = Math.atan2(y, x);
+    const degrees = (angle * 180) / Math.PI;
+    const adjusted = (degrees + 90 + 360) % 360;
+
+    if (targetMode === 'hour') {
+      const baseHour = Math.round(adjusted / 30) % 12;
+      const normalized = baseHour === 0 ? 12 : baseHour;
+      const isPm = hour >= 12;
+      const newHour = isPm ? (normalized % 12) + 12 : normalized % 12;
+      updateTime(newHour, minute);
+      setMode('minute');
+    } else {
+      let newMinute = Math.round((adjusted / 360) * 60);
+      newMinute = Math.round(newMinute / 5) * 5;
+      if (newMinute === 60) newMinute = 0;
+      updateTime(hour, newMinute);
+    }
+  };
+
+  const handlePointerDown = (event) => {
+    setIsDragging(true);
+    handleSelect(event.clientX, event.clientY);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!isDragging) return;
+    handleSelect(event.clientX, event.clientY, mode);
+  };
+
+  const handlePointerUp = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div className="clock-picker">
+      <div className="clock-picker-header">
+        <span className="clock-label">{label}</span>
+        <span className="clock-time-display">{formatTime24(dateValue)}</span>
+      </div>
+      <div
+        className={`clock-face ${mode}`}
+        ref={clockRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+      >
+        {[...Array(12)].map((_, idx) => {
+          const angle = (idx / 12) * 360;
+          const label = idx === 0 ? 12 : idx;
+          return (
+            <div
+              key={`hour-${idx}`}
+              className="clock-mark major"
+              style={{ transform: `rotate(${angle}deg)` }}
+            >
+              <span className="mark-label">{label}</span>
+            </div>
+          );
+        })}
+        {[...Array(12)].map((_, idx) => (
+          <div
+            key={`minute-${idx}`}
+            className="clock-minute-dot"
+            style={{ transform: `rotate(${idx * 30}deg)` }}
+          />
+        ))}
+        <div className={`clock-hand hour-hand ${mode === 'hour' ? 'active' : ''}`} style={{ transform: `rotate(${hourAngle}deg)` }}>
+          <span />
+        </div>
+        <div className={`clock-hand minute-hand ${mode === 'minute' ? 'active' : ''}`} style={{ transform: `rotate(${minuteAngle}deg)` }}>
+          <span />
+        </div>
+        <div className="clock-center" />
+      </div>
+      <div className="clock-picker-footer">
+        <button
+          type="button"
+          className="clock-action-btn"
+          onClick={() => setMode('hour')}
+          disabled={mode === 'hour'}
+        >
+          <ArrowLeft size={14} />
+          Back
+        </button>
+        <div className="clock-mode-indicator">
+          {mode === 'hour' ? 'Select hour' : 'Select minutes (5m)'}
+        </div>
+        <button
+          type="button"
+          className="clock-action-btn primary"
+          onClick={() => setMode('hour')}
+        >
+          <Check size={14} />
+          Done
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const EventModal = () => {
   const { selectedEvent, isEventModalOpen, closeEventModal } = useCalendar();
@@ -29,39 +172,45 @@ const EventModal = () => {
   const [validationErrors, setValidationErrors] = useState([]);
 
   useEffect(() => {
-    if (selectedEvent) {
-      if (selectedEvent.id) {
-        // Editing existing event
-        setFormData({
-          title: selectedEvent.title || '',
-          description: selectedEvent.description || '',
-          start: new Date(selectedEvent.start).toISOString().slice(0, 16),
-          end: new Date(selectedEvent.end).toISOString().slice(0, 16),
-          location: selectedEvent.location || '',
-          category: selectedEvent.category || 'personal',
-          color: selectedEvent.color || getEventColor(selectedEvent.category),
-          reminder: selectedEvent.reminder || null,
-          recurring: selectedEvent.recurring || { type: RECURRENCE_TYPES.NONE }
-        });
-        setIsEditing(true);
-      } else {
-        // Creating new event
-        const startTime = selectedEvent.start || new Date();
-        const endTime = selectedEvent.end || new Date(startTime.getTime() + 60 * 60 * 1000);
-        
-        setFormData({
-          title: '',
-          description: '',
-          start: startTime.toISOString().slice(0, 16),
-          end: endTime.toISOString().slice(0, 16),
-          location: '',
-          category: 'personal',
-          color: getEventColor('personal')
-        });
-        setIsEditing(false);
-      }
+    if (!isEventModalOpen) return;
+    if (selectedEvent && selectedEvent.id) {
+      setFormData({
+        title: selectedEvent.title || '',
+        description: selectedEvent.description || '',
+        start: toLocalInputValue(new Date(selectedEvent.start)),
+        end: toLocalInputValue(new Date(selectedEvent.end)),
+        location: selectedEvent.location || '',
+        category: selectedEvent.category || 'personal',
+        color: selectedEvent.color || getEventColor(selectedEvent.category),
+        reminder: selectedEvent.reminder || null,
+        recurring: selectedEvent.recurring || { type: RECURRENCE_TYPES.NONE }
+      });
+      setIsEditing(true);
+      return;
     }
-  }, [selectedEvent]);
+
+    const baseDate = selectedEvent?.start ? new Date(selectedEvent.start) : new Date();
+    const isDefaultToday = selectedEvent?.start ? isToday(baseDate) : true;
+    const startTime = selectedEvent?.start
+      ? baseDate
+      : (isDefaultToday ? roundToNearestFiveMinutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
+    const endTime = selectedEvent?.end
+      ? new Date(selectedEvent.end)
+      : new Date(startTime.getTime() + 60 * 60 * 1000);
+
+    setFormData({
+      title: '',
+      description: '',
+      start: toLocalInputValue(startTime),
+      end: toLocalInputValue(endTime),
+      location: '',
+      category: 'personal',
+      color: getEventColor('personal'),
+      reminder: null,
+      recurring: { type: RECURRENCE_TYPES.NONE }
+    });
+    setIsEditing(false);
+  }, [selectedEvent, isEventModalOpen]);
 
   const handleDurationChange = (minutes) => {
     if (!formData.start) return;
@@ -122,6 +271,27 @@ const EventModal = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleDateChange = (field, value) => {
+    const current = formData[field] ? new Date(formData[field]) : new Date();
+    const [year, month, day] = value.split('-').map(Number);
+    current.setFullYear(year, month - 1, day);
+    if (!isEditing && field === 'start') {
+      if (isToday(current)) {
+        const rounded = roundToNearestFiveMinutes(current);
+        handleChange(field, toLocalInputValue(rounded));
+        return;
+      }
+      current.setHours(12, 0, 0, 0);
+    }
+    handleChange(field, toLocalInputValue(current));
+  };
+
+  const handleTimeChange = (field, { hours, minutes }) => {
+    const current = formData[field] ? new Date(formData[field]) : new Date();
+    current.setHours(hours, minutes, 0, 0);
+    handleChange(field, toLocalInputValue(current));
   };
 
   const categories = [
@@ -205,31 +375,44 @@ const EventModal = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="start">
+                <label htmlFor="start-date">
                   <Clock size={16} />
-                  Start Time
+                  Start Date
                 </label>
                 <input
-                  id="start"
-                  type="datetime-local"
-                  value={formData.start}
-                  onChange={(e) => handleChange('start', e.target.value)}
+                  id="start-date"
+                  type="date"
+                  value={formData.start ? toLocalDateInput(new Date(formData.start)) : ''}
+                  onChange={(e) => handleDateChange('start', e.target.value)}
                   className="input"
                   required
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="end">End Time</label>
+                <label htmlFor="end-date">End Date</label>
                 <input
-                  id="end"
-                  type="datetime-local"
-                  value={formData.end}
-                  onChange={(e) => handleChange('end', e.target.value)}
+                  id="end-date"
+                  type="date"
+                  value={formData.end ? toLocalDateInput(new Date(formData.end)) : ''}
+                  onChange={(e) => handleDateChange('end', e.target.value)}
                   className="input"
                   required
                 />
               </div>
+            </div>
+
+            <div className="time-picker-grid">
+              <ClockTimePicker
+                label="Start Time"
+                value={formData.start}
+                onChange={(time) => handleTimeChange('start', time)}
+              />
+              <ClockTimePicker
+                label="End Time"
+                value={formData.end}
+                onChange={(time) => handleTimeChange('end', time)}
+              />
             </div>
 
             <div className="form-group quick-duration">

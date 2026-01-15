@@ -23,6 +23,10 @@ export const formatTime = (date) => {
   return format(date, 'h:mm a');
 };
 
+export const formatTime24 = (date) => {
+  return format(date, 'HH:mm');
+};
+
 export const getWeekDays = (date) => {
   const start = startOfWeek(date, { weekStartsOn: 0 }); // Sunday
   const end = endOfWeek(date, { weekStartsOn: 0 });
