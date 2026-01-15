@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getWeekDays, getDayHours, formatTime24, isToday } from '../../utils/dateUtils';
+import { getWeekDays, getDayHours, formatTime24, isToday, startOfDay, endOfDay } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -8,10 +8,17 @@ import './WeekView.css';
 
 const WeekView = () => {
   const { currentDate, openEventModal } = useCalendar();
-  const { getEventsForDate } = useEvents();
+  const { events } = useEvents();
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
-  const weekEventsCount = weekDays.reduce((total, day) => total + getEventsForDate(day).length, 0);
+  const weekStart = startOfDay(weekDays[0]);
+  const weekEnd = endOfDay(weekDays[weekDays.length - 1]);
+  const weekEvents = events.filter((event) => {
+    const eventStart = new Date(event.start);
+    const eventEnd = new Date(event.end);
+    return eventStart <= weekEnd && eventEnd >= weekStart;
+  });
+  const weekEventsCount = weekEvents.length;
 
   // Current Time Indicator Logic
   const [currentTick, setCurrentTick] = useState(Date.now());
@@ -96,9 +103,22 @@ const WeekView = () => {
               )}
 
               {weekDays.map((day) => {
-                const dayEvents = getEventsForDate(day).filter(e => {
-                  const start = new Date(e.start);
-                  return start.getHours() === hourNum;
+                const dayStart = startOfDay(day);
+                const dayEnd = endOfDay(day);
+                const slotStart = new Date(dayStart);
+                slotStart.setHours(hourNum, 0, 0, 0);
+                const slotEnd = new Date(slotStart);
+                slotEnd.setHours(hourNum + 1);
+                const dayEvents = weekEvents.filter((event) => {
+                  const eventStart = new Date(event.start);
+                  const eventEnd = new Date(event.end);
+
+                  if (eventStart > dayEnd || eventEnd < dayStart) {
+                    return false;
+                  }
+
+                  const displayStart = eventStart < dayStart ? dayStart : eventStart;
+                  return displayStart >= slotStart && displayStart < slotEnd;
                 });
 
                 return (
