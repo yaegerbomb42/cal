@@ -1,8 +1,36 @@
 import { CreateMLCEngine } from "@mlc-ai/web-llm";
 
-// Qwen2.5-0.5B-Instruct is a very small (~350MB) model good for basic instruction following
-const SELECTED_MODEL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC";
+// Qwen2.5-3B-Instruct offers stronger reasoning while staying feasible for in-browser use.
+const SELECTED_MODEL = "Qwen2.5-3B-Instruct-q4f16_1-MLC";
 const LOCAL_BRAIN_PREF_KEY = "calai-prefer-local-brain";
+
+const getTemporalContext = () => {
+    const now = new Date();
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const localTime = now.toLocaleString("en-US", {
+        timeZone,
+        dateStyle: "full",
+        timeStyle: "long"
+    });
+    return {
+        now,
+        timeZone,
+        localTime,
+        iso: now.toISOString()
+    };
+};
+
+const getGroundingPrompt = () => {
+    const { timeZone, localTime, iso } = getTemporalContext();
+    return `
+You are Cal, a friendly calendar assistant.
+Grounding:
+- Current local date/time: ${localTime}
+- Current ISO time: ${iso}
+- User timezone: ${timeZone}
+Use this grounding to interpret relative dates like "tomorrow" or "next Friday".
+If a request is ambiguous, ask a concise follow-up question.`;
+};
 
 const readStoredPreference = () => {
     if (typeof window === "undefined") return false;
@@ -65,7 +93,7 @@ export const localBrainService = {
             );
             this.type = 'webllm';
             this.isLoaded = true;
-            console.log("Local Brain: Using WebLLM (Qwen 0.5B)");
+            console.log("Local Brain: Using WebLLM (Qwen 2.5 3B)");
         } catch (error) {
             console.error("Failed to initialize Local Brain:", error);
             throw error;
@@ -102,7 +130,7 @@ export const localBrainService = {
      * @param {string} userMessage 
      * @param {Array} history - Optional previous messages
      */
-    async chat(userMessage, systemInstruction = "You are a helpful assistant.") {
+    async chat(userMessage, systemInstruction = getGroundingPrompt()) {
         if (!this.isLoaded) throw new Error("Local Brain not loaded. Call initialize() first.");
 
         try {
@@ -137,15 +165,23 @@ export const localBrainService = {
      * This mimics the structure of geminiService.parseEventFromText
      */
     async parseEvent(text) {
+        const { timeZone, localTime, iso } = getTemporalContext();
         const systemPrompt = `
-      You are an event parser. User input will be a natural language description of a calendar event.
-      Extract: title, start (ISO string), end (ISO string), description, location.
-      Current Date: ${new Date().toISOString()}
-      Return ONLY valid JSON.
-      Example:
-      User: "Lunch with Bob tomorrow at 12pm"
-      JSON: { "title": "Lunch with Bob", "start": "...", "end": "..." }
-    `;
+${getGroundingPrompt()}
+
+You are an event parser. User input will be a natural language description of a calendar event.
+Extract: title, start (ISO string), end (ISO string), description, location, category.
+Current local date/time: ${localTime}
+Current ISO time: ${iso}
+User timezone: ${timeZone}
+Rules:
+- Interpret times in the user's timezone.
+- If end time is missing, assume a 1-hour duration unless context implies otherwise.
+- Return ONLY valid JSON (no markdown, no extra text).
+Example:
+User: "Lunch with Bob tomorrow at 12pm"
+JSON: { "title": "Lunch with Bob", "start": "2024-01-02T20:00:00.000Z", "end": "2024-01-02T21:00:00.000Z" }
+`;
 
         const response = await this.chat(text, systemPrompt);
 
