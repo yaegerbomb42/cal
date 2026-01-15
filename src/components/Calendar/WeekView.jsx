@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { getWeekDays, getDayHours, formatTime24, isToday, startOfDay, endOfDay } from '../../utils/dateUtils';
+import { getWeekDays, getDayHours, formatTime24, getEventPosition, getCurrentTimePosition, isToday } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
+import { useHourScale } from '../../utils/useHourScale';
 import './WeekView.css';
 
 const WeekView = () => {
@@ -19,6 +20,9 @@ const WeekView = () => {
     return eventStart <= weekEnd && eventEnd >= weekStart;
   });
   const weekEventsCount = weekEvents.length;
+
+  const weekGridRef = useRef(null);
+  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, minPixels: 16, maxPixels: 48, offset: 24 });
 
   // Current Time Indicator Logic
   const [currentTick, setCurrentTick] = useState(Date.now());
@@ -46,8 +50,11 @@ const WeekView = () => {
     openEventModal(event);
   };
 
+  const showCurrentTime = weekDays.some(day => isToday(day));
+  const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+
   return (
-    <div className="week-view">
+    <div className="week-view" style={{ '--hour-height': `${pixelsPerHour}px` }}>
       <div className="week-summary glass-card">
         <div className="week-summary-title">This Week</div>
         <div className="week-summary-stat">
@@ -121,34 +128,66 @@ const WeekView = () => {
                   return displayStart >= slotStart && displayStart < slotEnd;
                 });
 
-                return (
+        <div className="week-days-grid">
+          {weekDays.map((day) => {
+            const dayEvents = getEventsForDate(day);
+            return (
+              <div key={day.toISOString()} className={cn('week-day-column', isToday(day) && 'today')}>
+                {dayHours.map((hour) => (
                   <div
-                    key={day.toISOString()}
-                    className="day-column"
+                    key={hour.getHours()}
+                    className="week-hour-cell"
                     onClick={() => handleTimeSlotClick(day, hour)}
-                  >
-                    {dayEvents.map((event) => (
+                  />
+                ))}
+
+                <div className="week-events-layer">
+                  {dayEvents.map((event, index) => {
+                    const { top, height } = getEventPosition(event, day, pixelsPerHour);
+
+                    return (
                       <motion.div
                         key={event.id}
-                        className="event-chip"
+                        className="week-event"
                         style={{
+                          top: `${top}px`,
+                          height: `${height}px`,
                           backgroundColor: event.color || getEventColor(event.category)
                         }}
                         onClick={(e) => handleEventClick(event, e)}
-                        layout // Animate layout changes
-                        initial={{ opacity: 0, scale: 0.9 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        whileHover={{ scale: 1.02 }}
+                        transition={{ delay: index * 0.05 }}
                       >
-                        {event.title}
+                        <div className="week-event-title">{event.title}</div>
+                        {height > 40 && (
+                          <div className="week-event-time">
+                            {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
+                          </div>
+                        )}
                       </motion.div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {showCurrentTime && currentTimePosition !== null && (
+          <div className="week-current-time" style={{ top: `${currentTimePosition}px` }}>
+            <div className="current-time-line"></div>
+            <div className="current-time-circle"></div>
+            <div className="current-time-label">{formatTime24(new Date(currentTick))}</div>
+          </div>
+        )}
+
+        {weekEventsCount === 0 && (
+          <div className="week-empty-state">
+            <div className="empty-title">No events scheduled</div>
+            <div className="empty-subtitle">Tap an hour cell to add something for this week.</div>
+          </div>
+        )}
       </div>
     </div>
   );

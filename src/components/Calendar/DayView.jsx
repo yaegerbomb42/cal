@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { getDayHours, getDayHoursWithHalf, formatTime24, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
 import { Clock } from 'lucide-react';
+import { useHourScale } from '../../utils/useHourScale';
 import './DayView.css';
 
 const DayView = () => {
@@ -14,28 +15,10 @@ const DayView = () => {
   const dayHours = getDayHours();
   const daySlots = getDayHoursWithHalf();
   const dayEvents = getEventsForDate(currentDate);
-  const [pixelsPerHour, setPixelsPerHour] = useState(36);
   const dayGridRef = useRef(null);
+  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, minPixels: 18, maxPixels: 64, offset: 24 });
   const showCurrentTime = isToday(currentDate);
   const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
-
-  const updateHourScale = useCallback(() => {
-    if (!dayGridRef.current) {
-      return;
-    }
-    const gridTop = dayGridRef.current.getBoundingClientRect().top;
-    const availableHeight = window.innerHeight - gridTop - 16;
-    if (availableHeight <= 0) {
-      return;
-    }
-    setPixelsPerHour(availableHeight / 24);
-  }, []);
-
-  useLayoutEffect(() => {
-    updateHourScale();
-    window.addEventListener('resize', updateHourScale);
-    return () => window.removeEventListener('resize', updateHourScale);
-  }, [updateHourScale]);
 
   const handleTimeSlotClick = (hour) => {
     const startTime = new Date(currentDate);
@@ -74,10 +57,10 @@ const DayView = () => {
             {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}
           </div>
           <div className="day-date">
-            {currentDate.toLocaleDateString('en-US', { 
-              month: 'long', 
-              day: 'numeric', 
-              year: 'numeric' 
+            {currentDate.toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
             })}
           </div>
         </div>
@@ -143,6 +126,13 @@ const DayView = () => {
                 <div className="current-time-label">
                   {formatTime24(new Date())}
                 </div>
+              </div>
+            )}
+
+            {dayEvents.length === 0 && (
+              <div className="day-empty-state">
+                <div className="empty-title">No events yet</div>
+                <div className="empty-subtitle">Click any hour to schedule something.</div>
               </div>
             )}
 

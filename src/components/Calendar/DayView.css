@@ -1,6 +1,6 @@
 .day-view {
   width: 100%;
-  height: auto;
+  height: 100%;
   position: relative;
   --half-hour-height: 18px;
   --hour-height: calc(var(--half-hour-height) * 2);
@@ -153,6 +153,30 @@
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.day-empty-state {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.day-empty-state .empty-title {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.day-empty-state .empty-subtitle {
+  font-size: 0.85rem;
 }
 
 .events-column::-webkit-scrollbar {
