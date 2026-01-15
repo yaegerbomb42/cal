@@ -19,6 +19,36 @@
     margin-bottom: 24px;
 }
 
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+}
+
+.filter-chip {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.4);
+    color: #cbd5f5;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-chip.active {
+    border-color: rgba(99, 102, 241, 0.6);
+    color: #c7d2fe;
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.filter-chip:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #e2e8f0;
+}
+
 .sidebar-header h3 {
     font-size: 1.25rem;
     font-weight: 700;
@@ -46,7 +76,7 @@
 .upcoming-event-item {
     display: flex;
     gap: 16px;
-    padding: 12px;
+    padding: 12px 52px 12px 12px;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.03);
@@ -144,20 +174,13 @@
 }
 
 /* Actions */
-.event-actions-hover {
+.event-actions {
     position: absolute;
-    right: 8px;
+    right: 10px;
     top: 50%;
-    transform: translateY(-50%) translateX(100%);
+    transform: translateY(-50%);
     display: flex;
     gap: 6px;
-    opacity: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.upcoming-event-item:hover .event-actions-hover {
-    transform: translateY(-50%) translateX(0);
-    opacity: 1;
 }
 
 .action-btn {
@@ -177,8 +200,18 @@
     color: #f43f5e;
 }
 
+.action-btn.edit {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818cf8;
+}
+
 .action-btn.delete:hover {
     background: #f43f5e;
+    color: white;
+}
+
+.action-btn.edit:hover {
+    background: #6366f1;
     color: white;
 }
 

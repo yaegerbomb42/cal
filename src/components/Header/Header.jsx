@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles } from 'lucide-react';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
-import { useEvents } from '../../contexts/EventsContext';
 import { formatDate } from '../../utils/dateUtils';
-import { geminiService } from '../../services/geminiService';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
 import SearchBar from '../Search/SearchBar';
 import './Header.css';
@@ -12,7 +10,6 @@ import './Header.css';
 const Header = ({ onOpenSettings, onOpenAI }) => {
   const [quickInput, setQuickInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const { addEvent, events } = useEvents(); // Added events to destructuring
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
   const viewButtons = [
@@ -66,23 +63,8 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     setQuickInput('');
 
     try {
-      // First, get AI's interpretation of the input
-      const aiResponse = await geminiService.chatResponse(userInput, events);
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-
-      if (jsonMatch) {
-        // If query/action, open AI sidebar
-        onOpenAI();
-        window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput, response: aiResponse } }));
-      } else {
-        // Direct event creation - NOW WITH POPUP CONFIRMATION (TODO: Link to new UI)
-        // For now, we'll keep the direct add but improving the service next is key
-        const eventData = await geminiService.parseEventFromText(userInput, []);
-        addEvent(eventData, { allowConflicts: false });
-      }
-    } catch (error) {
-      console.error('Error processing AI command:', error);
       onOpenAI();
+      window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput } }));
     } finally {
       setIsProcessing(false);
     }
@@ -103,7 +85,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               type="text"
               value={quickInput}
               onChange={(e) => setQuickInput(e.target.value)}
-              placeholder="Ask AI or quick add... (e.g. 'Coffee with Sam tomorrow at 9am')"
+              placeholder="Ask Cal or quick add... (e.g. 'Coffee with Sam tomorrow at 9am')"
               className="quick-event-input"
               disabled={isProcessing}
             />

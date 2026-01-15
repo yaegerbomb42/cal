@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, X, Sparkles, Calendar, Check, Edit2, Trash2 } from 'lucide-react';
+import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { useEvents } from '../../contexts/EventsContext';
+import { useCalendar } from '../../contexts/CalendarContext';
 import './AIChat.css';
 
 const AIChat = ({ isOpen, onClose }) => {
@@ -10,7 +11,7 @@ const AIChat = ({ isOpen, onClose }) => {
     {
       id: 1,
       type: 'ai',
-      content: "Hello. I'm your calendar assistant. Paste an email, message, or simply type a request to schedule an event."
+      content: "Hey! I’m Cal — short for calendar. Tell me what you need scheduled, and I’ll draft it for you."
     }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -20,6 +21,7 @@ const AIChat = ({ isOpen, onClose }) => {
 
   const messagesEndRef = useRef(null);
   const { events, addEvent } = useEvents();
+  const { openEventModal } = useCalendar();
 
   useEffect(() => {
     if (geminiService.isInitialized) {
@@ -29,7 +31,11 @@ const AIChat = ({ isOpen, onClose }) => {
     const handlePing = (e) => {
       const { text, response } = e.detail;
       addMessage('user', text);
-      handleAIResponse(response);
+      if (response) {
+        handleAIResponse(response);
+        return;
+      }
+      processInput(text);
     };
 
     window.addEventListener('calai-ping', handlePing);
@@ -127,8 +133,16 @@ const AIChat = ({ isOpen, onClose }) => {
   const handleConfirmEvent = () => {
     if (!pendingEvent) return;
 
-    addEvent(pendingEvent);
+    const { conflicts, originalText, ...eventData } = pendingEvent;
+    addEvent(eventData, { allowConflicts: true });
     addMessage('ai', `Confirmed. "${pendingEvent.title}" has been added to your calendar.`);
+    setPendingEvent(null);
+  };
+
+  const handleEditDraft = () => {
+    if (!pendingEvent) return;
+    const { conflicts, originalText, ...eventData } = pendingEvent;
+    openEventModal(eventData);
     setPendingEvent(null);
   };
 
@@ -169,7 +183,7 @@ const AIChat = ({ isOpen, onClose }) => {
           <div className="chat-header">
             <div className="chat-title">
               <Sparkles className="ai-icon" size={18} />
-              <h3>Assistant</h3>
+              <h3>Cal</h3>
             </div>
             <button onClick={onClose} className="close-btn">
               <X size={18} />
@@ -213,6 +227,9 @@ const AIChat = ({ isOpen, onClose }) => {
                 )}
 
                 <div className="event-card-actions">
+                  <button onClick={handleEditDraft} className="btn-icon">
+                    <Edit2 size={16} />
+                  </button>
                   <button onClick={handleDiscardEvent} className="btn-icon danger">
                     <Trash2 size={16} />
                   </button>

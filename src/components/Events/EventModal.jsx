@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell } from 'lucide-react';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
-import { formatDate, formatTime } from '../../utils/dateUtils';
 import { getEventColor } from '../../utils/helpers';
 import { validateEvent } from '../../utils/eventValidator';
 import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEvents';
@@ -21,7 +20,7 @@ const EventModal = () => {
     end: '',
     location: '',
     category: 'personal',
-    color: '#6366f1',
+    color: getEventColor('personal'),
     reminder: null,
     recurring: { type: RECURRENCE_TYPES.NONE }
   });
@@ -57,12 +56,22 @@ const EventModal = () => {
           end: endTime.toISOString().slice(0, 16),
           location: '',
           category: 'personal',
-          color: '#6366f1'
+          color: getEventColor('personal')
         });
         setIsEditing(false);
       }
     }
   }, [selectedEvent]);
+
+  const handleDurationChange = (minutes) => {
+    if (!formData.start) return;
+    const start = new Date(formData.start);
+    const end = new Date(start.getTime() + minutes * 60 * 1000);
+    setFormData(prev => ({
+      ...prev,
+      end: end.toISOString().slice(0, 16)
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -116,17 +125,25 @@ const EventModal = () => {
   };
 
   const categories = [
-    { value: 'work', label: 'Work', color: '#3b82f6' },
-    { value: 'personal', label: 'Personal', color: '#10b981' },
-    { value: 'health', label: 'Health', color: '#f59e0b' },
-    { value: 'social', label: 'Social', color: '#8b5cf6' },
-    { value: 'travel', label: 'Travel', color: '#06b6d4' },
-    { value: 'other', label: 'Other', color: '#6b7280' }
+    { value: 'work', label: 'Work', color: getEventColor('work') },
+    { value: 'personal', label: 'Personal', color: getEventColor('personal') },
+    { value: 'fun', label: 'Fun', color: getEventColor('fun') },
+    { value: 'hobby', label: 'Hobby', color: getEventColor('hobby') },
+    { value: 'task', label: 'Task', color: getEventColor('task') },
+    { value: 'todo', label: 'To-Do', color: getEventColor('todo') },
+    { value: 'event', label: 'Event', color: getEventColor('event') },
+    { value: 'appointment', label: 'Appointment', color: getEventColor('appointment') }
   ];
 
   const colorOptions = [
-    '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
-    '#f59e0b', '#10b981', '#06b6d4', '#6b7280'
+    getEventColor('work'),
+    getEventColor('personal'),
+    getEventColor('fun'),
+    getEventColor('hobby'),
+    getEventColor('task'),
+    getEventColor('todo'),
+    getEventColor('event'),
+    getEventColor('appointment')
   ];
 
   if (!isEventModalOpen) return null;
@@ -215,6 +232,22 @@ const EventModal = () => {
               </div>
             </div>
 
+            <div className="form-group quick-duration">
+              <label>Quick Duration</label>
+              <div className="duration-buttons">
+                {[15, 30, 60, 120].map(minutes => (
+                  <button
+                    key={minutes}
+                    type="button"
+                    onClick={() => handleDurationChange(minutes)}
+                    className="duration-btn"
+                  >
+                    {minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="form-group">
               <label htmlFor="location">
                 <MapPin size={16} />
@@ -246,7 +279,7 @@ const EventModal = () => {
                   value={formData.category}
                   onChange={(e) => {
                     const category = e.target.value;
-                    const color = categories.find(c => c.value === category)?.color || '#6366f1';
+                    const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
                     handleChange('category', category);
                     handleChange('color', color);
                   }}
@@ -258,6 +291,22 @@ const EventModal = () => {
                     </option>
                   ))}
                 </select>
+                <div className="category-pills">
+                  {categories.map(category => (
+                    <button
+                      key={category.value}
+                      type="button"
+                      className={`category-pill ${formData.category === category.value ? 'active' : ''}`}
+                      style={{ '--pill-color': category.color }}
+                      onClick={() => {
+                        handleChange('category', category.value);
+                        handleChange('color', category.color);
+                      }}
+                    >
+                      {category.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="form-group">

@@ -444,6 +444,21 @@ const Settings = ({ isOpen, onClose }) => {
                         <h3>CalAI</h3>
                         <p>Version 2.0.1 (Nitro)</p>
                       </div>
+                      <div className="upgrade-todo">
+                        <h4>Cal Upgrade TODO</h4>
+                        <ol>
+                          <li>Route quick add input straight into Cal chat.</li>
+                          <li>Correct explicit times so 1:45pm stays 1:45pm.</li>
+                          <li>Open day view when clicking a date in month view.</li>
+                          <li>Add AI draft editing before confirming events.</li>
+                          <li>Refresh the event modal for faster edits.</li>
+                          <li>Always-show trash controls in upcoming events.</li>
+                          <li>Ensure AI-created events always carry times.</li>
+                          <li>Expand category + color system to 8 tags.</li>
+                          <li>Add category filters for upcoming events.</li>
+                          <li>Enable quick edit actions from the upcoming list.</li>
+                        </ol>
+                      </div>
                       <div className="legal-links-alt">
                         <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
                         <span>•</span>

@@ -49,9 +49,12 @@ export const getEventColor = (category) => {
   const colors = {
     work: '#3b82f6',
     personal: '#10b981',
-    health: '#f59e0b',
-    social: '#8b5cf6',
-    travel: '#06b6d4',
+    fun: '#ec4899',
+    hobby: '#8b5cf6',
+    task: '#f59e0b',
+    todo: '#22c55e',
+    event: '#ef4444',
+    appointment: '#06b6d4',
     default: '#6b7280'
   };
   

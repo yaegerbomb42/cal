@@ -1,27 +1,32 @@
 import { motion } from 'framer-motion';
-import { getMonthDays, isSameMonth, isToday, isSameDay } from '../../utils/dateUtils';
-import { useCalendar } from '../../contexts/CalendarContext';
+import { getMonthDays, isSameMonth, isToday } from '../../utils/dateUtils';
+import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
-import { cn } from '../../utils/helpers';
+import { cn, getEventColor } from '../../utils/helpers';
 import './MonthView.css';
 
 const MonthView = () => {
-  const { currentDate, openEventModal } = useCalendar();
+  const { currentDate, openEventModal, setView, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
 
   const monthDays = getMonthDays(currentDate);
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const handleDayClick = (day) => {
-    openEventModal({ 
-      start: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0),
-      end: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 10, 0)
-    });
+    setCurrentDate(day);
+    setView(CALENDAR_VIEWS.DAY);
   };
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
     openEventModal(event);
+  };
+
+  const handleDayDoubleClick = (day) => {
+    openEventModal({
+      start: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0),
+      end: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 10, 0)
+    });
   };
 
   return (
@@ -49,6 +54,7 @@ const MonthView = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.01 }}
               onClick={() => handleDayClick(day)}
+              onDoubleClick={() => handleDayDoubleClick(day)}
               className={cn(
                 'month-day',
                 'glass-card',
@@ -70,7 +76,7 @@ const MonthView = () => {
                     whileHover={{ scale: 1.02 }}
                     onClick={(e) => handleEventClick(event, e)}
                     className="day-event"
-                    style={{ backgroundColor: event.color || '#6366f1' }}
+                    style={{ backgroundColor: event.color || getEventColor(event.category) }}
                   >
                     <span className="event-title">
                       {event.title}

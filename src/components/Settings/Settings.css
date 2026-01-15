@@ -600,6 +600,29 @@
   font-size: 0.85rem;
 }
 
+.upgrade-todo {
+  margin: 24px 0;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.upgrade-todo h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #e2e8f0;
+}
+
+.upgrade-todo ol {
+  margin: 0;
+  padding-left: 18px;
+  color: #cbd5f5;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 6px;
+}
+
 /* Scrollbar */
 .tab-content-wrapper::-webkit-scrollbar {
   width: 6px;

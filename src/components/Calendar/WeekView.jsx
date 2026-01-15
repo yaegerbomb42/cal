@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { getWeekDays, getDayHours, formatTime, isToday } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
-import { cn } from '../../utils/helpers';
+import { cn, getEventColor } from '../../utils/helpers';
 import './WeekView.css';
 
 const WeekView = () => {
@@ -123,7 +123,7 @@ const WeekView = () => {
                         key={event.id}
                         className="event-chip"
                         style={{
-                          backgroundColor: event.color || (event.category === 'work' ? '#6366f1' : '#10b981')
+                          backgroundColor: event.color || getEventColor(event.category)
                         }}
                         onClick={(e) => handleEventClick(event, e)}
                         layout // Animate layout changes
