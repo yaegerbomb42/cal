@@ -64,22 +64,12 @@ const AIChat = ({ isOpen, onClose }) => {
   const processInput = async (text) => {
     setIsLoading(true);
     try {
-      // First, check if this looks like an event request
-      const eventKeywords = ['schedule', 'create', 'add', 'book', 'appointment', 'meeting', 'reminder', 'event', 'tomorrow', 'next week', 'at'];
-      const isEventRequest = eventKeywords.some(keyword => text.toLowerCase().includes(keyword)) || text.length > 20; // Assume longer text might be "paste" content
-
-      if (isEventRequest) {
-        // ... (parsing logic remains similar but we handle the response more carefully)
-        try {
-          const eventData = await geminiService.parseEventFromText(text, events);
-          const conflicts = await geminiService.checkConflicts(eventData, events);
-          setPendingEvent({ ...eventData, conflicts, originalText: text });
-          addMessage('ai', "I've drafted this event for you. Does it look correct?");
-        } catch (error) {
-          const response = await geminiService.chatResponse(text, events);
-          handleAIResponse(response);
-        }
-      } else {
+      try {
+        const eventData = await geminiService.parseEventFromText(text, events);
+        const conflicts = await geminiService.checkConflicts(eventData, events);
+        setPendingEvent({ ...eventData, conflicts, originalText: text });
+        addMessage('ai', "I've drafted this event for you. Does it look correct?");
+      } catch (error) {
         const response = await geminiService.chatResponse(text, events);
         handleAIResponse(response);
       }
@@ -254,7 +244,7 @@ const AIChat = ({ isOpen, onClose }) => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Chat with Cal"
+              placeholder="just chat with cal"
               className="chat-input-field"
               autoFocus
             />

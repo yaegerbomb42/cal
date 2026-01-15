@@ -60,7 +60,7 @@
 
 .day-grid {
   height: calc(var(--hour-height) * 24);
-  overflow: hidden;
+  overflow: visible;
   border-radius: 16px;
   background: var(--glass-border);
 }
@@ -69,14 +69,14 @@
   display: grid;
   grid-template-columns: 120px 1fr;
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .time-column {
   background: var(--glass-bg);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
-  overflow: hidden;
+  overflow: visible;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
@@ -149,7 +149,7 @@
   background: var(--glass-bg);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
-  overflow: hidden;
+  overflow: visible;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
