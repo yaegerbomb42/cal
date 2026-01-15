@@ -1,7 +1,9 @@
 .day-view {
   width: 100%;
-  height: calc(100vh - 200px);
+  height: auto;
   position: relative;
+  --half-hour-height: 18px;
+  --hour-height: calc(var(--half-hour-height) * 2);
 }
 
 .day-header {
@@ -57,19 +59,24 @@
 }
 
 .day-grid {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  height: calc(100% - 150px);
+  height: calc(var(--hour-height) * 24);
   overflow: hidden;
   border-radius: 16px;
   background: var(--glass-border);
+}
+
+.day-grid-scroll {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .time-column {
   background: var(--glass-bg);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
-  overflow-y: auto;
+  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
@@ -88,7 +95,7 @@
 }
 
 .time-slot {
-  height: 60px;
+  height: var(--half-hour-height);
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--glass-border);
   display: flex;
@@ -98,7 +105,7 @@
 }
 
 .time-slot.half-hour {
-  height: 60px;
+  height: var(--half-hour-height);
   border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
   padding: 0.25rem 1rem;
 }
@@ -130,7 +137,7 @@
   background: var(--glass-bg);
   backdrop-filter: var(--backdrop-blur);
   -webkit-backdrop-filter: var(--backdrop-blur);
-  overflow-y: auto;
+  overflow: hidden;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -155,7 +162,7 @@
 }
 
 .hour-slot {
-  height: 120px;
+  height: var(--hour-height);
   border-bottom: 1px solid var(--glass-border);
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -239,7 +246,7 @@
   position: absolute;
   left: 1rem;
   right: 1rem;
-  padding: 1rem;
+  padding: 0.6rem 0.75rem;
   border-radius: 12px;
   cursor: pointer;
   pointer-events: auto;
@@ -317,7 +324,8 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .day-view {
-    height: calc(100vh - 160px);
+    height: auto;
+    --half-hour-height: 16px;
   }
 
   .day-header {
@@ -344,23 +352,16 @@
     font-size: 1.5rem;
   }
 
-  .day-grid {
+  .day-grid-scroll {
     grid-template-columns: 100px 1fr;
-    height: calc(100% - 120px);
   }
 
   .time-slot {
-    height: 50px;
     padding: 0.5rem 0.75rem;
   }
 
   .time-slot.half-hour {
-    height: 50px;
     padding: 0.2rem 0.75rem;
-  }
-
-  .hour-slot {
-    height: 100px;
   }
 
   .time-label {
@@ -410,26 +411,24 @@
     padding: 1rem;
   }
 
+  .day-view {
+    --half-hour-height: 14px;
+  }
+
   .day-name {
     font-size: 1.125rem;
   }
 
-  .day-grid {
+  .day-grid-scroll {
     grid-template-columns: 80px 1fr;
   }
 
   .time-slot {
-    height: 40px;
     padding: 0.25rem 0.5rem;
   }
 
   .time-slot.half-hour {
-    height: 40px;
     padding: 0.15rem 0.5rem;
-  }
-
-  .hour-slot {
-    height: 80px;
   }
 
   .time-label {

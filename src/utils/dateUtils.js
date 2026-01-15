@@ -71,7 +71,7 @@ export const getDayHoursWithHalf = () => {
 export const getCurrentTimePosition = () => {
   const now = new Date();
   const minutes = now.getHours() * 60 + now.getMinutes();
-  return (minutes / 60) * 120; // 120px per hour slot
+  return (minutes / 60) * 36; // 36px per hour slot
 };
 
 export const isBusinessHour = (hour) => {
@@ -90,8 +90,8 @@ export const getEventPosition = (event, dayStart) => {
   const minutesFromDayStart = (eventStart.getHours() * 60) + eventStart.getMinutes();
   const duration = (eventEnd - eventStart) / (1000 * 60); // duration in minutes
   
-  const top = (minutesFromDayStart / 60) * 120; // 120px per hour (increased from 60px)
-  const height = Math.max((duration / 60) * 120, 30); // minimum 30px height (increased from 20px)
+  const top = (minutesFromDayStart / 60) * 36; // 36px per hour
+  const height = Math.max((duration / 60) * 36, 24); // minimum 24px height
   
   return { top, height };
 };

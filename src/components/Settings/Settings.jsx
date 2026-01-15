@@ -27,6 +27,9 @@ const Settings = ({ isOpen, onClose }) => {
   // Local Brain State
   const [localBrainProgress, setLocalBrainProgress] = useState(null);
   const [isLocalBrainLoaded, setIsLocalBrainLoaded] = useState(false);
+  const [preferLocalBrain, setPreferLocalBrain] = useState(false);
+  const [localBrainTestStatus, setLocalBrainTestStatus] = useState('idle');
+  const [localBrainTestResult, setLocalBrainTestResult] = useState('');
 
   const handleInitLocalBrain = async () => {
     try {
@@ -48,6 +51,35 @@ const Settings = ({ isOpen, onClose }) => {
     await localBrainService.unload();
     setIsLocalBrainLoaded(false);
     toastService.info("Offline brain unloaded to free memory.");
+  };
+
+  const handlePreferLocalBrain = (enabled) => {
+    setPreferLocalBrain(enabled);
+    localBrainService.setPreferLocal(enabled);
+    if (enabled && !localBrainService.isLoaded) {
+      toastService.info("Load the Offline Brain to route chats locally.");
+    }
+  };
+
+  const handleLocalBrainTest = async () => {
+    if (!localBrainService.isLoaded) {
+      toastService.error("Offline Brain isn't loaded yet.");
+      return;
+    }
+    setLocalBrainTestStatus('loading');
+    setLocalBrainTestResult('');
+    try {
+      const response = await localBrainService.chat(
+        'Write a friendly one-sentence confirmation that the local model is working.',
+        'You are Cal, a friendly calendar assistant.'
+      );
+      setLocalBrainTestResult(response);
+      setLocalBrainTestStatus('success');
+    } catch (error) {
+      console.error(error);
+      setLocalBrainTestStatus('error');
+      toastService.error('Offline Brain test failed: ' + error.message);
+    }
   };
 
   const [activeTab, setActiveTab] = useState('account');
@@ -102,6 +134,11 @@ const Settings = ({ isOpen, onClose }) => {
     };
     loadApiKey();
   }, [user]);
+
+  useEffect(() => {
+    setIsLocalBrainLoaded(localBrainService.isLoaded);
+    setPreferLocalBrain(localBrainService.getPreferLocal());
+  }, [isOpen]);
 
   const handleSaveApiKey = async () => {
     const trimmedKey = apiKey.trim();
@@ -365,7 +402,7 @@ const Settings = ({ isOpen, onClose }) => {
                           <Sparkles size={20} className="sparkle-icon" style={{ color: '#6366f1' }} />
                           <div>
                             <h4>Offline Backup Brain (Beta)</h4>
-                            <p>Run a small AI model directly in your browser. Perfect for when internet is down.</p>
+                            <p>Run a small AI model directly in your browser. Perfect for offline use or saving Gemini costs.</p>
                           </div>
                         </div>
 
@@ -390,13 +427,56 @@ const Settings = ({ isOpen, onClose }) => {
                         )}
 
                         {isLocalBrainLoaded && (
-                          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 0.5B)</div>
-                            <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
-                              Unload
+                          <>
+                            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 0.5B)</div>
+                              <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
+                                Unload
+                              </button>
+                            </div>
+                            <p className="local-brain-note">Offline Brain is ready. Use it anytime by toggling the switch below.</p>
+                          </>
+                        )}
+
+                        <div className="local-brain-toggle">
+                          <div>
+                            <h5>Prefer Offline Brain</h5>
+                            <p>Route chats + event parsing to the local model even if Gemini is connected.</p>
+                          </div>
+                          <label className="toggle-switch">
+                            <input
+                              type="checkbox"
+                              checked={preferLocalBrain}
+                              onChange={(e) => handlePreferLocalBrain(e.target.checked)}
+                            />
+                            <span className="toggle-slider" />
+                          </label>
+                        </div>
+
+                        <div className="local-brain-test">
+                          <div className="local-brain-test-header">
+                            <div>
+                              <h5>Example Test Chat</h5>
+                              <p>Run a quick sample response to confirm the local model is working.</p>
+                            </div>
+                            <button
+                              onClick={handleLocalBrainTest}
+                              className="pro-btn-secondary"
+                              disabled={localBrainTestStatus === 'loading'}
+                            >
+                              {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Run Test'}
                             </button>
                           </div>
-                        )}
+                          {localBrainTestResult && (
+                            <div className="local-brain-test-output">
+                              <span className="label">Sample Response</span>
+                              <p>{localBrainTestResult}</p>
+                            </div>
+                          )}
+                          {localBrainTestStatus === 'error' && (
+                            <p className="local-brain-test-error">We couldn't complete the test. Try loading the Offline Brain again.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

@@ -406,6 +406,138 @@
   font-weight: 500;
 }
 
+.local-brain-note {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.local-brain-toggle {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.local-brain-toggle h5 {
+  margin: 0 0 4px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.local-brain-toggle p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 26px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  transition: 0.2s;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  top: 2px;
+  background: #f8fafc;
+  border-radius: 50%;
+  transition: 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: rgba(99, 102, 241, 0.5);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.local-brain-test {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.local-brain-test-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.local-brain-test h5 {
+  margin: 0 0 4px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.local-brain-test p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.local-brain-test-output {
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.local-brain-test-output .label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.local-brain-test-output p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.local-brain-test-error {
+  margin: 0;
+  color: #f87171;
+  font-size: 0.75rem;
+}
+
 .external-link-alt {
   display: flex;
   align-items: center;

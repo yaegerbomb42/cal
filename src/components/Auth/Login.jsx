@@ -64,22 +64,13 @@ const Login = () => {
 
             <main className="landing-content">
                 <section className="hero-section">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="hero-badge"
-                    >
-                        <Sparkles size={14} />
-                        <span>Powered by Gemini 3.0</span>
-                    </motion.div>
-
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
                     >
-                        Master your schedule <br />
-                        <span>with Ambient Intelligence</span>
+                        AI calendar.
+                        <span>Save time.</span>
                     </motion.h1>
 
                     <motion.p
@@ -88,39 +79,42 @@ const Login = () => {
                         transition={{ delay: 0.2 }}
                         className="hero-desc"
                     >
-                        CalAI is an intelligent productivity assistant that transforms natural language into perfectly
-                        organized calendar events. Sync with Google Calendar, manage tasks with Gemini,
-                        and reclaim your time.
+                        Type it. We place it.
                     </motion.p>
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="hero-actions"
+                        className="hero-actions center"
                     >
                         <button onClick={() => setShowAuth(true)} className="cta-btn primary">
-                            Get Started Free <ArrowRight size={18} />
+                            Sign In <ArrowRight size={18} />
                         </button>
-                        <a href="#features" className="cta-btn secondary">Learn More</a>
                     </motion.div>
                 </section>
 
-                <section id="features" className="features-grid">
-                    <div className="feature-card glass">
-                        <Zap color="#6366f1" size={24} />
-                        <h3>Smart Parsing</h3>
-                        <p>Type "Dinner at 7 tomorrow" and let AI handle the date, time, and reminders automatically.</p>
+                <section className="value-row">
+                    <div className="value-card">
+                        <Sparkles color="#6366f1" size={22} />
+                        <div>
+                            <h3>Smart</h3>
+                            <p>Fast scheduling.</p>
+                        </div>
                     </div>
-                    <div className="feature-card glass">
-                        <Shield color="#10b981" size={24} />
-                        <h3>Google Sync</h3>
-                        <p>Two-way synchronization with Google Calendar ensures your schedule is always up to date across devices.</p>
+                    <div className="value-card">
+                        <Shield color="#10b981" size={22} />
+                        <div>
+                            <h3>Synced</h3>
+                            <p>Across devices.</p>
+                        </div>
                     </div>
-                    <div className="feature-card glass">
-                        <Sparkles color="#8b5cf6" size={24} />
-                        <h3>Gemini Core</h3>
-                        <p>Utilizing Gemini 3.0 for deep natural language understanding and intelligent conflict detection.</p>
+                    <div className="value-card">
+                        <Zap color="#8b5cf6" size={22} />
+                        <div>
+                            <h3>Simple</h3>
+                            <p>No clutter.</p>
+                        </div>
                     </div>
                 </section>
             </main>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getWeekDays, getDayHours, formatTime24, isToday } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
@@ -9,22 +9,16 @@ import './WeekView.css';
 const WeekView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
-  const [hoveredHour, setHoveredHour] = useState(null);
-  const containerRef = useRef(null);
-
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
   const weekEventsCount = weekDays.reduce((total, day) => total + getEventsForDate(day).length, 0);
 
   // Current Time Indicator Logic
-  const [currentTimePos, setCurrentTimePos] = useState(null);
+  const [currentTick, setCurrentTick] = useState(Date.now());
 
   useEffect(() => {
     const updateTime = () => {
-      const now = new Date();
-      const minutes = now.getHours() * 60 + now.getMinutes();
-      const percentage = (minutes / 1440) * 100;
-      setCurrentTimePos(percentage);
+      setCurrentTick(Date.now());
     };
 
     updateTime();
@@ -45,20 +39,8 @@ const WeekView = () => {
     openEventModal(event);
   };
 
-  const getScaleFactor = (hourNum) => {
-    if (hoveredHour === null) return 1;
-    const distance = Math.abs(hoveredHour - hourNum);
-
-    // Fisheye Curve
-    if (distance === 0) return 6;    // Active
-    if (distance === 1) return 2.5;  // Neighbors
-    if (distance === 2) return 1.5;  // Far neighbors
-    if (distance === 3) return 1;    // Outer neighbors
-    return 0.5;                      // Compressed
-  };
-
   return (
-    <div className="week-view" ref={containerRef}>
+    <div className="week-view">
       <div className="week-summary glass-card">
         <div className="week-summary-title">This Week</div>
         <div className="week-summary-stat">
@@ -78,17 +60,15 @@ const WeekView = () => {
         ))}
       </div>
 
-      {/* 24h Fisheye Grid - Relative positioning for Time Indicator */}
-      <div className="week-grid" onMouseLeave={() => setHoveredHour(null)}>
+      {/* 24h Grid - Relative positioning for Time Indicator */}
+      <div className="week-grid">
 
         {/* Red Line Time Indicator */}
         {dayHours.map((hour) => {
           const hourNum = hour.getHours();
-          const scale = getScaleFactor(hourNum);
-          const isFocused = hoveredHour === hourNum;
 
           // Check if this hour contains the current time
-          const now = new Date();
+          const now = new Date(currentTick);
           const isCurrentHour = isToday(currentDate) && now.getHours() === hourNum;
           // Calculate percentage for top position (0-100%)
           const currentMinPercent = isCurrentHour ? (now.getMinutes() / 60) * 100 : 0;
@@ -96,11 +76,7 @@ const WeekView = () => {
           return (
             <div
               key={hourNum}
-              className={cn('time-slot', isFocused && 'focused')}
-              style={{
-                flexGrow: scale,
-              }}
-              onMouseEnter={() => setHoveredHour(hourNum)}
+              className="time-slot"
             >
               <div className="time-label">
                 {formatTime24(hour)}

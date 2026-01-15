@@ -2,10 +2,10 @@
 .week-view {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-  /* No scroll allowed for fisheye */
+  height: auto;
+  overflow: visible;
   background: transparent;
+  --hour-height: 36px;
 }
 
 .week-summary {
@@ -71,7 +71,24 @@
   color: var(--text-primary);
 }
 
-/* ... */
+/* Grid */
+.week-grid {
+  display: grid;
+  grid-template-rows: repeat(24, var(--hour-height));
+  border: 1px solid var(--glass-border);
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+  background: var(--glass-bg);
+}
+
+.time-slot {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  min-height: var(--hour-height);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
+}
 
 /* Time Label (Left Column) */
 .time-label {
