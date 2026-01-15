@@ -409,7 +409,7 @@ const Settings = ({ isOpen, onClose }) => {
                         {!isLocalBrainLoaded && !localBrainProgress && (
                           <div style={{ marginTop: '12px' }}>
                             <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px' }}>
-                              Requires ~400MB download (first time only). Uses your device's GPU.
+                              Requires ~1.5GB download (first time only). Uses your device's GPU.
                             </p>
                             <button onClick={handleInitLocalBrain} className="pro-btn-secondary">
                               <Download size={14} /> Initialize Backup Brain
@@ -429,7 +429,7 @@ const Settings = ({ isOpen, onClose }) => {
                         {isLocalBrainLoaded && (
                           <>
                             <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 0.5B)</div>
+                              <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 2.5 3B)</div>
                               <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
                                 Unload
                               </button>
