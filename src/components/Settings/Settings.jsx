@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
@@ -17,6 +17,8 @@ const Settings = ({ isOpen, onClose }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
+  const [hasSavedApiKey, setHasSavedApiKey] = useState(false);
+  const savedApiKeyRef = useRef(null);
 
   // Google Sync State
   const [isSyncing, setIsSyncing] = useState(false);
@@ -59,10 +61,16 @@ const Settings = ({ isOpen, onClose }) => {
     { id: 'about', label: 'About', icon: CheckCircle, color: '#10b981' }
   ];
 
-  const testConnection = async (key) => {
+  const testConnection = async (keyOverride) => {
+    const candidateKey = (keyOverride ?? apiKey).trim();
+    const keyToTest = candidateKey || savedApiKeyRef.current;
+    if (!keyToTest) {
+      toastService.error('Add a Gemini API key to test the connection.');
+      return;
+    }
     setIsTestingConnection(true);
     setConnectionStatus(null);
-    geminiService.initialize(key);
+    geminiService.initialize(keyToTest);
     try {
       const result = await geminiService.testConnection();
       if (result.success) {
@@ -84,29 +92,30 @@ const Settings = ({ isOpen, onClose }) => {
       if (user) {
         const savedKey = await firebaseService.getApiKey();
         if (savedKey) {
-          setApiKey(savedKey);
+          savedApiKeyRef.current = savedKey;
+          setHasSavedApiKey(true);
           testConnection(savedKey);
           return;
         }
-      }
-      const localKey = localStorage.getItem('gemini_api_key');
-      if (localKey) {
-        setApiKey(localKey);
-        testConnection(localKey);
+        setHasSavedApiKey(false);
       }
     };
     loadApiKey();
   }, [user]);
 
   const handleSaveApiKey = async () => {
-    if (!apiKey.trim()) return;
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) return;
     setIsTestingConnection(true);
     try {
-      localStorage.setItem('gemini_api_key', apiKey);
       if (user) {
-        await firebaseService.saveApiKey(apiKey);
+        await firebaseService.saveApiKey(trimmedKey);
       }
-      await testConnection(apiKey);
+      savedApiKeyRef.current = trimmedKey;
+      setHasSavedApiKey(true);
+      setApiKey('');
+      setShowApiKey(false);
+      await testConnection(trimmedKey);
       toastService.success('API Key saved successfully!');
     } catch (error) {
       console.error('Failed to save API key:', error);
@@ -311,15 +320,15 @@ const Settings = ({ isOpen, onClose }) => {
                               type={showApiKey ? "text" : "password"}
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
-                              placeholder="sk-..."
+                              placeholder={hasSavedApiKey ? "Stored securely in your account" : "sk-..."}
                             />
                             <button onClick={() => setShowApiKey(!showApiKey)} className="eye-toggle">
                               {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                           </div>
                           <button
-                            onClick={() => testConnection(apiKey)}
-                            disabled={!apiKey || isTestingConnection}
+                            onClick={() => testConnection()}
+                            disabled={(!apiKey.trim() && !hasSavedApiKey) || isTestingConnection}
                             className="pro-btn-secondary"
                             style={{ marginRight: '8px' }}
                           >
@@ -328,13 +337,18 @@ const Settings = ({ isOpen, onClose }) => {
                           </button>
                           <button
                             onClick={handleSaveApiKey}
-                            disabled={!apiKey || isTestingConnection}
+                            disabled={!apiKey.trim() || isTestingConnection}
                             className="pro-btn-primary"
                           >
                             <Save size={16} />
                             Save
                           </button>
                         </div>
+                        {hasSavedApiKey && (
+                          <div className="pro-status success" style={{ marginTop: '8px' }}>
+                            <CheckCircle size={14} /> Saved key is hidden for security.
+                          </div>
+                        )}
                         {connectionStatus === 'success' && (
                           <div className="pro-status success"><CheckCircle size={14} /> Gemini 3.0 Connected</div>
                         )}
