@@ -9,10 +9,17 @@ import './WeekView.css';
 
 const WeekView = () => {
   const { currentDate, openEventModal } = useCalendar();
-  const { getEventsForDate } = useEvents();
+  const { events } = useEvents();
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
-  const weekEventsCount = weekDays.reduce((total, day) => total + getEventsForDate(day).length, 0);
+  const weekStart = startOfDay(weekDays[0]);
+  const weekEnd = endOfDay(weekDays[weekDays.length - 1]);
+  const weekEvents = events.filter((event) => {
+    const eventStart = new Date(event.start);
+    const eventEnd = new Date(event.end);
+    return eventStart <= weekEnd && eventEnd >= weekStart;
+  });
+  const weekEventsCount = weekEvents.length;
 
   const weekGridRef = useRef(null);
   const pixelsPerHour = useHourScale({ containerRef: weekGridRef, minPixels: 16, maxPixels: 48, offset: 24 });
@@ -67,14 +74,59 @@ const WeekView = () => {
         ))}
       </div>
 
-      <div className="week-grid" ref={weekGridRef}>
-        <div className="week-time-column">
-          {dayHours.map((hour) => (
-            <div key={hour.getHours()} className="week-time-slot">
-              <span className="time-label">{formatTime24(hour)}</span>
-            </div>
-          ))}
-        </div>
+      {/* 24h Grid - Relative positioning for Time Indicator */}
+      <div className="week-grid">
+
+        {/* Red Line Time Indicator */}
+        {dayHours.map((hour) => {
+          const hourNum = hour.getHours();
+
+          // Check if this hour contains the current time
+          const now = new Date(currentTick);
+          const isCurrentHour = isToday(currentDate) && now.getHours() === hourNum;
+          // Calculate percentage for top position (0-100%)
+          const currentMinPercent = isCurrentHour ? (now.getMinutes() / 60) * 100 : 0;
+
+          return (
+            <div
+              key={hourNum}
+              className="time-slot"
+            >
+              <div className="time-label">
+                {formatTime24(hour)}
+              </div>
+
+              {/* Time Line (only if current hour) */}
+              {isCurrentHour && (
+                <div
+                  className="current-time-line"
+                  style={{ top: `${currentMinPercent}%` }}
+                >
+                  <div className="current-time-circle" />
+                  <div className="current-time-label">
+                    {formatTime24(now)}
+                  </div>
+                </div>
+              )}
+
+              {weekDays.map((day) => {
+                const dayStart = startOfDay(day);
+                const dayEnd = endOfDay(day);
+                const slotStart = new Date(dayStart);
+                slotStart.setHours(hourNum, 0, 0, 0);
+                const slotEnd = new Date(slotStart);
+                slotEnd.setHours(hourNum + 1);
+                const dayEvents = weekEvents.filter((event) => {
+                  const eventStart = new Date(event.start);
+                  const eventEnd = new Date(event.end);
+
+                  if (eventStart > dayEnd || eventEnd < dayStart) {
+                    return false;
+                  }
+
+                  const displayStart = eventStart < dayStart ? dayStart : eventStart;
+                  return displayStart >= slotStart && displayStart < slotEnd;
+                });
 
         <div className="week-days-grid">
           {weekDays.map((day) => {

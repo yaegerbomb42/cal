@@ -36,6 +36,7 @@ const ClockTimePicker = ({ label, value, onChange }) => {
   const [mode, setMode] = useState('hour');
   const [isDragging, setIsDragging] = useState(false);
   const modeRef = useRef('hour');
+  const dragModeRef = useRef(null);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -57,7 +58,7 @@ const ClockTimePicker = ({ label, value, onChange }) => {
     setMode(nextMode);
   };
 
-  const handleSelect = (clientX, clientY, targetMode = modeRef.current, shouldAdvance = false) => {
+  const handleSelect = (clientX, clientY, targetMode = modeRef.current) => {
     if (!clockRef.current) return;
     const rect = clockRef.current.getBoundingClientRect();
     const x = clientX - rect.left - rect.width / 2;
@@ -72,9 +73,6 @@ const ClockTimePicker = ({ label, value, onChange }) => {
       const isPm = hour >= 12;
       const newHour = isPm ? (normalized % 12) + 12 : normalized % 12;
       updateTime(newHour, minute);
-      if (shouldAdvance) {
-        setPickerMode('minute');
-      }
     } else {
       let newMinute = Math.round((adjusted / 360) * 60);
       newMinute = Math.round(newMinute / 5) * 5;
@@ -83,20 +81,32 @@ const ClockTimePicker = ({ label, value, onChange }) => {
     }
   };
 
-  const handlePointerDown = (event) => {
+  const startDrag = (event, targetMode) => {
     event.preventDefault();
+    event.stopPropagation();
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    dragModeRef.current = targetMode;
+    setPickerMode(targetMode);
     setIsDragging(true);
-    handleSelect(event.clientX, event.clientY, modeRef.current, true);
+    handleSelect(event.clientX, event.clientY, targetMode);
+  };
+
+  const handlePointerDown = (event) => {
+    startDrag(event, modeRef.current);
+  };
+
+  const handleHandPointerDown = (event, targetMode) => {
+    startDrag(event, targetMode);
   };
 
   const handlePointerMove = (event) => {
     if (!isDragging) return;
-    handleSelect(event.clientX, event.clientY, modeRef.current);
+    handleSelect(event.clientX, event.clientY, dragModeRef.current ?? modeRef.current);
   };
 
   const handlePointerUp = (event) => {
     setIsDragging(false);
+    dragModeRef.current = null;
     if (event?.currentTarget?.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture?.(event.pointerId);
     }
@@ -136,10 +146,18 @@ const ClockTimePicker = ({ label, value, onChange }) => {
             style={{ transform: `rotate(${idx * 30}deg)` }}
           />
         ))}
-        <div className={`clock-hand hour-hand ${mode === 'hour' ? 'active' : ''}`} style={{ transform: `rotate(${hourAngle}deg)` }}>
+        <div
+          className={`clock-hand hour-hand ${mode === 'hour' ? 'active' : ''}`}
+          style={{ transform: `rotate(${hourAngle}deg)` }}
+          onPointerDown={(event) => handleHandPointerDown(event, 'hour')}
+        >
           <span />
         </div>
-        <div className={`clock-hand minute-hand ${mode === 'minute' ? 'active' : ''}`} style={{ transform: `rotate(${minuteAngle}deg)` }}>
+        <div
+          className={`clock-hand minute-hand ${mode === 'minute' ? 'active' : ''}`}
+          style={{ transform: `rotate(${minuteAngle}deg)` }}
+          onPointerDown={(event) => handleHandPointerDown(event, 'minute')}
+        >
           <span />
         </div>
         <div className="clock-center" />
@@ -164,7 +182,6 @@ const ClockTimePicker = ({ label, value, onChange }) => {
           type="button"
           className="clock-action-btn primary"
           onClick={() => {
-            setPickerMode('hour');
             setIsDragging(false);
           }}
         >
