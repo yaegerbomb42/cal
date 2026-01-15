@@ -82,6 +82,114 @@
     margin-bottom: 18px;
 }
 
+.delete-modal-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+}
+
+.delete-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.delete-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.delete-subtitle {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.delete-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(15, 23, 42, 0.65);
+}
+
+.delete-input-wrapper:focus-within {
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.delete-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e2e8f0;
+    font-size: 0.8rem;
+}
+
+.delete-input::placeholder {
+    color: #64748b;
+}
+
+.search-icon {
+    color: #94a3b8;
+}
+
+.close-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #e2e8f0;
+}
+
+.delete-confirm-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #fee2e2;
+    background: linear-gradient(135deg, rgba(248, 113, 113, 0.3), rgba(244, 63, 94, 0.5));
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-confirm-btn:disabled {
+    cursor: not-allowed;
+    background: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+}
+
+.delete-confirm-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(248, 113, 113, 0.25);
+}
+
+.delete-hint {
+    margin: 0;
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
 .filter-chip {
     border: 1px solid rgba(148, 163, 184, 0.2);
     background: rgba(15, 23, 42, 0.4);
