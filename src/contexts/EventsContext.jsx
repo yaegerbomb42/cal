@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { firebaseService } from '../services/firebaseService';
 import { debounce } from '../utils/helpers';
-import { validateEvent, checkEventConflicts } from '../utils/eventValidator';
+import { validateEvent, checkEventConflicts, validateEventOrThrow } from '../utils/eventValidator';
+import { getActiveEvents as getActiveEventsList, getArchivedEvents as getArchivedEventsList, getUpcomingEvents as getUpcomingEventsList } from '../utils/eventQueries';
+import { ValidationError } from '../utils/errors';
 import { toastService } from '../utils/toast';
 import { reminderService } from '../services/reminderService';
 import { googleCalendarService } from '../services/googleCalendarService';
@@ -155,10 +157,14 @@ export const EventsProvider = ({ children }) => {
 
   const addEvent = async (event, options = {}) => {
     // Validate event
-    const validation = validateEvent(event);
-    if (!validation.isValid) {
-      toastService.error(validation.errors[0]);
-      throw new Error(validation.errors[0]);
+    try {
+      validateEventOrThrow(event);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        toastService.error(error.message);
+        throw error;
+      }
+      throw error;
     }
 
     // Check conflicts if not disabled
@@ -349,6 +355,12 @@ export const EventsProvider = ({ children }) => {
     );
   };
 
+  const getUpcomingEvents = (now = new Date()) => getUpcomingEventsList(events, now);
+
+  const getArchivedEvents = (now = new Date()) => getArchivedEventsList(events, now);
+
+  const getActiveEvents = (now = new Date()) => getActiveEventsList(events, now);
+
   return (
     <EventsContext.Provider value={{
       events,
@@ -360,6 +372,9 @@ export const EventsProvider = ({ children }) => {
       deleteEventsByFilter,
       getEventsForDate,
       getEventsForRange,
+      getUpcomingEvents,
+      getArchivedEvents,
+      getActiveEvents,
       searchEvents,
       filterEvents,
       isLoading

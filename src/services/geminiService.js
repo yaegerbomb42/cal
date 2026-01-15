@@ -1,6 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { localBrainService } from './localBrainService';
-import { parseNaturalLanguageTime } from '../utils/dateUtils';
+import { localBrainService } from './localBrainService.js';
+import { parseNaturalLanguageTime } from '../utils/dateUtils.js';
+import { parseTimeRangeToDates } from '../utils/timeParser.js';
+import { AIParseError, AIServiceError } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 export class GeminiService {
   constructor(apiKey) {
@@ -13,7 +16,7 @@ export class GeminiService {
 
   initialize(apiKey) {
     if (!apiKey) {
-      console.warn('Gemini API key not provided');
+      logger.warn('Gemini API key not provided');
       this.isInitialized = false;
       return false;
     }
@@ -28,14 +31,14 @@ export class GeminiService {
       try {
         this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
         this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
-      } catch (e) {
-        console.warn("Gemini 3 Preview initialization failed. Service will rely on Offline Brain if loaded.", e);
+      } catch (error) {
+        logger.warn('Gemini 3 Preview initialization failed. Service will rely on Offline Brain if loaded.', { error });
         // No API fallback. We want true offline behavior if primary fails.
       }
       this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize Gemini:', error);
+      logger.error('Failed to initialize Gemini', { error });
       this.isInitialized = false;
       return false;
     }
@@ -43,7 +46,7 @@ export class GeminiService {
 
   async testConnection() {
     if (!this.isInitialized) {
-      throw new Error('Service not initialized - please add your API key');
+      throw new AIServiceError('Service not initialized - please add your API key');
     }
     try {
       const result = await this.modelFlash.generateContent('Say "connected" in one word');
@@ -52,13 +55,13 @@ export class GeminiService {
     } catch (error) {
       const errorMsg = error.message || 'Unknown error';
       if (errorMsg.includes('API_KEY_INVALID')) {
-        throw new Error('Invalid API key - please check your key in Settings');
+        throw new AIServiceError('Invalid API key - please check your key in Settings');
       } else if (errorMsg.includes('PERMISSION_DENIED')) {
-        throw new Error('API key lacks permissions - enable Gemini API in Google Cloud');
+        throw new AIServiceError('API key lacks permissions - enable Gemini API in Google Cloud');
       } else if (errorMsg.includes('QUOTA')) {
-        throw new Error('API quota exceeded - try again later or upgrade your plan');
+        throw new AIServiceError('API quota exceeded - try again later or upgrade your plan');
       }
-      throw new Error(`Connection failed: ${errorMsg}`);
+      throw new AIServiceError(`Connection failed: ${errorMsg}`);
     }
   }
 
@@ -67,7 +70,7 @@ export class GeminiService {
     const canUseLocal = Boolean(preferLocal && localBrainService.isLoaded);
 
     if (!this.isInitialized && !localBrainService.isLoaded) {
-      throw new Error('AI service not initialized. Connect Gemini API or load Offline Brain.');
+      throw new AIServiceError('AI service not initialized. Connect Gemini API or load Offline Brain.');
     }
 
     if (canUseLocal) {
@@ -75,9 +78,9 @@ export class GeminiService {
         const localResult = await localBrainService.parseEvent(text);
         return this.normalizeParsedEvent(localResult, text);
       } catch (error) {
-        console.warn('Preferred Offline Brain failed, falling back to Gemini.', error);
+        logger.warn('Preferred Offline Brain failed, falling back to Gemini.', { error });
         if (!this.isInitialized) {
-          throw error;
+          throw new AIParseError('Offline Brain failed to parse the request.');
         }
       }
     }
@@ -122,41 +125,45 @@ If the text doesn't contain enough information for a calendar event, respond wit
       // Use Flash for faster parsing
       const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
-      const text = response.text();
+      const responseText = response.text();
 
       // Extract JSON from response
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
-        throw new Error('No valid JSON found in response');
+        throw new AIParseError('No valid JSON found in response');
       }
 
       const parsedEvent = JSON.parse(jsonMatch[0]);
 
       if (parsedEvent.error) {
-        throw new Error(parsedEvent.error);
+        throw new AIParseError(parsedEvent.error);
       }
 
       // Validate required fields
       if (!parsedEvent.title || !parsedEvent.start || !parsedEvent.end) {
-        throw new Error('Missing required event fields');
+        throw new AIParseError('Missing required event fields');
       }
 
       return this.normalizeParsedEvent(parsedEvent, text);
     } catch (error) {
-      console.error('Error parsing event with Gemini:', error);
+      logger.error('Error parsing event with Gemini', { error });
 
       // FALLBACK: Local Brain
       if (localBrainService.isLoaded) {
-        console.log('Falling back to Offline Brain...');
+        logger.info('Falling back to Offline Brain...');
         try {
           const localResult = await localBrainService.parseEvent(text);
           return this.normalizeParsedEvent(localResult, text);
         } catch (localError) {
-          console.error('Offline Brain failed:', localError);
+          logger.error('Offline Brain failed', { error: localError });
         }
       }
 
-      throw error;
+      if (error instanceof AIParseError) {
+        throw error;
+      }
+
+      throw new AIParseError('Unable to parse the event details.');
     }
   }
 
@@ -213,16 +220,16 @@ Respond with JSON array of suggested times:
       // Use Flash for faster parsing
       const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
-      const text = response.text();
+      const responseText = response.text();
 
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return [];
       }
 
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
-      console.error('Error checking conflicts:', error);
+      logger.error('Error checking conflicts', { error });
       return [];
     }
   }
@@ -263,16 +270,16 @@ Respond with JSON array:
       // Use Flash for faster parsing
       const result = await this.modelFlash.generateContent(prompt);
       const response = await result.response;
-      const text = response.text();
+      const responseText = response.text();
 
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         return [];
       }
 
       return JSON.parse(jsonMatch[0]);
     } catch (error) {
-      console.error('Error suggesting events:', error);
+      logger.error('Error suggesting events', { error });
       return [];
     }
   }
@@ -282,7 +289,7 @@ Respond with JSON array:
     const canUseLocal = Boolean(preferLocal && localBrainService.isLoaded);
 
     if (!this.isInitialized && !canUseLocal) {
-      throw new Error('AI service not available');
+      throw new AIServiceError('AI service not available');
     }
 
     const eventsContext = events.length > 0 ?
@@ -319,9 +326,9 @@ Keep responses concise and actionable.
         const response = await localBrainService.chat(message, prompt);
         return response;
       } catch (error) {
-        console.warn('Preferred Offline Brain failed, falling back to Gemini.', error);
+        logger.warn('Preferred Offline Brain failed, falling back to Gemini.', { error });
         if (!this.isInitialized) {
-          throw error;
+          throw new AIServiceError('Offline Brain unavailable.');
         }
       }
     }
@@ -332,8 +339,8 @@ Keep responses concise and actionable.
       const response = await result.response;
       return response.text();
     } catch (error) {
-      console.error('Error generating chat response:', error);
-      throw error;
+      logger.error('Error generating chat response', { error });
+      throw new AIServiceError('Unable to generate chat response.');
     }
   }
 
@@ -351,6 +358,15 @@ Keep responses concise and actionable.
     const durationMs = endDate && !Number.isNaN(endDate.getTime())
       ? Math.max(endDate.getTime() - startDate.getTime(), 60 * 60 * 1000)
       : 60 * 60 * 1000;
+
+    const explicitRange = parseTimeRangeToDates(originalText, startDate);
+    if (explicitRange.start && explicitRange.end) {
+      return {
+        ...parsedEvent,
+        start: explicitRange.start.toISOString(),
+        end: explicitRange.end.toISOString()
+      };
+    }
 
     const timeMatch = this.extractExplicitTime(originalText);
     if (timeMatch) {

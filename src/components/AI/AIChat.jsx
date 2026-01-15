@@ -1,10 +1,21 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2 } from 'lucide-react';
+import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useCalendar } from '../../contexts/CalendarContext';
+import { detectIntent } from '../../services/aiIntentService';
+import { buildQueryResponse } from '../../services/aiQueryService';
+import { applyClarificationAnswer, finalizeDraft, listMissingFields, parseEventDraft } from '../../services/aiEventService';
+import { AIParseError, AIServiceError, ValidationError } from '../../utils/errors';
+import { logger } from '../../utils/logger';
 import './AIChat.css';
+
+const CLARIFICATION_PROMPTS = {
+  title: 'What should I call this event?',
+  start: 'When should it start? (date and time)',
+  end: 'When should it end? (time is enough)'
+};
 
 const AIChat = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
@@ -18,9 +29,11 @@ const AIChat = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [pendingEvent, setPendingEvent] = useState(null);
+  const [clarificationState, setClarificationState] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
 
   const messagesEndRef = useRef(null);
-  const { events, addEvent } = useEvents();
+  const { events, addEvent, deleteEventsByCategory } = useEvents();
   const { openEventModal } = useCalendar();
 
   useEffect(() => {
@@ -44,7 +57,7 @@ const AIChat = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, pendingEvent]);
+  }, [messages, pendingEvent, clarificationState]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -61,27 +74,93 @@ const AIChat = ({ isOpen, onClose }) => {
     return newMessage;
   };
 
+  const setStatus = (type, message) => {
+    if (!type) {
+      setStatusMessage(null);
+      return;
+    }
+    setStatusMessage({ type, message });
+  };
+
+  const processClarification = async (text) => {
+    if (!clarificationState) return;
+    const { draft, missingFields } = clarificationState;
+    const currentField = missingFields[0];
+
+    const updatedDraft = applyClarificationAnswer(draft, currentField, text);
+    const remainingFields = listMissingFields(updatedDraft);
+
+    if (remainingFields.length > 0) {
+      const nextField = remainingFields[0];
+      setClarificationState({ draft: updatedDraft, missingFields: remainingFields });
+      addMessage('ai', CLARIFICATION_PROMPTS[nextField]);
+      return;
+    }
+
+    const finalized = finalizeDraft(updatedDraft);
+    const conflicts = await geminiService.checkConflicts(finalized, events);
+    setPendingEvent({ ...finalized, conflicts, originalText: text });
+    setClarificationState(null);
+    addMessage('ai', "I've got everything I need. Does this event look right?");
+  };
+
   const processInput = async (text) => {
     setIsLoading(true);
+    setStatus(null, null);
+
     try {
-      try {
-        const eventData = await geminiService.parseEventFromText(text, events);
-        const conflicts = await geminiService.checkConflicts(eventData, events);
-        setPendingEvent({ ...eventData, conflicts, originalText: text });
-        addMessage('ai', "I've drafted this event for you. Does it look correct?");
-      } catch (error) {
-        const response = await geminiService.chatResponse(text, events);
-        handleAIResponse(response);
+      if (clarificationState) {
+        await processClarification(text);
+        return;
       }
+
+      const intent = detectIntent(text);
+      logger.info('AI intent detected', { intent });
+
+      if (intent === 'event_query') {
+        const response = buildQueryResponse(text, events);
+        addMessage('ai', response);
+        return;
+      }
+
+      if (intent === 'event_create') {
+        const draftResult = await parseEventDraft(text);
+
+        if (draftResult.status === 'needs_clarification') {
+          setClarificationState({ draft: draftResult.draft, missingFields: draftResult.missingFields });
+          addMessage('ai', CLARIFICATION_PROMPTS[draftResult.missingFields[0]]);
+          return;
+        }
+
+        const finalized = finalizeDraft(draftResult.draft);
+        const conflicts = await geminiService.checkConflicts(finalized, events);
+        setPendingEvent({ ...finalized, conflicts, originalText: text });
+        addMessage('ai', "I've drafted this event for you. Does it look correct?");
+        return;
+      }
+
+      const response = await geminiService.chatResponse(text, events);
+      handleAIResponse(response);
     } catch (error) {
-      console.error('AI Error:', error);
-      addMessage('ai', "I encountered an error processing your request. Please try again.");
+      if (error instanceof AIParseError) {
+        addMessage('ai', "I couldn't parse that event yet. Could you rephrase with a time or date?");
+        return;
+      }
+      if (error instanceof AIServiceError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      if (error instanceof ValidationError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      logger.error('AI processing error', { error });
+      addMessage('ai', 'I encountered an error processing your request. Please try again.');
+      setStatus('error', 'AI request failed');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const { deleteEventsByCategory } = useEvents();
 
   const handleAIResponse = (response) => {
     try {
@@ -95,12 +174,12 @@ const AIChat = ({ isOpen, onClose }) => {
         }
 
         if (data.type === 'query' && data.intent === 'next_appointment') {
-          const sorted = [...events]
+          const upcoming = [...events]
             .filter(e => new Date(e.start) > new Date())
             .sort((a, b) => new Date(a.start) - new Date(b.start));
 
-          if (sorted.length > 0) {
-            const next = sorted[0];
+          if (upcoming.length > 0) {
+            const next = upcoming[0];
             const timeStr = new Date(next.start).toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' });
             addMessage('ai', `Your next appointment is "${next.title}" on ${timeStr}.`);
           } else {
@@ -115,18 +194,27 @@ const AIChat = ({ isOpen, onClose }) => {
         }
       }
       addMessage('ai', response);
-    } catch (e) {
+    } catch (error) {
       addMessage('ai', response);
     }
   };
 
-  const handleConfirmEvent = () => {
+  const handleConfirmEvent = async () => {
     if (!pendingEvent) return;
 
     const { conflicts, originalText, ...eventData } = pendingEvent;
-    addEvent(eventData, { allowConflicts: true });
-    addMessage('ai', `Confirmed. "${pendingEvent.title}" has been added to your calendar.`);
-    setPendingEvent(null);
+    try {
+      await addEvent(eventData, { allowConflicts: true });
+      addMessage('ai', `Confirmed. "${pendingEvent.title}" has been added to your calendar.`);
+      setPendingEvent(null);
+      setStatus('success', 'Event added');
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      addMessage('ai', 'Something went wrong while saving the event.');
+    }
   };
 
   const handleEditDraft = () => {
@@ -138,7 +226,7 @@ const AIChat = ({ isOpen, onClose }) => {
 
   const handleDiscardEvent = () => {
     setPendingEvent(null);
-    addMessage('ai', "Cancelled. What would you like to do instead?");
+    addMessage('ai', 'Cancelled. What would you like to do instead?');
   };
 
   const handleSubmit = async (e) => {
@@ -174,13 +262,21 @@ const AIChat = ({ isOpen, onClose }) => {
             <div className="chat-title">
               <Sparkles className="ai-icon" size={18} />
               <h3>Cal</h3>
+              <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
             </div>
-            <button onClick={onClose} className="close-btn">
+            <button onClick={onClose} className="close-btn" aria-label="Close Cal chat">
               <X size={18} />
             </button>
           </div>
 
-          <div className="chat-messages">
+          {statusMessage && (
+            <div className={`chat-status ${statusMessage.type}`}>
+              <AlertTriangle size={14} />
+              {statusMessage.message}
+            </div>
+          )}
+
+          <div className="chat-messages" aria-live="polite">
             {messages.map((message) => (
               <motion.div
                 key={message.id}
@@ -217,10 +313,10 @@ const AIChat = ({ isOpen, onClose }) => {
                 )}
 
                 <div className="event-card-actions">
-                  <button onClick={handleEditDraft} className="btn-icon">
+                  <button onClick={handleEditDraft} className="btn-icon" aria-label="Edit draft">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={handleDiscardEvent} className="btn-icon danger">
+                  <button onClick={handleDiscardEvent} className="btn-icon danger" aria-label="Discard draft">
                     <Trash2 size={16} />
                   </button>
                   <button onClick={handleConfirmEvent} className="btn-primary w-full">
@@ -244,7 +340,7 @@ const AIChat = ({ isOpen, onClose }) => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="just chat with cal"
+              placeholder="Just chat with Cal"
               className="chat-input-field"
               autoFocus
             />
