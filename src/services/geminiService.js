@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { localBrainService } from './localBrainService';
+import { parseNaturalLanguageTime } from '../utils/dateUtils';
 
 export class GeminiService {
   constructor(apiKey) {
@@ -125,7 +126,7 @@ If the text doesn't contain enough information for a calendar event, respond wit
         throw new Error('Missing required event fields');
       }
 
-      return parsedEvent;
+      return this.normalizeParsedEvent(parsedEvent, text);
     } catch (error) {
       console.error('Error parsing event with Gemini:', error);
 
@@ -134,7 +135,7 @@ If the text doesn't contain enough information for a calendar event, respond wit
         console.log('Falling back to Offline Brain...');
         try {
           const localResult = await localBrainService.parseEvent(text);
-          return localResult;
+          return this.normalizeParsedEvent(localResult, text);
         } catch (localError) {
           console.error('Offline Brain failed:', localError);
         }
@@ -272,7 +273,7 @@ Respond with JSON array:
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
-You are a helpful calendar assistant. The user said: "${message}"
+You are Cal, a friendly calendar assistant (Cal = calendar shorthand). The user said: "${message}"
 
 ${eventsContext}
 
@@ -304,6 +305,66 @@ Keep responses concise and actionable.
       console.error('Error generating chat response:', error);
       throw error;
     }
+  }
+
+  normalizeParsedEvent(parsedEvent, originalText) {
+    if (!parsedEvent || !parsedEvent.start) {
+      return parsedEvent;
+    }
+
+    const startDate = new Date(parsedEvent.start);
+    const endDate = parsedEvent.end ? new Date(parsedEvent.end) : null;
+    if (Number.isNaN(startDate.getTime())) {
+      return parsedEvent;
+    }
+
+    const durationMs = endDate && !Number.isNaN(endDate.getTime())
+      ? Math.max(endDate.getTime() - startDate.getTime(), 60 * 60 * 1000)
+      : 60 * 60 * 1000;
+
+    const timeMatch = this.extractExplicitTime(originalText);
+    if (timeMatch) {
+      const { hours, minutes } = parseNaturalLanguageTime(timeMatch);
+      const localStart = new Date(startDate);
+      const matches = localStart.getHours() === hours && localStart.getMinutes() === minutes;
+      if (!matches) {
+        const correctedStart = new Date(localStart);
+        correctedStart.setHours(hours, minutes, 0, 0);
+        const correctedEnd = new Date(correctedStart.getTime() + durationMs);
+        return {
+          ...parsedEvent,
+          start: correctedStart.toISOString(),
+          end: correctedEnd.toISOString()
+        };
+      }
+    }
+
+    if (!parsedEvent.end || Number.isNaN(endDate?.getTime())) {
+      const fallbackEnd = new Date(startDate.getTime() + durationMs);
+      return {
+        ...parsedEvent,
+        end: fallbackEnd.toISOString()
+      };
+    }
+
+    if (endDate && endDate <= startDate) {
+      const fallbackEnd = new Date(startDate.getTime() + durationMs);
+      return {
+        ...parsedEvent,
+        end: fallbackEnd.toISOString()
+      };
+    }
+
+    return parsedEvent;
+  }
+
+  extractExplicitTime(text) {
+    if (!text) return null;
+    const amPmMatch = text.match(/\b\d{1,2}(?::\d{2})?\s*(am|pm)\b/i);
+    if (amPmMatch) return amPmMatch[0];
+    const timeMatch = text.match(/\b\d{1,2}:\d{2}\b/);
+    if (timeMatch) return timeMatch[0];
+    return null;
   }
 }
 

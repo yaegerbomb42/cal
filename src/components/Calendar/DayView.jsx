@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { getDayHours, getDayHoursWithHalf, formatTime, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
-import { cn } from '../../utils/helpers';
+import { cn, getEventColor } from '../../utils/helpers';
 import { Clock } from 'lucide-react';
 import './DayView.css';
 
@@ -133,7 +133,7 @@ const DayView = () => {
                   style={{
                     top: `${top}px`,
                     height: `${Math.max(height, 40)}px`,
-                    backgroundColor: event.color || '#6366f1'
+                    backgroundColor: event.color || getEventColor(event.category)
                   }}
                 >
                   <div className="event-content">

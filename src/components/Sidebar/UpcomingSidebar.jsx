@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useEvents } from '../../contexts/EventsContext';
-import { Calendar, Trash2, Archive, History, X, Search } from 'lucide-react';
+import { useCalendar } from '../../contexts/CalendarContext';
+import { Calendar, Trash2, Archive, History, X, Search, Edit2 } from 'lucide-react';
+import { getEventColor } from '../../utils/helpers';
 import './UpcomingSidebar.css';
 
 const UpcomingSidebar = () => {
-    const { events, deleteEvent, deleteEventsByName, updateEvent } = useEvents();
+    const { events, deleteEvent, deleteEventsByName } = useEvents();
+    const { openEventModal } = useCalendar();
     const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' | 'archive'
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteSearch, setDeleteSearch] = useState('');
+    const [categoryFilter, setCategoryFilter] = useState('all');
 
     // Sort events logic
     const now = new Date();
@@ -38,9 +42,13 @@ const UpcomingSidebar = () => {
     const displayEvents = events
         .filter(event => {
             const eventStart = new Date(event.start);
-            return viewMode === 'upcoming'
+            const inRange = viewMode === 'upcoming'
                 ? eventStart >= now
                 : eventStart < now;
+            const matchesCategory = categoryFilter === 'all'
+                ? true
+                : (event.category || 'personal') === categoryFilter;
+            return inRange && matchesCategory;
         })
         .sort((a, b) => {
             const dateA = new Date(a.start);
@@ -94,6 +102,31 @@ const UpcomingSidebar = () => {
                 )}
             </div>
 
+            {!showDeleteModal && (
+                <div className="category-filters">
+                    {[
+                        { value: 'all', label: 'All' },
+                        { value: 'work', label: 'Work' },
+                        { value: 'personal', label: 'Personal' },
+                        { value: 'fun', label: 'Fun' },
+                        { value: 'hobby', label: 'Hobby' },
+                        { value: 'task', label: 'Task' },
+                        { value: 'todo', label: 'To-Do' },
+                        { value: 'event', label: 'Event' },
+                        { value: 'appointment', label: 'Appointment' }
+                    ].map(filter => (
+                        <button
+                            key={filter.value}
+                            type="button"
+                            onClick={() => setCategoryFilter(filter.value)}
+                            className={`filter-chip ${categoryFilter === filter.value ? 'active' : ''}`}
+                        >
+                            {filter.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Delete By Name Modal/Area */}
             {showDeleteModal && (
                 <div className="delete-modal-area fade-in">
@@ -129,7 +162,11 @@ const UpcomingSidebar = () => {
                     </div>
                 ) : (
                     displayEvents.map(event => (
-                        <div key={event.id} className="upcoming-event-item" style={{ '--category-color': event.category === 'work' ? '#6366f1' : '#10b981' }}>
+                        <div
+                            key={event.id}
+                            className="upcoming-event-item"
+                            style={{ '--category-color': getEventColor(event.category) }}
+                        >
                             <div className="event-date-badge">
                                 <span className="month">
                                     {new Date(event.start).toLocaleString('default', { month: 'short' })}
@@ -154,7 +191,14 @@ const UpcomingSidebar = () => {
                                 </div>
                             </div>
 
-                            <div className="event-actions-hover">
+                            <div className="event-actions">
+                                <button
+                                    onClick={() => openEventModal(event)}
+                                    className="action-btn edit"
+                                    title="Edit event"
+                                >
+                                    <Edit2 size={14} />
+                                </button>
                                 <button
                                     onClick={() => handleDeleteClick(event.id)}
                                     className="action-btn delete"
