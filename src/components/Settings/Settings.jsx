@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
@@ -17,6 +17,8 @@ const Settings = ({ isOpen, onClose }) => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
+  const [hasSavedApiKey, setHasSavedApiKey] = useState(false);
+  const savedApiKeyRef = useRef(null);
 
   // Google Sync State
   const [isSyncing, setIsSyncing] = useState(false);
@@ -25,6 +27,9 @@ const Settings = ({ isOpen, onClose }) => {
   // Local Brain State
   const [localBrainProgress, setLocalBrainProgress] = useState(null);
   const [isLocalBrainLoaded, setIsLocalBrainLoaded] = useState(false);
+  const [preferLocalBrain, setPreferLocalBrain] = useState(false);
+  const [localBrainTestStatus, setLocalBrainTestStatus] = useState('idle');
+  const [localBrainTestResult, setLocalBrainTestResult] = useState('');
 
   const handleInitLocalBrain = async () => {
     try {
@@ -48,6 +53,35 @@ const Settings = ({ isOpen, onClose }) => {
     toastService.info("Offline brain unloaded to free memory.");
   };
 
+  const handlePreferLocalBrain = (enabled) => {
+    setPreferLocalBrain(enabled);
+    localBrainService.setPreferLocal(enabled);
+    if (enabled && !localBrainService.isLoaded) {
+      toastService.info("Load the Offline Brain to route chats locally.");
+    }
+  };
+
+  const handleLocalBrainTest = async () => {
+    if (!localBrainService.isLoaded) {
+      toastService.error("Offline Brain isn't loaded yet.");
+      return;
+    }
+    setLocalBrainTestStatus('loading');
+    setLocalBrainTestResult('');
+    try {
+      const response = await localBrainService.chat(
+        'Write a friendly one-sentence confirmation that the local model is working.',
+        'You are Cal, a friendly calendar assistant.'
+      );
+      setLocalBrainTestResult(response);
+      setLocalBrainTestStatus('success');
+    } catch (error) {
+      console.error(error);
+      setLocalBrainTestStatus('error');
+      toastService.error('Offline Brain test failed: ' + error.message);
+    }
+  };
+
   const [activeTab, setActiveTab] = useState('account');
   const { events, addEvent, deleteEventsByFilter } = useEvents();
 
@@ -59,10 +93,16 @@ const Settings = ({ isOpen, onClose }) => {
     { id: 'about', label: 'About', icon: CheckCircle, color: '#10b981' }
   ];
 
-  const testConnection = async (key) => {
+  const testConnection = async (keyOverride) => {
+    const candidateKey = (keyOverride ?? apiKey).trim();
+    const keyToTest = candidateKey || savedApiKeyRef.current;
+    if (!keyToTest) {
+      toastService.error('Add a Gemini API key to test the connection.');
+      return;
+    }
     setIsTestingConnection(true);
     setConnectionStatus(null);
-    geminiService.initialize(key);
+    geminiService.initialize(keyToTest);
     try {
       const result = await geminiService.testConnection();
       if (result.success) {
@@ -84,29 +124,35 @@ const Settings = ({ isOpen, onClose }) => {
       if (user) {
         const savedKey = await firebaseService.getApiKey();
         if (savedKey) {
-          setApiKey(savedKey);
+          savedApiKeyRef.current = savedKey;
+          setHasSavedApiKey(true);
           testConnection(savedKey);
           return;
         }
-      }
-      const localKey = localStorage.getItem('gemini_api_key');
-      if (localKey) {
-        setApiKey(localKey);
-        testConnection(localKey);
+        setHasSavedApiKey(false);
       }
     };
     loadApiKey();
   }, [user]);
 
+  useEffect(() => {
+    setIsLocalBrainLoaded(localBrainService.isLoaded);
+    setPreferLocalBrain(localBrainService.getPreferLocal());
+  }, [isOpen]);
+
   const handleSaveApiKey = async () => {
-    if (!apiKey.trim()) return;
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) return;
     setIsTestingConnection(true);
     try {
-      localStorage.setItem('gemini_api_key', apiKey);
       if (user) {
-        await firebaseService.saveApiKey(apiKey);
+        await firebaseService.saveApiKey(trimmedKey);
       }
-      await testConnection(apiKey);
+      savedApiKeyRef.current = trimmedKey;
+      setHasSavedApiKey(true);
+      setApiKey('');
+      setShowApiKey(false);
+      await testConnection(trimmedKey);
       toastService.success('API Key saved successfully!');
     } catch (error) {
       console.error('Failed to save API key:', error);
@@ -311,15 +357,15 @@ const Settings = ({ isOpen, onClose }) => {
                               type={showApiKey ? "text" : "password"}
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
-                              placeholder="sk-..."
+                              placeholder={hasSavedApiKey ? "Stored securely in your account" : "sk-..."}
                             />
                             <button onClick={() => setShowApiKey(!showApiKey)} className="eye-toggle">
                               {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                           </div>
                           <button
-                            onClick={() => testConnection(apiKey)}
-                            disabled={!apiKey || isTestingConnection}
+                            onClick={() => testConnection()}
+                            disabled={(!apiKey.trim() && !hasSavedApiKey) || isTestingConnection}
                             className="pro-btn-secondary"
                             style={{ marginRight: '8px' }}
                           >
@@ -328,13 +374,18 @@ const Settings = ({ isOpen, onClose }) => {
                           </button>
                           <button
                             onClick={handleSaveApiKey}
-                            disabled={!apiKey || isTestingConnection}
+                            disabled={!apiKey.trim() || isTestingConnection}
                             className="pro-btn-primary"
                           >
                             <Save size={16} />
                             Save
                           </button>
                         </div>
+                        {hasSavedApiKey && (
+                          <div className="pro-status success" style={{ marginTop: '8px' }}>
+                            <CheckCircle size={14} /> Saved key is hidden for security.
+                          </div>
+                        )}
                         {connectionStatus === 'success' && (
                           <div className="pro-status success"><CheckCircle size={14} /> Gemini 3.0 Connected</div>
                         )}
@@ -351,7 +402,7 @@ const Settings = ({ isOpen, onClose }) => {
                           <Sparkles size={20} className="sparkle-icon" style={{ color: '#6366f1' }} />
                           <div>
                             <h4>Offline Backup Brain (Beta)</h4>
-                            <p>Run a small AI model directly in your browser. Perfect for when internet is down.</p>
+                            <p>Run a small AI model directly in your browser. Perfect for offline use or saving Gemini costs.</p>
                           </div>
                         </div>
 
@@ -376,13 +427,56 @@ const Settings = ({ isOpen, onClose }) => {
                         )}
 
                         {isLocalBrainLoaded && (
-                          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 0.5B)</div>
-                            <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
-                              Unload
+                          <>
+                            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 0.5B)</div>
+                              <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
+                                Unload
+                              </button>
+                            </div>
+                            <p className="local-brain-note">Offline Brain is ready. Use it anytime by toggling the switch below.</p>
+                          </>
+                        )}
+
+                        <div className="local-brain-toggle">
+                          <div>
+                            <h5>Prefer Offline Brain</h5>
+                            <p>Route chats + event parsing to the local model even if Gemini is connected.</p>
+                          </div>
+                          <label className="toggle-switch">
+                            <input
+                              type="checkbox"
+                              checked={preferLocalBrain}
+                              onChange={(e) => handlePreferLocalBrain(e.target.checked)}
+                            />
+                            <span className="toggle-slider" />
+                          </label>
+                        </div>
+
+                        <div className="local-brain-test">
+                          <div className="local-brain-test-header">
+                            <div>
+                              <h5>Example Test Chat</h5>
+                              <p>Run a quick sample response to confirm the local model is working.</p>
+                            </div>
+                            <button
+                              onClick={handleLocalBrainTest}
+                              className="pro-btn-secondary"
+                              disabled={localBrainTestStatus === 'loading'}
+                            >
+                              {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Run Test'}
                             </button>
                           </div>
-                        )}
+                          {localBrainTestResult && (
+                            <div className="local-brain-test-output">
+                              <span className="label">Sample Response</span>
+                              <p>{localBrainTestResult}</p>
+                            </div>
+                          )}
+                          {localBrainTestStatus === 'error' && (
+                            <p className="local-brain-test-error">We couldn't complete the test. Try loading the Offline Brain again.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

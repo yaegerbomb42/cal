@@ -39,11 +39,8 @@ const MainLayout = () => {
 
   useEffect(() => {
     const initializeAI = async () => {
-      let key = localStorage.getItem('gemini_api_key');
-
-      // Using FirebaseService to fetch key if user is logged in
-      if (user && !key) {
-        // Dynamic import to avoid circular dependency issues if any, though here straightforward
+      let key = null;
+      if (user) {
         const { firebaseService } = await import('./services/firebaseService');
         key = await firebaseService.getApiKey();
       }

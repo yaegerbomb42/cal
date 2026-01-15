@@ -63,8 +63,23 @@ export class GeminiService {
   }
 
   async parseEventFromText(text) {
+    const preferLocal = localBrainService.getPreferLocal?.();
+    const canUseLocal = Boolean(preferLocal && localBrainService.isLoaded);
+
     if (!this.isInitialized && !localBrainService.isLoaded) {
       throw new Error('AI service not initialized. Connect Gemini API or load Offline Brain.');
+    }
+
+    if (canUseLocal) {
+      try {
+        const localResult = await localBrainService.parseEvent(text);
+        return this.normalizeParsedEvent(localResult, text);
+      } catch (error) {
+        console.warn('Preferred Offline Brain failed, falling back to Gemini.', error);
+        if (!this.isInitialized) {
+          throw error;
+        }
+      }
     }
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -263,7 +278,10 @@ Respond with JSON array:
   }
 
   async chatResponse(message, events = []) {
-    if (!this.isInitialized) {
+    const preferLocal = localBrainService.getPreferLocal?.();
+    const canUseLocal = Boolean(preferLocal && localBrainService.isLoaded);
+
+    if (!this.isInitialized && !canUseLocal) {
       throw new Error('AI service not available');
     }
 
@@ -295,6 +313,18 @@ If it's an action or query, respond with a JSON object ONLY:
 Otherwise, respond with natural text.
 Keep responses concise and actionable.
 `;
+
+    if (canUseLocal) {
+      try {
+        const response = await localBrainService.chat(message, prompt);
+        return response;
+      } catch (error) {
+        console.warn('Preferred Offline Brain failed, falling back to Gemini.', error);
+        if (!this.isInitialized) {
+          throw error;
+        }
+      }
+    }
 
     try {
       // Use Pro for better chat responses

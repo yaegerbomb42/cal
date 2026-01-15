@@ -1,7 +1,7 @@
 .landing-page {
     min-height: 100vh;
-    background: #020617;
-    color: #f8fafc;
+    background: #f8fafc;
+    color: #0f172a;
     position: relative;
     overflow-x: hidden;
     display: flex;
@@ -18,36 +18,24 @@
 .mesh-sphere {
     position: absolute;
     border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.4;
+    filter: blur(120px);
+    opacity: 0.6;
 }
 
 .sphere-1 {
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, #6366f1, transparent);
-    top: -200px;
-    right: -100px;
-    animation: float 20s infinite alternate;
+    background: radial-gradient(circle, rgba(165, 180, 252, 0.7), transparent 60%);
+    top: -220px;
+    right: -140px;
 }
 
 .sphere-2 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, #8b5cf6, transparent);
-    bottom: -100px;
-    left: -100px;
-    animation: float 25s infinite alternate-reverse;
-}
-
-@keyframes float {
-    from {
-        transform: translate(0, 0);
-    }
-
-    to {
-        transform: translate(50px, 100px);
-    }
+    background: radial-gradient(circle, rgba(191, 219, 254, 0.7), transparent 60%);
+    bottom: -140px;
+    left: -120px;
 }
 
 /* Nav */
@@ -75,18 +63,18 @@
 .logo-box {
     width: 36px;
     height: 36px;
-    background: #6366f1;
+    background: linear-gradient(135deg, #a5b4fc, #bae6fd);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 8px 16px -8px rgba(59, 130, 246, 0.4);
 }
 
 .nav-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
+    background: white;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #0f172a;
     padding: 10px 24px;
     border-radius: 99px;
     font-weight: 600;
@@ -95,8 +83,8 @@
 }
 
 .nav-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: #eef2ff;
+    border-color: rgba(99, 102, 241, 0.3);
 }
 
 /* Hero */
@@ -117,16 +105,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 120px;
+    margin-bottom: 64px;
 }
 
 .hero-badge {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(99, 102, 241, 0.12);
     border: 1px solid rgba(99, 102, 241, 0.2);
-    color: #818cf8;
+    color: #4f46e5;
     padding: 6px 14px;
     border-radius: 99px;
     font-size: 0.85rem;
@@ -135,22 +123,25 @@
 }
 
 .hero-section h1 {
-    font-size: 4.5rem;
-    font-weight: 800;
+    font-size: 3.25rem;
+    font-weight: 700;
     line-height: 1.1;
     letter-spacing: -0.04em;
     margin: 0 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .hero-section h1 span {
-    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #38bdf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .hero-desc {
-    font-size: 1.25rem;
-    color: #94a3b8;
+    font-size: 1.1rem;
+    color: #475569;
     max-width: 700px;
     line-height: 1.6;
     margin-bottom: 48px;
@@ -159,6 +150,10 @@
 .hero-actions {
     display: flex;
     gap: 16px;
+}
+
+.hero-actions.center {
+    justify-content: center;
 }
 
 .cta-btn {
@@ -175,65 +170,57 @@
 }
 
 .cta-btn.primary {
-    background: #6366f1;
+    background: linear-gradient(135deg, #6366f1, #60a5fa);
     color: white;
     border: none;
-    box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 10px 20px -8px rgba(99, 102, 241, 0.4);
+    min-width: 180px;
+    justify-content: center;
 }
 
 .cta-btn.primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.45);
 }
 
 .cta-btn.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
+    background: white;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #0f172a;
 }
 
 .cta-btn.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: #f1f5f9;
 }
 
-/* Features */
-.features-grid {
+/* Value Row */
+.value-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
     width: 100%;
 }
 
-.feature-card {
-    padding: 32px;
-    border-radius: 24px;
-    text-align: left;
+.value-card {
+    background: white;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 18px;
+    padding: 18px 20px;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    transition: transform 0.3s;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 10px 20px -18px rgba(15, 23, 42, 0.2);
 }
 
-.feature-card:hover {
-    transform: translateY(-8px);
+.value-card h3 {
+    font-size: 1rem;
+    margin: 0 0 4px;
+    color: #0f172a;
 }
 
-.feature-card.glass {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-}
-
-.feature-card h3 {
-    font-size: 1.25rem;
-    margin: 0;
-    color: #f1f5f9;
-}
-
-.feature-card p {
-    font-size: 0.95rem;
-    line-height: 1.6;
+.value-card p {
+    font-size: 0.9rem;
+    line-height: 1.5;
     color: #64748b;
     margin: 0;
 }
@@ -243,7 +230,7 @@
     position: fixed;
     inset: 0;
     z-index: 100;
-    background: rgba(2, 6, 23, 0.8);
+    background: rgba(248, 250, 252, 0.7);
     -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     display: flex;
@@ -258,16 +245,16 @@
     padding: 40px;
     border-radius: 28px;
     position: relative;
-    background: rgba(15, 23, 42, 0.8);
+    background: white;
 }
 
 .close-modal {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(148, 163, 184, 0.15);
     border: none;
-    color: #94a3b8;
+    color: #64748b;
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -279,8 +266,8 @@
 }
 
 .close-modal:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(148, 163, 184, 0.25);
+    color: #0f172a;
 }
 
 /* Login/Auth Styles */
@@ -292,7 +279,7 @@
 }
 
 .login-header p {
-    color: #94a3b8;
+    color: #64748b;
     margin-bottom: 32px;
 }
 
@@ -316,7 +303,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    color: #475569;
+    color: #94a3b8;
     margin: 24px 0;
 }
 
@@ -325,7 +312,7 @@
     content: "";
     flex: 1;
     height: 1px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(148, 163, 184, 0.2);
 }
 
 .input-group {
@@ -338,23 +325,23 @@
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #64748b;
+    color: #94a3b8;
 }
 
 .input-group input {
     width: 100%;
     padding: 14px 14px 14px 44px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.3);
     border-radius: 12px;
-    color: white;
+    color: #0f172a;
     font-size: 1rem;
 }
 
 .submit-btn {
     width: 100%;
     padding: 14px;
-    background: #6366f1;
+    background: linear-gradient(135deg, #6366f1, #60a5fa);
     color: white;
     border: none;
     border-radius: 12px;
@@ -366,7 +353,7 @@
 .link-btn {
     background: none;
     border: none;
-    color: #818cf8;
+    color: #4f46e5;
     font-size: 0.9rem;
     margin-top: 24px;
     cursor: pointer;
@@ -378,7 +365,7 @@
     position: relative;
     z-index: 10;
     padding: 48px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .footer-content {
@@ -387,7 +374,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #475569;
+    color: #64748b;
     font-size: 0.9rem;
 }
 
@@ -398,7 +385,7 @@
 }
 
 .footer-links a {
-    color: #94a3b8;
+    color: #64748b;
     text-decoration: none;
     transition: color 0.2s;
 }
@@ -413,10 +400,10 @@
 
 @media (max-width: 768px) {
     .hero-section h1 {
-        font-size: 3rem;
+        font-size: 2.4rem;
     }
 
-    .features-grid {
+    .value-row {
         grid-template-columns: 1fr;
     }
 

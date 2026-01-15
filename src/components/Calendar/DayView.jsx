@@ -66,98 +66,100 @@ const DayView = () => {
 
       {/* Day Grid */}
       <div className="day-grid">
-        {/* Time Column */}
-        <div className="time-column">
-          {daySlots.map((slot, index) => (
-            <div 
-              key={index} 
-              className={cn(
-                'time-slot',
-                slot.isHalfHour && 'half-hour',
-                !slot.isHalfHour && isBusinessHour(slot.time) && 'business-hour'
-              )}
-            >
-              {!slot.isHalfHour && (
-                <span className="time-label">
-                  {formatTime24(slot.time)}
-                </span>
-              )}
-              {slot.isHalfHour && (
-                <span className="time-label-half">30</span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Events Column */}
-        <div className="events-column">
-          {/* Hour Slots */}
-          {dayHours.map((hour) => (
-            <div
-              key={hour.getHours()}
-              onClick={() => handleTimeSlotClick(hour)}
-              className={cn(
-                'hour-slot',
-                isBusinessHour(hour) && 'business-hour'
-              )}
-            />
-          ))}
-
-          {/* Current Time Indicator */}
-          {showCurrentTime && currentTimePosition !== null && (
-            <div 
-              className="current-time-indicator"
-              style={{ top: `${currentTimePosition}px` }}
-            >
-              <div className="current-time-line"></div>
-              <div className="current-time-dot">
-                <Clock size={12} />
+        <div className="day-grid-scroll">
+          {/* Time Column */}
+          <div className="time-column">
+            {daySlots.map((slot, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'time-slot',
+                  slot.isHalfHour && 'half-hour',
+                  !slot.isHalfHour && isBusinessHour(slot.time) && 'business-hour'
+                )}
+              >
+                {!slot.isHalfHour && (
+                  <span className="time-label">
+                    {formatTime24(slot.time)}
+                  </span>
+                )}
+                {slot.isHalfHour && (
+                  <span className="time-label-half">30</span>
+                )}
               </div>
-              <div className="current-time-label">
-                {formatTime24(new Date())}
-              </div>
-            </div>
-          )}
+            ))}
+          </div>
 
-          {/* Events Layer */}
-          <div className="events-layer">
-            {dayEvents.map((event, index) => {
-              const { top, height } = getEventPosition(event, currentDate);
-              
-              return (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, scale: 0.9, x: -20 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02, zIndex: 10 }}
-                  onClick={() => handleEventClick(event)}
-                  className="day-event glass-card"
-                  style={{
-                    top: `${top}px`,
-                    height: `${Math.max(height, 40)}px`,
-                    backgroundColor: event.color || getEventColor(event.category)
-                  }}
-                >
-                  <div className="event-content">
-                    <div className="event-title">{event.title}</div>
-                    {event.description && height > 80 && (
-                      <div className="event-description">
-                        {event.description}
+          {/* Events Column */}
+          <div className="events-column">
+            {/* Hour Slots */}
+            {dayHours.map((hour) => (
+              <div
+                key={hour.getHours()}
+                onClick={() => handleTimeSlotClick(hour)}
+                className={cn(
+                  'hour-slot',
+                  isBusinessHour(hour) && 'business-hour'
+                )}
+              />
+            ))}
+
+            {/* Current Time Indicator */}
+            {showCurrentTime && currentTimePosition !== null && (
+              <div
+                className="current-time-indicator"
+                style={{ top: `${currentTimePosition}px` }}
+              >
+                <div className="current-time-line"></div>
+                <div className="current-time-dot">
+                  <Clock size={12} />
+                </div>
+                <div className="current-time-label">
+                  {formatTime24(new Date())}
+                </div>
+              </div>
+            )}
+
+            {/* Events Layer */}
+            <div className="events-layer">
+              {dayEvents.map((event, index) => {
+                const { top, height } = getEventPosition(event, currentDate);
+
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, scale: 0.9, x: -20 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.02, zIndex: 10 }}
+                    onClick={() => handleEventClick(event)}
+                    className="day-event glass-card"
+                    style={{
+                      top: `${top}px`,
+                      height: `${Math.max(height, 28)}px`,
+                      backgroundColor: event.color || getEventColor(event.category)
+                    }}
+                  >
+                    <div className="event-content">
+                      <div className="event-title">{event.title}</div>
+                      {event.description && height > 60 && (
+                        <div className="event-description">
+                          {event.description}
+                        </div>
+                      )}
+                      {event.location && height > 80 && (
+                        <div className="event-location">
+                          📍 {event.location}
+                        </div>
+                      )}
+                      <div className="event-time">
+                        {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
                       </div>
-                    )}
-                    {event.location && height > 100 && (
-                      <div className="event-location">
-                        📍 {event.location}
-                      </div>
-                    )}
-                    <div className="event-time">
-                      {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

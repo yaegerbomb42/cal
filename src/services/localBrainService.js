@@ -2,10 +2,22 @@ import { CreateMLCEngine } from "@mlc-ai/web-llm";
 
 // Qwen2.5-0.5B-Instruct is a very small (~350MB) model good for basic instruction following
 const SELECTED_MODEL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC";
+const LOCAL_BRAIN_PREF_KEY = "calai-prefer-local-brain";
+
+const readStoredPreference = () => {
+    if (typeof window === "undefined") return false;
+    try {
+        return window.localStorage.getItem(LOCAL_BRAIN_PREF_KEY) === "true";
+    } catch (error) {
+        console.warn("Local Brain: Unable to read preference", error);
+        return false;
+    }
+};
 
 export const localBrainService = {
     engine: null,
     isLoaded: false,
+    preferLocal: readStoredPreference(),
     loadProgressCallback: null,
 
     /**
@@ -69,6 +81,20 @@ export const localBrainService = {
             this.engine = null;
             this.isLoaded = false;
         }
+    },
+
+    setPreferLocal(preferLocal) {
+        this.preferLocal = Boolean(preferLocal);
+        if (typeof window === "undefined") return;
+        try {
+            window.localStorage.setItem(LOCAL_BRAIN_PREF_KEY, String(this.preferLocal));
+        } catch (error) {
+            console.warn("Local Brain: Unable to save preference", error);
+        }
+    },
+
+    getPreferLocal() {
+        return this.preferLocal;
     },
 
     /**
