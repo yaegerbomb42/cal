@@ -68,7 +68,7 @@ const UpcomingSidebar = () => {
 
     const handleBulkDelete = () => {
         if (!deleteSearch.trim()) return;
-        if (window.confirm(`Delete ALL events matching "${deleteSearch}"? This cannot be undone.`)) {
+        if (window.confirm(`Permanently delete all events titled "${deleteSearch}"? This cannot be undone.`)) {
             deleteEventsByName(deleteSearch);
             setDeleteSearch('');
             setShowDeleteModal(false);
@@ -131,11 +131,15 @@ const UpcomingSidebar = () => {
             {/* Delete By Name Modal/Area */}
             {showDeleteModal && (
                 <div className="delete-modal-area fade-in">
+                    <div className="delete-header">
+                        <span className="delete-title">Bulk delete by name</span>
+                        <span className="delete-subtitle">Remove every event with the exact title below.</span>
+                    </div>
                     <div className="delete-input-wrapper">
                         <Search size={14} className="search-icon" />
                         <input
                             type="text"
-                            placeholder="Event name to delete..."
+                            placeholder="Enter exact event title"
                             value={deleteSearch}
                             onChange={(e) => setDeleteSearch(e.target.value)}
                             className="delete-input"
@@ -149,9 +153,9 @@ const UpcomingSidebar = () => {
                         onClick={handleBulkDelete}
                         className="delete-confirm-btn"
                     >
-                        Delete All Matches
+                        Delete matching events
                     </button>
-                    <p className="delete-hint">Deletes ALL events with this title.</p>
+                    <p className="delete-hint">This action removes all events with the exact title.</p>
                 </div>
             )}
 
