@@ -34,6 +34,11 @@ const ClockTimePicker = ({ label, value, onChange }) => {
   const clockRef = useRef(null);
   const [mode, setMode] = useState('hour');
   const [isDragging, setIsDragging] = useState(false);
+  const modeRef = useRef('hour');
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   const dateValue = value ? new Date(value) : new Date();
   const hour = dateValue.getHours();
@@ -46,7 +51,12 @@ const ClockTimePicker = ({ label, value, onChange }) => {
     onChange({ hours: nextHour, minutes: nextMinute });
   };
 
-  const handleSelect = (clientX, clientY, targetMode = mode) => {
+  const setPickerMode = (nextMode) => {
+    modeRef.current = nextMode;
+    setMode(nextMode);
+  };
+
+  const handleSelect = (clientX, clientY, targetMode = modeRef.current, shouldAdvance = false) => {
     if (!clockRef.current) return;
     const rect = clockRef.current.getBoundingClientRect();
     const x = clientX - rect.left - rect.width / 2;
@@ -61,7 +71,9 @@ const ClockTimePicker = ({ label, value, onChange }) => {
       const isPm = hour >= 12;
       const newHour = isPm ? (normalized % 12) + 12 : normalized % 12;
       updateTime(newHour, minute);
-      setMode('minute');
+      if (shouldAdvance) {
+        setPickerMode('minute');
+      }
     } else {
       let newMinute = Math.round((adjusted / 360) * 60);
       newMinute = Math.round(newMinute / 5) * 5;
@@ -71,17 +83,22 @@ const ClockTimePicker = ({ label, value, onChange }) => {
   };
 
   const handlePointerDown = (event) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     setIsDragging(true);
-    handleSelect(event.clientX, event.clientY);
+    handleSelect(event.clientX, event.clientY, modeRef.current, true);
   };
 
   const handlePointerMove = (event) => {
     if (!isDragging) return;
-    handleSelect(event.clientX, event.clientY, mode);
+    handleSelect(event.clientX, event.clientY, modeRef.current);
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (event) => {
     setIsDragging(false);
+    if (event?.currentTarget?.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    }
   };
 
   return (
@@ -130,7 +147,10 @@ const ClockTimePicker = ({ label, value, onChange }) => {
         <button
           type="button"
           className="clock-action-btn"
-          onClick={() => setMode('hour')}
+          onClick={() => {
+            setPickerMode('hour');
+            setIsDragging(false);
+          }}
           disabled={mode === 'hour'}
         >
           <ArrowLeft size={14} />
@@ -142,7 +162,10 @@ const ClockTimePicker = ({ label, value, onChange }) => {
         <button
           type="button"
           className="clock-action-btn primary"
-          onClick={() => setMode('hour')}
+          onClick={() => {
+            setPickerMode('hour');
+            setIsDragging(false);
+          }}
         >
           <Check size={14} />
           Done

@@ -1,30 +1,30 @@
-/* Pro High-Contrast Dark Theme */
+/* Pastel Light Theme */
 :root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   line-height: 1.6;
   font-weight: 400;
 
   /* Global Colors */
-  --bg-primary: #0b1224;
-  /* Deep navy blue */
-  --bg-secondary: #101a33;
-  /* Soft blue slate */
-  --accent: #7aa2ff;
-  /* Soft blue */
-  --accent-hover: #91b4ff;
-  --accent-glow: rgba(122, 162, 255, 0.3);
+  --bg-primary: #f7f7ff;
+  /* Soft lavender white */
+  --bg-secondary: #eef2ff;
+  /* Pastel blue */
+  --accent: #a7c5ff;
+  /* Pastel blue */
+  --accent-hover: #bdd3ff;
+  --accent-glow: rgba(167, 197, 255, 0.45);
 
   /* Text Contrast - Maximize legibility */
-  --text-primary: #ffffff;
-  --text-secondary: #c0c8da;
-  --text-muted: #8a93a5;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
 
   /* Glass / Surfaces */
-  --glass-bg: rgba(16, 26, 51, 0.82);
-  --glass-border: rgba(150, 170, 220, 0.15);
-  /* White alpha border for contrast */
-  --glass-shadow: 0 12px 40px rgba(3, 7, 18, 0.5);
-  --backdrop-blur: blur(16px);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(148, 163, 184, 0.35);
+  /* Soft pastel border */
+  --glass-shadow: 0 12px 32px rgba(148, 163, 184, 0.25);
+  --backdrop-blur: blur(14px);
 
   /* Status Colors */
   --success: #10b981;
