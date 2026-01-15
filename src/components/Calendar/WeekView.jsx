@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { getWeekDays, getDayHours, formatTime, isToday } from '../../utils/dateUtils';
+import { getWeekDays, getDayHours, formatTime24, isToday } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -14,6 +14,7 @@ const WeekView = () => {
 
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
+  const weekEventsCount = weekDays.reduce((total, day) => total + getEventsForDate(day).length, 0);
 
   // Current Time Indicator Logic
   const [currentTimePos, setCurrentTimePos] = useState(null);
@@ -52,11 +53,20 @@ const WeekView = () => {
     if (distance === 0) return 6;    // Active
     if (distance === 1) return 2.5;  // Neighbors
     if (distance === 2) return 1.5;  // Far neighbors
+    if (distance === 3) return 1;    // Outer neighbors
     return 0.5;                      // Compressed
   };
 
   return (
     <div className="week-view" ref={containerRef}>
+      <div className="week-summary glass-card">
+        <div className="week-summary-title">This Week</div>
+        <div className="week-summary-stat">
+          <span className="stat-number">{weekEventsCount}</span>
+          <span className="stat-label">Events</span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>
@@ -93,7 +103,7 @@ const WeekView = () => {
               onMouseEnter={() => setHoveredHour(hourNum)}
             >
               <div className="time-label">
-                {formatTime(hour).replace(':00', '')}
+                {formatTime24(hour)}
               </div>
 
               {/* Time Line (only if current hour) */}
@@ -103,6 +113,9 @@ const WeekView = () => {
                   style={{ top: `${currentMinPercent}%` }}
                 >
                   <div className="current-time-circle" />
+                  <div className="current-time-label">
+                    {formatTime24(now)}
+                  </div>
                 </div>
               )}
 

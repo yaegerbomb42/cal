@@ -14,9 +14,65 @@
 
 .sidebar-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.75rem;
     margin-bottom: 24px;
+}
+
+.header-title-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-title-row h3 {
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+.header-spacer {
+    width: 32px;
+    height: 32px;
+}
+
+.header-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.4);
+    color: #c7d2fe;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.15);
+    color: #e0e7ff;
+    transform: translateY(-1px);
+}
+
+.icon-btn.active {
+    border-color: rgba(99, 102, 241, 0.6);
+    background: rgba(99, 102, 241, 0.25);
+    color: #e0e7ff;
+}
+
+.icon-btn.active-red {
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.15);
+    color: #fca5a5;
 }
 
 .category-filters {
@@ -63,6 +119,7 @@
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 600;
+    align-self: center;
 }
 
 .upcoming-list {

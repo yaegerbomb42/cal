@@ -3,6 +3,7 @@ import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import DayView from './DayView';
 import WeekView from './WeekView';
 import MonthView from './MonthView';
+import YearView from './YearView';
 import './Calendar.css';
 
 const Calendar = () => {
@@ -16,6 +17,8 @@ const Calendar = () => {
         return <WeekView key="week" />;
       case CALENDAR_VIEWS.MONTH:
         return <MonthView key="month" />;
+      case CALENDAR_VIEWS.YEAR:
+        return <YearView key="year" />;
       default:
         return <MonthView key="month" />;
     }

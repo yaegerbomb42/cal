@@ -1,0 +1,145 @@
+.year-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.year-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+}
+
+.year-title h3 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.year-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.year-grid {
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.year-month-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10px, 1fr));
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.month-label {
+  opacity: 0.2;
+}
+
+.month-label.visible {
+  opacity: 0.9;
+}
+
+.year-weeks {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(10px, 1fr);
+  gap: 4px;
+  align-items: start;
+}
+
+.year-week-column {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.year-day {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  cursor: pointer;
+}
+
+.year-day.level-1 {
+  background: rgba(99, 102, 241, 0.35);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.year-day.level-2 {
+  background: rgba(96, 165, 250, 0.5);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.year-day.level-3 {
+  background: rgba(52, 211, 153, 0.55);
+  border-color: rgba(52, 211, 153, 0.55);
+}
+
+.year-day.level-4 {
+  background: rgba(34, 197, 94, 0.75);
+  border-color: rgba(34, 197, 94, 0.8);
+}
+
+.year-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.legend-scale {
+  display: flex;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.legend-dot.level-1 {
+  background: rgba(99, 102, 241, 0.35);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.legend-dot.level-2 {
+  background: rgba(96, 165, 250, 0.5);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.legend-dot.level-3 {
+  background: rgba(52, 211, 153, 0.55);
+  border-color: rgba(52, 211, 153, 0.55);
+}
+
+.legend-dot.level-4 {
+  background: rgba(34, 197, 94, 0.75);
+  border-color: rgba(34, 197, 94, 0.8);
+}
+
+@media (max-width: 1024px) {
+  .year-grid {
+    padding: 1.25rem;
+  }
+
+  .year-day,
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+  }
+}

@@ -5,24 +5,25 @@
   font-weight: 400;
 
   /* Global Colors */
-  --bg-primary: #050505;
-  /* Near black */
-  --bg-secondary: #0a0a0a;
-  /* Slightly lighter */
-  --accent: #6366f1;
-  /* Indigo 500 */
-  --accent-glow: rgba(99, 102, 241, 0.25);
+  --bg-primary: #0b1224;
+  /* Deep navy blue */
+  --bg-secondary: #101a33;
+  /* Soft blue slate */
+  --accent: #7aa2ff;
+  /* Soft blue */
+  --accent-hover: #91b4ff;
+  --accent-glow: rgba(122, 162, 255, 0.3);
 
   /* Text Contrast - Maximize legibility */
   --text-primary: #ffffff;
-  --text-secondary: #a3a3a3;
-  --text-muted: #737373;
+  --text-secondary: #c0c8da;
+  --text-muted: #8a93a5;
 
   /* Glass / Surfaces */
-  --glass-bg: rgba(10, 10, 10, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(16, 26, 51, 0.82);
+  --glass-border: rgba(150, 170, 220, 0.15);
   /* White alpha border for contrast */
-  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  --glass-shadow: 0 12px 40px rgba(3, 7, 18, 0.5);
   --backdrop-blur: blur(16px);
 
   /* Status Colors */

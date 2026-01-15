@@ -211,6 +211,20 @@
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
+.current-time-label {
+  position: absolute;
+  left: 0.75rem;
+  top: -12px;
+  padding: 2px 8px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+}
+
 .events-layer {
   position: absolute;
   top: 0;

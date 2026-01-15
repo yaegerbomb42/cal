@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { getDayHours, getDayHoursWithHalf, formatTime, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
+import { getDayHours, getDayHoursWithHalf, formatTime24, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -79,7 +79,7 @@ const DayView = () => {
             >
               {!slot.isHalfHour && (
                 <span className="time-label">
-                  {formatTime(slot.time)}
+                  {formatTime24(slot.time)}
                 </span>
               )}
               {slot.isHalfHour && (
@@ -112,6 +112,9 @@ const DayView = () => {
               <div className="current-time-line"></div>
               <div className="current-time-dot">
                 <Clock size={12} />
+              </div>
+              <div className="current-time-label">
+                {formatTime24(new Date())}
               </div>
             </div>
           )}
@@ -149,7 +152,7 @@ const DayView = () => {
                       </div>
                     )}
                     <div className="event-time">
-                      {formatTime(new Date(event.start))} - {formatTime(new Date(event.end))}
+                      {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
                     </div>
                   </div>
                 </motion.div>

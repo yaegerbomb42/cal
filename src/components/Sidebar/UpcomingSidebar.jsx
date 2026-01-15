@@ -79,6 +79,7 @@ const UpcomingSidebar = () => {
         <div className="upcoming-sidebar glass-card">
             <div className="sidebar-header">
                 <div className="header-title-row">
+                    <span className="header-spacer" />
                     <h3>{viewMode === 'upcoming' ? 'Upcoming' : 'Archive'}</h3>
                     <div className="header-actions">
                         <button
