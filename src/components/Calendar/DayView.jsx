@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { getDayHours, getDayHoursWithHalf, formatTime24, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -13,8 +14,28 @@ const DayView = () => {
   const dayHours = getDayHours();
   const daySlots = getDayHoursWithHalf();
   const dayEvents = getEventsForDate(currentDate);
+  const [pixelsPerHour, setPixelsPerHour] = useState(36);
+  const dayGridRef = useRef(null);
   const showCurrentTime = isToday(currentDate);
-  const currentTimePosition = showCurrentTime ? getCurrentTimePosition() : null;
+  const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+
+  const updateHourScale = useCallback(() => {
+    if (!dayGridRef.current) {
+      return;
+    }
+    const gridTop = dayGridRef.current.getBoundingClientRect().top;
+    const availableHeight = window.innerHeight - gridTop - 16;
+    if (availableHeight <= 0) {
+      return;
+    }
+    setPixelsPerHour(availableHeight / 24);
+  }, []);
+
+  useLayoutEffect(() => {
+    updateHourScale();
+    window.addEventListener('resize', updateHourScale);
+    return () => window.removeEventListener('resize', updateHourScale);
+  }, [updateHourScale]);
 
   const handleTimeSlotClick = (hour) => {
     const startTime = new Date(currentDate);
@@ -37,6 +58,10 @@ const DayView = () => {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       className="day-view"
+      style={{
+        '--hour-height': `${pixelsPerHour}px`,
+        '--half-hour-height': `${pixelsPerHour / 2}px`
+      }}
     >
       {/* Day Header */}
       <div className={cn(
@@ -65,7 +90,7 @@ const DayView = () => {
       </div>
 
       {/* Day Grid */}
-      <div className="day-grid">
+      <div className="day-grid" ref={dayGridRef}>
         <div className="day-grid-scroll">
           {/* Time Column */}
           <div className="time-column">
@@ -101,6 +126,7 @@ const DayView = () => {
                   'hour-slot',
                   isBusinessHour(hour) && 'business-hour'
                 )}
+                data-time={formatTime24(hour)}
               />
             ))}
 
@@ -123,7 +149,7 @@ const DayView = () => {
             {/* Events Layer */}
             <div className="events-layer">
               {dayEvents.map((event, index) => {
-                const { top, height } = getEventPosition(event, currentDate);
+                const { top, height } = getEventPosition(event, currentDate, pixelsPerHour);
 
                 return (
                   <motion.div
@@ -136,7 +162,7 @@ const DayView = () => {
                     className="day-event glass-card"
                     style={{
                       top: `${top}px`,
-                      height: `${Math.max(height, 28)}px`,
+                      height: `${height}px`,
                       backgroundColor: event.color || getEventColor(event.category)
                     }}
                   >
