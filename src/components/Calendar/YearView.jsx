@@ -31,9 +31,20 @@ const getIntensity = (count) => {
   return 0;
 };
 
+const withAlpha = (hex, alpha) => {
+  if (!hex) return undefined;
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return hex;
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 const YearView = () => {
-  const { currentDate } = useCalendar();
+  const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
 
   const weeks = getCalendarWeeks(currentDate);
   const yearEventsCount = weeks.reduce((total, week) => {
@@ -59,7 +70,7 @@ const YearView = () => {
         <div className="year-month-labels">
           {weeks.map((week, index) => {
             const month = week[0];
-            const label = format(month, 'MMM');
+            const label = monthFormatter.format(month);
             const showLabel = index === 0 || !isSameMonth(month, weeks[index - 1][0]);
             return (
               <span key={`${label}-${index}`} className={cn('month-label', showLabel && 'visible')}>
@@ -73,15 +84,29 @@ const YearView = () => {
           {weeks.map((week, index) => (
             <div key={`week-${index}`} className="year-week-column">
               {week.map((day) => {
-                const count = getEventsForDate(day).length;
+                const dayEvents = getEventsForDate(day);
+                const count = dayEvents.length;
                 const intensity = getIntensity(count);
+                const primaryColor = dayEvents[0]?.color;
+                const dayStyle = primaryColor ? {
+                  backgroundColor: withAlpha(primaryColor, 0.22),
+                  borderColor: withAlpha(primaryColor, 0.55)
+                } : undefined;
                 return (
                   <motion.div
                     key={day.toISOString()}
-                    className={cn('year-day', intensity > 0 && `level-${intensity}`)}
+                    className={cn('year-day', count > 0 && 'has-events', intensity > 0 && `level-${intensity}`)}
                     title={`${format(day, 'MMM d')} · ${count} event${count === 1 ? '' : 's'}`}
+                    style={dayStyle}
+                    onClick={() => {
+                      const selectedDay = new Date(day);
+                      selectedDay.setHours(12, 0, 0, 0);
+                      openEventModal({ start: selectedDay.toISOString() });
+                    }}
                     whileHover={{ scale: 1.15 }}
-                  />
+                  >
+                    {count > 0 && <span className="year-day-count">{count}</span>}
+                  </motion.div>
                 );
               })}
             </div>

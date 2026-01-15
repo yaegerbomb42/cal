@@ -32,7 +32,7 @@
 
 .year-month-labels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(18px, 1fr));
   gap: 4px;
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -51,7 +51,7 @@
 .year-weeks {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(10px, 1fr);
+  grid-auto-columns: minmax(18px, 1fr);
   gap: 4px;
   align-items: start;
 }
@@ -63,32 +63,42 @@
 }
 
 .year-day {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.25);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .year-day.level-1 {
-  background: rgba(99, 102, 241, 0.35);
-  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(167, 197, 255, 0.4);
+  border-color: rgba(167, 197, 255, 0.6);
 }
 
 .year-day.level-2 {
-  background: rgba(96, 165, 250, 0.5);
-  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(186, 230, 253, 0.55);
+  border-color: rgba(186, 230, 253, 0.7);
 }
 
 .year-day.level-3 {
-  background: rgba(52, 211, 153, 0.55);
-  border-color: rgba(52, 211, 153, 0.55);
+  background: rgba(216, 180, 254, 0.6);
+  border-color: rgba(216, 180, 254, 0.7);
 }
 
 .year-day.level-4 {
-  background: rgba(34, 197, 94, 0.75);
-  border-color: rgba(34, 197, 94, 0.8);
+  background: rgba(253, 186, 248, 0.7);
+  border-color: rgba(253, 186, 248, 0.8);
+}
+
+.year-day-count {
+  line-height: 1;
 }
 
 .year-legend {
@@ -105,31 +115,31 @@
 }
 
 .legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .legend-dot.level-1 {
-  background: rgba(99, 102, 241, 0.35);
-  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(167, 197, 255, 0.4);
+  border-color: rgba(167, 197, 255, 0.6);
 }
 
 .legend-dot.level-2 {
-  background: rgba(96, 165, 250, 0.5);
-  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(186, 230, 253, 0.55);
+  border-color: rgba(186, 230, 253, 0.7);
 }
 
 .legend-dot.level-3 {
-  background: rgba(52, 211, 153, 0.55);
-  border-color: rgba(52, 211, 153, 0.55);
+  background: rgba(216, 180, 254, 0.6);
+  border-color: rgba(216, 180, 254, 0.7);
 }
 
 .legend-dot.level-4 {
-  background: rgba(34, 197, 94, 0.75);
-  border-color: rgba(34, 197, 94, 0.8);
+  background: rgba(253, 186, 248, 0.7);
+  border-color: rgba(253, 186, 248, 0.8);
 }
 
 @media (max-width: 1024px) {
@@ -139,7 +149,7 @@
 
   .year-day,
   .legend-dot {
-    width: 8px;
-    height: 8px;
+    width: 14px;
+    height: 14px;
   }
 }
