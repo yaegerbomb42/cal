@@ -8,7 +8,7 @@ import { useCallback, useLayoutEffect, useState } from 'react';
  *  offset?: number
  * }} options
  */
-export const useHourScale = ({ containerRef, minPixels = 24, maxPixels = 64, offset = 16 }) => {
+export const useHourScale = ({ containerRef, minPixels = 24, maxPixels = 64, offset = 16, fitToViewport = false }) => {
   const [pixelsPerHour, setPixelsPerHour] = useState(36);
 
   const updateScale = useCallback(() => {
@@ -23,9 +23,12 @@ export const useHourScale = ({ containerRef, minPixels = 24, maxPixels = 64, off
       return;
     }
 
-    const next = Math.max(minPixels, Math.min(maxPixels, availableHeight / 24));
+    const rawValue = availableHeight / 24;
+    const next = fitToViewport
+      ? rawValue
+      : Math.max(minPixels, Math.min(maxPixels, rawValue));
     setPixelsPerHour(next);
-  }, [containerRef, minPixels, maxPixels, offset]);
+  }, [containerRef, minPixels, maxPixels, offset, fitToViewport]);
 
   useLayoutEffect(() => {
     updateScale();

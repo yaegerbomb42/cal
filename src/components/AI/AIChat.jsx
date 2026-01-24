@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useCalendar } from '../../contexts/CalendarContext';
@@ -29,10 +29,13 @@ const AIChat = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [pendingEvent, setPendingEvent] = useState(null);
+  const [imageDrafts, setImageDrafts] = useState([]);
   const [clarificationState, setClarificationState] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const imageInputRef = useRef(null);
   const { events, addEvent, deleteEventsByCategory } = useEvents();
   const { openEventModal } = useCalendar();
 
@@ -217,6 +220,51 @@ const AIChat = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleConfirmImageEvent = async (index) => {
+    const draft = imageDrafts[index];
+    if (!draft) return;
+    try {
+      await addEvent(draft, { allowConflicts: true });
+      addMessage('ai', `Added "${draft.title}" from your image.`);
+      setImageDrafts(prev => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      addMessage('ai', 'Something went wrong while saving the image event.');
+    }
+  };
+
+  const handleConfirmAllImageEvents = async () => {
+    if (imageDrafts.length === 0) return;
+    const drafts = [...imageDrafts];
+    try {
+      for (const draft of drafts) {
+        await addEvent(draft, { allowConflicts: true });
+      }
+      addMessage('ai', `Added ${drafts.length} events from your images.`);
+      setImageDrafts([]);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      addMessage('ai', 'Something went wrong while adding image events.');
+    }
+  };
+
+  const handleEditImageEvent = (index) => {
+    const draft = imageDrafts[index];
+    if (!draft) return;
+    openEventModal(draft);
+    setImageDrafts(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDiscardImageEvent = (index) => {
+    setImageDrafts(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleEditDraft = () => {
     if (!pendingEvent) return;
     const { conflicts, originalText, ...eventData } = pendingEvent;
@@ -238,6 +286,37 @@ const AIChat = ({ isOpen, onClose }) => {
     addMessage('user', text);
 
     await processInput(text);
+  };
+
+  const handleImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    setIsImageProcessing(true);
+    setStatus('info', 'Processing images with Gemini 3...');
+    try {
+      const parsedEvents = await geminiService.parseEventsFromImages(files);
+      const drafts = parsedEvents.map(event => finalizeDraft(event));
+      if (drafts.length === 0) {
+        addMessage('ai', "I couldn't find any events in those images. Want to try another?");
+      } else {
+        addMessage('ai', `I found ${drafts.length} event${drafts.length === 1 ? '' : 's'} from your images. Review below.`);
+        setImageDrafts(prev => [...prev, ...drafts]);
+      }
+    } catch (error) {
+      if (error instanceof AIParseError || error instanceof AIServiceError) {
+        addMessage('ai', error.message);
+      } else {
+        logger.error('Image parsing error', { error });
+        addMessage('ai', 'I hit an error reading that image. Try a clearer screenshot.');
+      }
+      setStatus('error', 'Image processing failed');
+    } finally {
+      setIsImageProcessing(false);
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+      setStatus(null, null);
+    }
   };
 
   if (!isOpen) return null;
@@ -326,6 +405,55 @@ const AIChat = ({ isOpen, onClose }) => {
               </motion.div>
             )}
 
+            {imageDrafts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="event-confirmation-card glass-card image-event-batch"
+              >
+                <div className="event-card-header">
+                  <Calendar size={16} />
+                  <span>Image Events</span>
+                </div>
+                <p className="event-desc">Review and confirm each image-derived event.</p>
+                <div className="image-event-actions">
+                  <button onClick={handleConfirmAllImageEvents} className="btn-primary w-full">
+                    <Check size={16} /> Add All
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {imageDrafts.map((draft, index) => (
+              <motion.div
+                key={`${draft.title}-${draft.start}-${index}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="event-confirmation-card glass-card"
+              >
+                <div className="event-card-header">
+                  <Calendar size={16} />
+                  <span>Image Draft</span>
+                </div>
+                <h4>{draft.title}</h4>
+                <p className="event-time">
+                  {new Date(draft.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+                {draft.description && <p className="event-desc">{draft.description}</p>}
+                <div className="event-card-actions">
+                  <button onClick={() => handleEditImageEvent(index)} className="btn-icon" aria-label="Edit image draft">
+                    <Edit2 size={16} />
+                  </button>
+                  <button onClick={() => handleDiscardImageEvent(index)} className="btn-icon danger" aria-label="Discard image draft">
+                    <Trash2 size={16} />
+                  </button>
+                  <button onClick={() => handleConfirmImageEvent(index)} className="btn-primary w-full">
+                    <Check size={16} /> Add Event
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+
             {isLoading && (
               <div className="loading-dots">
                 <span>.</span><span>.</span><span>.</span>
@@ -336,6 +464,23 @@ const AIChat = ({ isOpen, onClose }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="chat-input-wrapper">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="chat-image-input"
+            />
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              className="chat-upload-btn"
+              disabled={isImageProcessing || isLoading}
+              title="Upload event images"
+            >
+              <ImagePlus size={16} />
+            </button>
             <input
               type="text"
               value={inputValue}

@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { localBrainService } from './localBrainService.js';
 import { parseNaturalLanguageTime } from '../utils/dateUtils.js';
 import { parseTimeRangeToDates } from '../utils/timeParser.js';
+import { sanitizeDraft } from '../utils/eventSchema.js';
 import { AIParseError, AIServiceError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
@@ -93,18 +94,20 @@ Parse the following text into a calendar event. The text might be a casual reque
 - start date and time
 - end date and time (if not specified, assume 1 hour duration unless context suggests otherwise)
 - location (optional)
-- category (work, personal, health, social, travel, or other)
+- category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, or other)
 
 Text: "${text}"
 
 Current ISO Time: ${new Date().toISOString()}
 User Timezone: ${timeZone}
 
-CRITICAL INSTRUCTION:
+CRITICAL INSTRUCTIONS:
 - The user is in ${timeZone}.
 - If the user says "8am", they mean 8:00 AM in ${timeZone}.
 - Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
 - Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
+- If the user specifies a time range (e.g., 3-4pm), honor that range exactly.
+- If a date is specified without a time, assume 12:00 PM local time.
 
 Please respond with a JSON object in this exact format:
 {
@@ -123,7 +126,11 @@ If the text doesn't contain enough information for a calendar event, respond wit
 
     try {
       // Use Flash for faster parsing
-      const result = await this.modelFlash.generateContent(prompt);
+      const model = this.modelFlash || this.modelPro;
+      if (!model) {
+        throw new AIServiceError('Gemini model not available. Reconnect your API key.');
+      }
+      const result = await model.generateContent(prompt);
       const response = await result.response;
       const responseText = response.text();
 
@@ -165,6 +172,88 @@ If the text doesn't contain enough information for a calendar event, respond wit
 
       throw new AIParseError('Unable to parse the event details.');
     }
+  }
+
+  async parseEventsFromImages(files) {
+    if (!this.isInitialized) {
+      throw new AIServiceError('AI service not initialized. Connect Gemini API to process images.');
+    }
+
+    if (!files || files.length === 0) {
+      throw new AIParseError('No images provided for processing.');
+    }
+
+    const model = this.modelPro || this.modelFlash;
+    if (!model) {
+      throw new AIServiceError('Gemini model not available. Reconnect your API key.');
+    }
+
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const prompt = `
+You are Cal, an expert calendar parser. Extract all event details from the provided images.
+The images may include multiple events per image.
+
+Return a JSON array. Each item must include:
+- title
+- description (optional)
+- start (ISO 8601 UTC string)
+- end (ISO 8601 UTC string)
+- location (optional)
+- category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, other)
+
+Rules:
+- Interpret dates and times in the user's timezone: ${timeZone}.
+- If a time is missing, assume 12:00 PM local.
+- If an end time is missing, assume 1 hour duration.
+- If the image contains no events, return [].
+- Respond ONLY with JSON (no markdown, no extra text).
+Current ISO Time: ${new Date().toISOString()}
+`;
+
+    const imageParts = await Promise.all(files.map(file => this.fileToGenerativePart(file)));
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = await result.response;
+    const responseText = response.text();
+
+    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      throw new AIParseError('No valid JSON array found in image response');
+    }
+
+    let parsedEvents = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsedEvents)) {
+      throw new AIParseError('Image response did not return an array of events');
+    }
+
+    parsedEvents = parsedEvents
+      .filter(event => event && event.start)
+      .map(event => {
+        const normalized = sanitizeDraft(this.normalizeParsedEvent(event, ''));
+        if (!normalized.end) {
+          const startDate = new Date(normalized.start);
+          normalized.end = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString();
+        }
+        return normalized;
+      });
+
+    return parsedEvents;
+  }
+
+  async fileToGenerativePart(file) {
+    const data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+    const base64 = data.split(',')[1];
+    return {
+      inlineData: {
+        data: base64,
+        mimeType: file.type
+      }
+    };
   }
 
   async checkConflicts(newEvent, existingEvents) {

@@ -8,6 +8,7 @@ import './MonthView.css';
 const MonthView = () => {
   const { currentDate, openEventModal, setView, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const now = new Date();
 
   const monthDays = getMonthDays(currentDate);
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -86,7 +87,7 @@ const MonthView = () => {
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.02 }}
                     onClick={(e) => handleEventClick(event, e)}
-                    className="day-event"
+                    className={cn('day-event', new Date(event.end || event.start) < now && 'past-event')}
                     style={{ backgroundColor: event.color || getEventColor(event.category) }}
                   >
                     <span className="event-time">{formatTime24(new Date(event.start))}</span>

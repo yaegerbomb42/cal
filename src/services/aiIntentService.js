@@ -24,6 +24,8 @@ const EVENT_QUERY_KEYWORDS = [
   'calendar',
   'schedule',
   'upcoming',
+  'appointment',
+  'next appointment',
   'today',
   'tomorrow',
   'this week',

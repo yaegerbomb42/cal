@@ -96,6 +96,26 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  --magnify-scale: 1;
+}
+
+.week-time-slot.magnify-core {
+  color: var(--text-primary);
+  background: rgba(56, 189, 248, 0.1);
+  --magnify-scale: 1.08;
+  transform: scaleY(var(--magnify-scale));
+}
+
+.week-time-slot.magnify-near {
+  background: rgba(56, 189, 248, 0.05);
+  --magnify-scale: 1.05;
+  transform: scaleY(var(--magnify-scale));
+}
+
+.week-time-slot.magnify-far {
+  background: rgba(56, 189, 248, 0.03);
+  --magnify-scale: 1.02;
+  transform: scaleY(var(--magnify-scale));
 }
 
 .week-days-grid {
@@ -119,10 +139,27 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: background 0.2s ease;
+  --magnify-scale: 1;
 }
 
 .week-hour-cell:hover {
   background: rgba(255, 255, 255, 0.05);
+  transform: scaleY(var(--magnify-scale));
+}
+
+.week-hour-cell.magnify-core {
+  background: rgba(56, 189, 248, 0.08);
+  --magnify-scale: 1.08;
+}
+
+.week-hour-cell.magnify-near {
+  background: rgba(56, 189, 248, 0.04);
+  --magnify-scale: 1.05;
+}
+
+.week-hour-cell.magnify-far {
+  background: rgba(56, 189, 248, 0.02);
+  --magnify-scale: 1.02;
 }
 
 .week-events-layer {
@@ -143,6 +180,12 @@
   pointer-events: auto;
   overflow: hidden;
   backdrop-filter: blur(6px);
+}
+
+.week-event.past-event {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+  transform: scale(0.97);
 }
 
 .week-event-title {

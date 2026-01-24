@@ -161,7 +161,9 @@ export const EventsProvider = ({ children }) => {
       validateEventOrThrow(event);
     } catch (error) {
       if (error instanceof ValidationError) {
-        toastService.error(error.message);
+        if (!options.silent) {
+          toastService.error(error.message);
+        }
         throw error;
       }
       throw error;
@@ -171,7 +173,9 @@ export const EventsProvider = ({ children }) => {
     if (!options.skipConflictCheck) {
       const conflicts = checkEventConflicts(event, events);
       if (conflicts.length > 0 && !options.allowConflicts) {
-        toastService.warning(`This event conflicts with ${conflicts.length} existing event(s)`);
+        if (!options.silent) {
+          toastService.warning(`This event conflicts with ${conflicts.length} existing event(s)`);
+        }
         return null;
       }
     }
@@ -183,7 +187,9 @@ export const EventsProvider = ({ children }) => {
     };
 
     setEvents(prev => [...prev, newEvent]);
-    toastService.success(`Event "${newEvent.title}" created successfully`);
+    if (!options.silent) {
+      toastService.success(`Event "${newEvent.title}" created successfully`);
+    }
 
     // Sync to Google Calendar if connected
     if (googleCalendarService.isAuthorized) {
@@ -195,18 +201,20 @@ export const EventsProvider = ({ children }) => {
     }
 
     // Schedule reminder if set
-    if (newEvent.reminder) {
+    if (newEvent.reminder && !options.skipNotifications) {
       reminderService.updateEventReminders(newEvent);
     }
 
     // Send notification (fire-and-forget)
-    import('../services/notificationService').then(({ notificationService }) => {
-      notificationService.sendEventNotification(newEvent).catch(error => {
-        console.log('Could not send notification:', error);
+    if (!options.skipNotifications) {
+      import('../services/notificationService').then(({ notificationService }) => {
+        notificationService.sendEventNotification(newEvent).catch(error => {
+          console.log('Could not send notification:', error);
+        });
+      }).catch(error => {
+        console.log('Could not load notification service:', error);
       });
-    }).catch(error => {
-      console.log('Could not load notification service:', error);
-    });
+    }
 
     return newEvent;
   };
@@ -278,18 +286,26 @@ export const EventsProvider = ({ children }) => {
     }
   };
 
-  const deleteEventsByFilter = (filterFn, label) => {
+  const deleteEventsByFilter = (filterFn, label, options = {}) => {
     const toDelete = events.filter(filterFn);
     if (toDelete.length === 0) {
-      toastService.info(`No events found matching "${label}"`);
+      if (!options.silent) {
+        toastService.info(`No events found matching "${label}"`);
+      }
       return;
     }
 
-    if (window.confirm(`Are you sure you want to delete all ${toDelete.length} events matching "${label}"?`)) {
+    const shouldDelete = options.skipConfirm
+      ? true
+      : window.confirm(`Are you sure you want to delete all ${toDelete.length} events matching "${label}"?`);
+
+    if (shouldDelete) {
       toDelete.forEach(e => reminderService.cancelEventReminders(e.id));
       const idsToDelete = new Set(toDelete.map(e => e.id));
       setEvents(prev => prev.filter(e => !idsToDelete.has(e.id)));
-      toastService.success(`Deleted ${toDelete.length} events matching "${label}"`);
+      if (!options.silent) {
+        toastService.success(`Deleted ${toDelete.length} events matching "${label}"`);
+      }
     }
   };
 

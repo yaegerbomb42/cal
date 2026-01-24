@@ -96,7 +96,9 @@ class GoogleCalendarService {
     }
 
     async listUpcomingEvents() {
-        if (!this.gapiInited) throw new Error("GAPI not initialized");
+        if (!this.gapiInited || !this.isAuthorized) {
+            return [];
+        }
 
         // Ensure token is set for GAPI
         if (this.accessToken) {
@@ -125,7 +127,7 @@ class GoogleCalendarService {
             }));
         } catch (err) {
             console.error("Error listing events", err);
-            throw err;
+            return [];
         }
     }
 

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { getDayHours, getDayHoursWithHalf, formatTime24, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -16,9 +16,11 @@ const DayView = () => {
   const daySlots = getDayHoursWithHalf();
   const dayEvents = getEventsForDate(currentDate);
   const dayGridRef = useRef(null);
-  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, minPixels: 18, maxPixels: 64, offset: 24 });
+  const [magnifyHour, setMagnifyHour] = useState(null);
+  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
   const showCurrentTime = isToday(currentDate);
   const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+  const now = new Date();
 
   const handleTimeSlotClick = (hour) => {
     const startTime = new Date(currentDate);
@@ -36,6 +38,29 @@ const DayView = () => {
     openEventModal(event);
   };
 
+  const handleGridMouseMove = (event) => {
+    if (!dayGridRef.current) return;
+    const rect = dayGridRef.current.getBoundingClientRect();
+    const localY = event.clientY - rect.top;
+    const slotHeight = rect.height / 24;
+    const hour = Math.min(23, Math.max(0, Math.floor(localY / slotHeight)));
+    setMagnifyHour(hour);
+  };
+
+  const handleGridMouseLeave = () => {
+    setMagnifyHour(null);
+  };
+
+  const getMagnifyClass = (dateValue) => {
+    if (magnifyHour === null || magnifyHour === undefined) return '';
+    const hourValue = dateValue.getHours() + (dateValue.getMinutes() >= 30 ? 0.5 : 0);
+    const distance = Math.abs(hourValue - magnifyHour);
+    if (distance < 0.25) return 'magnify-core';
+    if (distance < 0.75) return 'magnify-near';
+    if (distance < 1.5) return 'magnify-far';
+    return '';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -43,7 +68,8 @@ const DayView = () => {
       className="day-view"
       style={{
         '--hour-height': `${pixelsPerHour}px`,
-        '--half-hour-height': `${pixelsPerHour / 2}px`
+        '--half-hour-height': `${pixelsPerHour / 2}px`,
+        '--magnify-index': magnifyHour ?? -1
       }}
     >
       {/* Day Header */}
@@ -73,7 +99,12 @@ const DayView = () => {
       </div>
 
       {/* Day Grid */}
-      <div className="day-grid" ref={dayGridRef}>
+      <div
+        className="day-grid"
+        ref={dayGridRef}
+        onMouseMove={handleGridMouseMove}
+        onMouseLeave={handleGridMouseLeave}
+      >
         <div className="day-grid-scroll">
           {/* Time Column */}
           <div className="time-column">
@@ -83,7 +114,8 @@ const DayView = () => {
                 className={cn(
                   'time-slot',
                   slot.isHalfHour && 'half-hour',
-                  !slot.isHalfHour && isBusinessHour(slot.time) && 'business-hour'
+                  !slot.isHalfHour && isBusinessHour(slot.time) && 'business-hour',
+                  getMagnifyClass(slot.time)
                 )}
               >
                 {!slot.isHalfHour && (
@@ -107,7 +139,8 @@ const DayView = () => {
                 onClick={() => handleTimeSlotClick(hour)}
                 className={cn(
                   'hour-slot',
-                  isBusinessHour(hour) && 'business-hour'
+                  isBusinessHour(hour) && 'business-hour',
+                  getMagnifyClass(hour)
                 )}
                 data-time={formatTime24(hour)}
               />
@@ -140,6 +173,7 @@ const DayView = () => {
             <div className="events-layer">
               {dayEvents.map((event, index) => {
                 const { top, height } = getEventPosition(event, currentDate, pixelsPerHour);
+                const isPastEvent = new Date(event.end || event.start) < now;
 
                 return (
                   <motion.div
@@ -149,7 +183,7 @@ const DayView = () => {
                     transition={{ delay: index * 0.1 }}
                     whileHover={{ scale: 1.02, zIndex: 10 }}
                     onClick={() => handleEventClick(event)}
-                    className="day-event glass-card"
+                    className={cn('day-event', 'glass-card', isPastEvent && 'past-event')}
                     style={{
                       top: `${top}px`,
                       height: `${height}px`,

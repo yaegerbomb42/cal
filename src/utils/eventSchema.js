@@ -7,6 +7,7 @@ export const EVENT_CATEGORIES = [
   'todo',
   'event',
   'appointment',
+  'holiday',
   'health',
   'social',
   'travel',

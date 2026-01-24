@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { getWeekDays, getDayHours, formatTime24, getEventPosition, getCurrentTimePosition, isToday } from '../../utils/dateUtils';
+import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -9,7 +9,7 @@ import './WeekView.css';
 
 const WeekView = () => {
   const { currentDate, openEventModal } = useCalendar();
-  const { events } = useEvents();
+  const { events, getEventsForDate } = useEvents();
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
   const weekStart = startOfDay(weekDays[0]);
@@ -22,18 +22,15 @@ const WeekView = () => {
   const weekEventsCount = weekEvents.length;
 
   const weekGridRef = useRef(null);
-  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, minPixels: 16, maxPixels: 48, offset: 24 });
+  const [magnifyHour, setMagnifyHour] = useState(null);
+  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
 
-  // Current Time Indicator Logic
   const [currentTick, setCurrentTick] = useState(Date.now());
 
   useEffect(() => {
-    const updateTime = () => {
-      setCurrentTick(Date.now());
-    };
-
+    const updateTime = () => setCurrentTick(Date.now());
     updateTime();
-    const interval = setInterval(updateTime, 60000); // Update every minute
+    const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -52,9 +49,38 @@ const WeekView = () => {
 
   const showCurrentTime = weekDays.some(day => isToday(day));
   const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+  const now = new Date();
+
+  const handleGridMouseMove = (event) => {
+    if (!weekGridRef.current) return;
+    const rect = weekGridRef.current.getBoundingClientRect();
+    const localY = event.clientY - rect.top;
+    const slotHeight = rect.height / 24;
+    const hour = Math.min(23, Math.max(0, Math.floor(localY / slotHeight)));
+    setMagnifyHour(hour);
+  };
+
+  const handleGridMouseLeave = () => {
+    setMagnifyHour(null);
+  };
+
+  const getMagnifyClass = (hourValue) => {
+    if (magnifyHour === null || magnifyHour === undefined) return '';
+    const distance = Math.abs(hourValue - magnifyHour);
+    if (distance < 0.25) return 'magnify-core';
+    if (distance < 0.75) return 'magnify-near';
+    if (distance < 1.5) return 'magnify-far';
+    return '';
+  };
 
   return (
-    <div className="week-view" style={{ '--hour-height': `${pixelsPerHour}px` }}>
+    <div
+      className="week-view"
+      style={{
+        '--hour-height': `${pixelsPerHour}px`,
+        '--magnify-index': magnifyHour ?? -1
+      }}
+    >
       <div className="week-summary glass-card">
         <div className="week-summary-title">This Week</div>
         <div className="week-summary-stat">
@@ -63,7 +89,6 @@ const WeekView = () => {
         </div>
       </div>
 
-      {/* Header */}
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>
         {weekDays.map((day) => (
@@ -74,59 +99,22 @@ const WeekView = () => {
         ))}
       </div>
 
-      {/* 24h Grid - Relative positioning for Time Indicator */}
-      <div className="week-grid">
-
-        {/* Red Line Time Indicator */}
-        {dayHours.map((hour) => {
-          const hourNum = hour.getHours();
-
-          // Check if this hour contains the current time
-          const now = new Date(currentTick);
-          const isCurrentHour = isToday(currentDate) && now.getHours() === hourNum;
-          // Calculate percentage for top position (0-100%)
-          const currentMinPercent = isCurrentHour ? (now.getMinutes() / 60) * 100 : 0;
-
-          return (
+      <div
+        className="week-grid"
+        ref={weekGridRef}
+        onMouseMove={handleGridMouseMove}
+        onMouseLeave={handleGridMouseLeave}
+      >
+        <div className="week-time-column">
+          {dayHours.map((hour) => (
             <div
-              key={hourNum}
-              className="time-slot"
+              key={`time-${hour.getHours()}`}
+              className={cn('week-time-slot', getMagnifyClass(hour.getHours()))}
             >
-              <div className="time-label">
-                {formatTime24(hour)}
-              </div>
-
-              {/* Time Line (only if current hour) */}
-              {isCurrentHour && (
-                <div
-                  className="current-time-line"
-                  style={{ top: `${currentMinPercent}%` }}
-                >
-                  <div className="current-time-circle" />
-                  <div className="current-time-label">
-                    {formatTime24(now)}
-                  </div>
-                </div>
-              )}
-
-              {weekDays.map((day) => {
-                const dayStart = startOfDay(day);
-                const dayEnd = endOfDay(day);
-                const slotStart = new Date(dayStart);
-                slotStart.setHours(hourNum, 0, 0, 0);
-                const slotEnd = new Date(slotStart);
-                slotEnd.setHours(hourNum + 1);
-                const dayEvents = weekEvents.filter((event) => {
-                  const eventStart = new Date(event.start);
-                  const eventEnd = new Date(event.end);
-
-                  if (eventStart > dayEnd || eventEnd < dayStart) {
-                    return false;
-                  }
-
-                  const displayStart = eventStart < dayStart ? dayStart : eventStart;
-                  return displayStart >= slotStart && displayStart < slotEnd;
-                });
+              {formatTime24(hour)}
+            </div>
+          ))}
+        </div>
 
         <div className="week-days-grid">
           {weekDays.map((day) => {
@@ -136,7 +124,7 @@ const WeekView = () => {
                 {dayHours.map((hour) => (
                   <div
                     key={hour.getHours()}
-                    className="week-hour-cell"
+                    className={cn('week-hour-cell', getMagnifyClass(hour.getHours()))}
                     onClick={() => handleTimeSlotClick(day, hour)}
                   />
                 ))}
@@ -144,11 +132,11 @@ const WeekView = () => {
                 <div className="week-events-layer">
                   {dayEvents.map((event, index) => {
                     const { top, height } = getEventPosition(event, day, pixelsPerHour);
-
+                    const isPastEvent = new Date(event.end || event.start) < now;
                     return (
                       <motion.div
                         key={event.id}
-                        className="week-event"
+                        className={cn('week-event', isPastEvent && 'past-event')}
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,

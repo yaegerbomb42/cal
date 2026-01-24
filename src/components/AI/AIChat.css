@@ -82,6 +82,10 @@
   color: #f97316;
 }
 
+.chat-status.info {
+  color: #38bdf8;
+}
+
 .chat-title h3 {
   font-size: 1rem;
   font-weight: 600;
@@ -205,6 +209,14 @@
   gap: 0.75rem;
 }
 
+.image-event-batch {
+  border-style: dashed;
+}
+
+.image-event-actions {
+  margin-top: 0.75rem;
+}
+
 .btn-icon {
   display: flex;
   align-items: center;
@@ -237,6 +249,35 @@
   display: flex;
   gap: 0.75rem;
   align-items: center;
+}
+
+.chat-image-input {
+  display: none;
+}
+
+.chat-upload-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.chat-upload-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.chat-upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .chat-input-field {

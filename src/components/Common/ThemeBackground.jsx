@@ -6,7 +6,7 @@ const ThemeBackground = () => {
     const canvasRef = useRef(null);
 
     useEffect(() => {
-        if (theme !== 'quantum' && theme !== 'neon') return;
+        if (theme !== 'codex' && theme !== 'pastel' && theme !== 'white') return;
 
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -26,24 +26,24 @@ const ThemeBackground = () => {
             mouse.y = e.clientY;
         };
 
+        resize();
+        window.addEventListener('resize', resize);
         window.addEventListener('mousemove', handleMouseMove);
 
         // Particle system (Subtle & Ambient)
         const particles = [];
-        const isLiving = theme === 'living';
-        // drastically reduced counts for "less chaos"
-        const particleCount = theme === 'quantum' ? 20 : (isLiving ? 25 : 15);
-        const color = theme === 'quantum' ? '139, 92, 246' : (isLiving ? '244, 114, 182' : '0, 242, 255');
+        const particleCount = theme === 'codex' ? 24 : theme === 'pastel' ? 20 : 14;
+        const color = theme === 'codex' ? '56, 189, 248' : theme === 'pastel' ? '236, 72, 153' : '100, 116, 139';
+        const glow = theme === 'codex' ? 0.35 : theme === 'pastel' ? 0.28 : 0.2;
 
         for (let i = 0; i < particleCount; i++) {
             particles.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
-                size: Math.random() * (isLiving ? 2.5 : 1.5) + 0.5,
-                // Slower, calmer movement
-                speedX: Math.random() * 0.2 - 0.1,
-                speedY: Math.random() * 0.2 - 0.1,
-                opacity: Math.random() * 0.3 + 0.1 // Lower opacity
+                size: Math.random() * (theme === 'pastel' ? 3 : 2) + 0.5,
+                speedX: Math.random() * 0.18 - 0.09,
+                speedY: Math.random() * 0.18 - 0.09,
+                opacity: Math.random() * glow + 0.08
             });
         }
 
@@ -54,19 +54,18 @@ const ThemeBackground = () => {
                 p.x += p.speedX;
                 p.y += p.speedY;
 
-                // Mouse interaction for living theme
-                if (isLiving) {
+                if (theme === 'pastel') {
                     const dx = mouse.x - p.x;
                     const dy = mouse.y - p.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     const forceDirectionX = dx / distance;
                     const forceDirectionY = dy / distance;
-                    const maxDistance = 150;
+                    const maxDistance = 120;
                     const force = (maxDistance - distance) / maxDistance;
 
                     if (distance < maxDistance) {
-                        p.x -= forceDirectionX * force * 2;
-                        p.y -= forceDirectionY * force * 2;
+                        p.x -= forceDirectionX * force * 1.5;
+                        p.y -= forceDirectionY * force * 1.5;
                     }
                 }
 
@@ -78,17 +77,17 @@ const ThemeBackground = () => {
                 ctx.fillStyle = `rgba(${color}, ${p.opacity})`;
                 ctx.fill();
 
-                // Lines between close particles
-                if (!isLiving && theme === 'quantum') {
+                // Lines between close particles (codex tech grid feel)
+                if (theme === 'codex') {
                     for (let j = i + 1; j < particles.length; j++) {
                         const p2 = particles[j];
                         const dx = p.x - p2.x;
                         const dy = p.y - p2.y;
                         const dist = Math.sqrt(dx * dx + dy * dy);
 
-                        if (dist < 150) {
+                        if (dist < 160) {
                             ctx.beginPath();
-                            ctx.strokeStyle = `rgba(${color}, ${0.1 * (1 - dist / 150)})`;
+                            ctx.strokeStyle = `rgba(${color}, ${0.12 * (1 - dist / 160)})`;
                             ctx.lineWidth = 0.5;
                             ctx.moveTo(p.x, p.y);
                             ctx.lineTo(p2.x, p2.y);
@@ -110,7 +109,7 @@ const ThemeBackground = () => {
         };
     }, [theme]);
 
-    if (theme !== 'quantum' && theme !== 'neon' && theme !== 'living') return null;
+    if (theme !== 'codex' && theme !== 'pastel' && theme !== 'white') return null;
 
     return (
         <canvas
@@ -123,7 +122,7 @@ const ThemeBackground = () => {
                 height: '100vh',
                 zIndex: -1,
                 pointerEvents: 'none',
-                opacity: 0.6
+                opacity: theme === 'white' ? 0.35 : 0.6
             }}
         />
     );
