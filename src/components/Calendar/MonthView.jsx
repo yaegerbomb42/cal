@@ -80,7 +80,7 @@ const MonthView = () => {
               </div>
 
               <div className="day-events">
-                {dayEvents.slice(0, 4).map((event) => (
+                {dayEvents.slice(0, 3).map((event) => (
                   <motion.div
                     key={event.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -95,9 +95,9 @@ const MonthView = () => {
                   </motion.div>
                 ))}
                 
-                {dayEvents.length > 4 && (
+                {dayEvents.length > 3 && (
                   <div className="more-events">
-                    +{dayEvents.length - 4} more
+                    +{dayEvents.length - 3} more
                   </div>
                 )}
               </div>

@@ -11,6 +11,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
+  gap: 1rem;
 }
 
 .year-title h3 {
@@ -21,6 +22,37 @@
 .year-subtitle {
   color: var(--text-secondary);
   font-size: 0.95rem;
+}
+
+.year-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.year-mode-toggle {
+  display: inline-flex;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 999px;
+  padding: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.year-mode-toggle .mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.year-mode-toggle .mode-btn.active {
+  background: var(--accent);
+  color: #0b1120;
+  font-weight: 700;
 }
 
 .year-grid {

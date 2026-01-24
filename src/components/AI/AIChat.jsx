@@ -197,7 +197,7 @@ const AIChat = ({ isOpen, onClose }) => {
         }
       }
       addMessage('ai', response);
-    } catch (error) {
+    } catch {
       addMessage('ai', response);
     }
   };
@@ -205,7 +205,7 @@ const AIChat = ({ isOpen, onClose }) => {
   const handleConfirmEvent = async () => {
     if (!pendingEvent) return;
 
-    const { conflicts, originalText, ...eventData } = pendingEvent;
+    const { conflicts: _conflicts, originalText: _originalText, ...eventData } = pendingEvent;
     try {
       await addEvent(eventData, { allowConflicts: true });
       addMessage('ai', `Confirmed. "${pendingEvent.title}" has been added to your calendar.`);
@@ -267,7 +267,7 @@ const AIChat = ({ isOpen, onClose }) => {
 
   const handleEditDraft = () => {
     if (!pendingEvent) return;
-    const { conflicts, originalText, ...eventData } = pendingEvent;
+    const { conflicts: _conflicts, originalText: _originalText, ...eventData } = pendingEvent;
     openEventModal(eventData);
     setPendingEvent(null);
   };
@@ -288,8 +288,7 @@ const AIChat = ({ isOpen, onClose }) => {
     await processInput(text);
   };
 
-  const handleImageUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
+  const processImageFiles = async (files) => {
     if (files.length === 0) return;
     setIsImageProcessing(true);
     setStatus('info', 'Processing images with Gemini 3...');
@@ -318,6 +317,21 @@ const AIChat = ({ isOpen, onClose }) => {
       setStatus(null, null);
     }
   };
+
+  const handleImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    await processImageFiles(files);
+  };
+
+  useEffect(() => {
+    const handleExternalImageUpload = (event) => {
+      const files = Array.from(event.detail?.files || []);
+      if (files.length === 0) return;
+      processImageFiles(files);
+    };
+    window.addEventListener('calai-image-upload', handleExternalImageUpload);
+    return () => window.removeEventListener('calai-image-upload', handleExternalImageUpload);
+  }, []);
 
   if (!isOpen) return null;
 

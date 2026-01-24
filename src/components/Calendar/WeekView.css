@@ -166,13 +166,11 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  padding: 0.2rem 0.35rem;
+  padding: 0;
 }
 
 .week-event {
   position: absolute;
-  left: 0.25rem;
-  right: 0.25rem;
   border-radius: 10px;
   padding: 0.3rem 0.4rem;
   color: #fff;
@@ -180,6 +178,7 @@
   pointer-events: auto;
   overflow: hidden;
   backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .week-event.past-event {
@@ -203,6 +202,14 @@
   font-size: 0.65rem;
   opacity: 0.85;
   margin-top: 0.25rem;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.week-event-duration {
+  font-size: 0.6rem;
+  opacity: 0.8;
 }
 
 .week-current-time {

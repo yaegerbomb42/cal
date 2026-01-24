@@ -19,6 +19,24 @@ export const formatDate = (date, formatStr = 'MMM d, yyyy') => {
   return format(date, formatStr);
 };
 
+export const formatFullDate = (date, locale = undefined) => {
+  return new Intl.DateTimeFormat(locale || undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
+};
+
+export const formatViewLabel = (date, viewName, locale = undefined) => {
+  const datePart = new Intl.DateTimeFormat(locale || undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
+  return `${datePart} · ${viewName} View`;
+};
+
 export const formatTime = (date) => {
   return format(date, 'h:mm a');
 };
@@ -97,6 +115,32 @@ export const getEventPosition = (event, dayStart, pixelsPerHour = 36) => {
   return { top, height };
 };
 
+export const getRelativeDayLabel = (date, locale = undefined) => {
+  const today = startOfDay(new Date());
+  const target = startOfDay(date);
+  const diffMs = target - today;
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays === -1) return 'Yesterday';
+  if (diffDays > 1 && diffDays <= 7) return `In ${diffDays} days`;
+  if (diffDays < -1 && diffDays >= -7) return `${Math.abs(diffDays)} days ago`;
+  return new Intl.DateTimeFormat(locale || undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date);
+};
+
+export const sortEventsByStart = (events) => {
+  return [...events].sort((a, b) => new Date(a.start) - new Date(b.start));
+};
+
+export const countRemainingEvents = (events, now = new Date()) => {
+  return events.filter(event => new Date(event.end || event.start) >= now).length;
+};
+
 export const createTimeSlot = (date, hour, minute = 0) => {
   const newDate = new Date(date);
   newDate.setHours(hour, minute, 0, 0);
@@ -142,7 +186,7 @@ export const parseNaturalLanguageDate = (text) => {
   }
   
   // Try to parse standard date formats
-  const dateMatch = text.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+  const dateMatch = text.match(/(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?/);
   if (dateMatch) {
     const [, month, day, year] = dateMatch;
     return new Date(year || now.getFullYear(), month - 1, day);

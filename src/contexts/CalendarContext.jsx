@@ -17,11 +17,17 @@ export const CALENDAR_VIEWS = {
   YEAR: 'year'
 };
 
-export const CalendarProvider = ({ children }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState(CALENDAR_VIEWS.WEEK);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+export const CalendarProvider = ({
+  children,
+  initialDate,
+  initialView,
+  initialSelectedEvent,
+  initialEventModalOpen
+}) => {
+  const [currentDate, setCurrentDate] = useState(initialDate ?? new Date());
+  const [view, setView] = useState(initialView ?? CALENDAR_VIEWS.WEEK);
+  const [selectedEvent, setSelectedEvent] = useState(initialSelectedEvent ?? null);
+  const [isEventModalOpen, setIsEventModalOpen] = useState(initialEventModalOpen ?? false);
 
   const navigateDate = (direction) => {
     setCurrentDate(prev => {

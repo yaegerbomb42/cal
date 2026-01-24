@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useEvents } from '../../contexts/EventsContext';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { Calendar, Trash2, Archive, History, X, Search, Edit2 } from 'lucide-react';
 import { getEventColor } from '../../utils/helpers';
+import { paginateItems } from '../../utils/pagination';
 import './UpcomingSidebar.css';
 
 const UpcomingSidebar = () => {
     const { events, deleteEvent, deleteEventsByName } = useEvents();
     const { openEventModal } = useCalendar();
     const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' | 'archive'
+    const [page, setPage] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteSearch, setDeleteSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
+    const pageSize = 5;
 
     // Sort events logic
     const now = new Date();
@@ -59,6 +62,15 @@ const UpcomingSidebar = () => {
                 ? dateA - dateB
                 : dateB - dateA;
         });
+
+    const pagination = paginateItems(displayEvents, page, pageSize);
+    const totalPages = pagination.totalPages;
+    const currentPage = pagination.page;
+    const paginatedEvents = pagination.items;
+
+    useEffect(() => {
+        setPage(1);
+    }, [viewMode, categoryFilter]);
 
     const handleDeleteClick = (id) => {
         if (window.confirm('Delete this event?')) {
@@ -167,7 +179,7 @@ const UpcomingSidebar = () => {
                         <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
                     </div>
                 ) : (
-                    displayEvents.map(event => {
+                    paginatedEvents.map(event => {
                         const isPastEvent = new Date(event.end || event.start) < now;
                         return (
                             <div
@@ -220,6 +232,30 @@ const UpcomingSidebar = () => {
                     })
                 )}
             </div>
+
+            {displayEvents.length > pageSize && !showDeleteModal && (
+                <div className="pagination-controls" role="navigation" aria-label="Upcoming events pagination">
+                    <button
+                        type="button"
+                        className="pagination-btn"
+                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                    >
+                        Prev
+                    </button>
+                    <span className="pagination-status">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        type="button"
+                        className="pagination-btn"
+                        onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

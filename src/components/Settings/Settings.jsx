@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, Palette } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, MessageSquare, Clock } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
 import { downloadICS } from '../../utils/icsExport';
 import { GENERAL_EVENT_PACKS, buildGeneralEvents } from '../../utils/generalEvents';
 import { toastService } from '../../utils/toast';
@@ -24,7 +23,6 @@ const Settings = ({ isOpen, onClose }) => {
 
   // Google Sync State
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   // Local Brain State
   const [localBrainProgress, setLocalBrainProgress] = useState(null);
@@ -32,9 +30,11 @@ const Settings = ({ isOpen, onClose }) => {
   const [preferLocalBrain, setPreferLocalBrain] = useState(false);
   const [localBrainTestStatus, setLocalBrainTestStatus] = useState('idle');
   const [localBrainTestResult, setLocalBrainTestResult] = useState('');
+  const [localBrainTestInput, setLocalBrainTestInput] = useState('');
+  const [localBrainChatHistory, setLocalBrainChatHistory] = useState([]);
+  const [localBrainNow, setLocalBrainNow] = useState(() => new Date());
+  const [storageMeta, setStorageMeta] = useState({ count: 0, lastUpdated: null });
   const [generalEventPacks, setGeneralEventPacks] = useState({});
-
-  const { theme, setTheme } = useTheme();
 
   const handleInitLocalBrain = async () => {
     try {
@@ -93,31 +93,9 @@ const Settings = ({ isOpen, onClose }) => {
   const tabs = [
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
     { id: 'ai', label: 'AI Engine', icon: Sparkles, color: '#8b5cf6' },
-    { id: 'appearance', label: 'Appearance', icon: Palette, color: '#38bdf8' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
     { id: 'data', label: 'Storage', icon: Download, color: '#f43f5e' },
     { id: 'about', label: 'About', icon: CheckCircle, color: '#10b981' }
-  ];
-
-  const themeOptions = [
-    {
-      id: 'codex',
-      label: 'Codex Dark',
-      description: 'OpenAI-inspired graphite with a cyan tech glow.',
-      accent: '#38bdf8'
-    },
-    {
-      id: 'pastel',
-      label: 'Vibrant Pastel',
-      description: 'Soft gradients with a playful neon pop.',
-      accent: '#a855f7'
-    },
-    {
-      id: 'white',
-      label: 'Crisp White',
-      description: 'Minimal, bright, and focused with deep-blue edges.',
-      accent: '#2563eb'
-    }
   ];
 
   const testConnection = async (keyOverride) => {
@@ -168,6 +146,11 @@ const Settings = ({ isOpen, onClose }) => {
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    setLocalBrainNow(new Date());
+  }, [isOpen]);
+
+  useEffect(() => {
     const loadGeneralEvents = async () => {
       const localStored = localStorage.getItem('calai-general-event-packs');
       let stored = localStored ? JSON.parse(localStored) : {};
@@ -183,6 +166,21 @@ const Settings = ({ isOpen, onClose }) => {
       loadGeneralEvents();
     }
   }, [isOpen, user]);
+
+  useEffect(() => {
+    const updateStorageMeta = () => {
+      const stored = localStorage.getItem('calendar-events');
+      const parsed = stored ? JSON.parse(stored) : [];
+      const lastUpdated = localStorage.getItem('calendar-events-updated');
+      setStorageMeta({
+        count: parsed.length,
+        lastUpdated: lastUpdated ? new Date(lastUpdated) : null
+      });
+    };
+    if (isOpen) {
+      updateStorageMeta();
+    }
+  }, [isOpen, events]);
 
   const handleToggleGeneralPack = async (packId, enabled) => {
     const updated = { ...generalEventPacks, [packId]: enabled };
@@ -262,7 +260,6 @@ const Settings = ({ isOpen, onClose }) => {
               if (!exists) addEvent(evt);
             });
             toastService.success(`Synced ${gEvents.length} events!`);
-            setIsGoogleConnected(true);
           }
         } catch (e) { console.error(e); } finally { setIsSyncing(false); }
       }, 2000);
@@ -291,13 +288,55 @@ const Settings = ({ isOpen, onClose }) => {
     try {
       downloadICS(events, `calendar-${new Date().toISOString().split('T')[0]}.ics`);
       toastService.success('Calendar exported as ICS file');
-    } catch (error) { toastService.error('Failed to export ICS file'); }
+    } catch {
+      toastService.error('Failed to export ICS file');
+    }
   };
 
   const handleClearAllData = () => {
     if (window.confirm('Are you sure you want to clear all calendar data? This action cannot be undone.')) {
       localStorage.removeItem('calendar-events');
+      localStorage.removeItem('calendar-events-updated');
       window.location.reload();
+    }
+  };
+
+  const handleLocalBrainChatSubmit = async (event) => {
+    event.preventDefault();
+    if (!localBrainTestInput.trim()) return;
+    if (!localBrainService.isLoaded) {
+      toastService.error("Offline Brain isn't loaded yet.");
+      return;
+    }
+    const message = localBrainTestInput.trim();
+    const timestamp = new Date();
+    const nonce = Math.random().toString(36).slice(2, 8);
+    setLocalBrainChatHistory(prev => [
+      ...prev,
+      { id: `${timestamp.getTime()}-user`, role: 'user', content: message, timestamp }
+    ]);
+    setLocalBrainTestInput('');
+    setLocalBrainTestStatus('loading');
+    try {
+      const response = await localBrainService.chat(
+        `${message}\n\nInclude this nonce in your reply: ${nonce}`,
+        'You are Cal, a friendly calendar assistant. Include the nonce exactly as provided.'
+      );
+      setLocalBrainChatHistory(prev => [
+        ...prev,
+        {
+          id: `${Date.now()}-ai`,
+          role: 'ai',
+          content: response,
+          timestamp: new Date(),
+          model: localBrainService.type || 'local'
+        }
+      ]);
+      setLocalBrainTestStatus('success');
+    } catch (error) {
+      console.error(error);
+      setLocalBrainTestStatus('error');
+      toastService.error('Offline Brain test failed: ' + error.message);
     }
   };
 
@@ -543,8 +582,8 @@ const Settings = ({ isOpen, onClose }) => {
                         <div className="local-brain-test">
                           <div className="local-brain-test-header">
                             <div>
-                              <h5>Example Test Chat</h5>
-                              <p>Run a quick sample response to confirm the local model is working.</p>
+                              <h5>Local Model Test Chat</h5>
+                              <p>Send a custom message and confirm live generation.</p>
                             </div>
                             <button
                               onClick={handleLocalBrainTest}
@@ -554,12 +593,57 @@ const Settings = ({ isOpen, onClose }) => {
                               {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Run Test'}
                             </button>
                           </div>
+                          <div className="local-brain-meta">
+                            <div className="meta-item">
+                              <Clock size={14} />
+                              <span>{localBrainNow.toLocaleString()}</span>
+                            </div>
+                            <div className="meta-item">
+                              <MessageSquare size={14} />
+                              <span>Model: {localBrainService.type || 'local'}</span>
+                            </div>
+                          </div>
                           {localBrainTestResult && (
                             <div className="local-brain-test-output">
                               <span className="label">Sample Response</span>
                               <p>{localBrainTestResult}</p>
                             </div>
                           )}
+                          <form onSubmit={handleLocalBrainChatSubmit} className="local-brain-chat-form">
+                            <input
+                              type="text"
+                              value={localBrainTestInput}
+                              onChange={(e) => setLocalBrainTestInput(e.target.value)}
+                              placeholder="Send a message to the local model..."
+                              className="local-brain-input"
+                            />
+                            <button type="submit" className="pro-btn-primary" disabled={localBrainTestStatus === 'loading'}>
+                              {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Send'}
+                            </button>
+                          </form>
+                          <div className="local-brain-chat-log">
+                            {localBrainChatHistory.map(entry => (
+                              <div key={entry.id} className={`chat-entry ${entry.role}`}>
+                                <div className="chat-entry-header">
+                                  <span className="role">{entry.role === 'ai' ? 'Cal' : 'You'}</span>
+                                  <span className="timestamp">{entry.timestamp.toLocaleTimeString()}</span>
+                                </div>
+                                <p>{entry.content}</p>
+                                {entry.role === 'ai' && entry.model && (
+                                  <span className="chat-model">{entry.model}</span>
+                                )}
+                              </div>
+                            ))}
+                            {localBrainTestStatus === 'loading' && (
+                              <div className="chat-entry ai">
+                                <div className="chat-entry-header">
+                                  <span className="role">Cal</span>
+                                  <span className="timestamp">Generating...</span>
+                                </div>
+                                <p className="streaming-indicator">Streaming response…</p>
+                              </div>
+                            )}
+                          </div>
                           {localBrainTestStatus === 'error' && (
                             <p className="local-brain-test-error">We couldn't complete the test. Try loading the Offline Brain again.</p>
                           )}
@@ -568,33 +652,69 @@ const Settings = ({ isOpen, onClose }) => {
                     </div>
                   )}
 
-                  {activeTab === 'appearance' && (
+                  {activeTab === 'sync' && (
                     <div className="content-section">
-                      <div className="info-box">
-                        <Palette size={20} className="sparkle-icon" />
+                      <div className="pro-integration-card">
+                        <div className="integration-header">
+                          <div className="icon-container google">
+                            <CalendarIcon size={24} />
+                          </div>
+                          <div className="integration-meta">
+                            <h4>Google Calendar</h4>
+                            <p>{googleCalendarService.isAuthorized ? 'Two-way synchronization active' : 'Connect to sync your schedules'}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleGoogleCalendarSync}
+                          disabled={isSyncing}
+                          className={`pro-button ${googleCalendarService.isAuthorized ? 'connected' : ''}`}
+                        >
+                          {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : googleCalendarService.isAuthorized ? <CheckCircle size={16} /> : 'Connect Now'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'data' && (
+                    <div className="content-section">
+                      <div className="storage-summary glass-card">
                         <div>
-                          <h4>Choose Your Theme</h4>
-                          <p>Each theme is tuned for clarity, contrast, and a signature CalAI glow.</p>
+                          <h4>Local Event Storage</h4>
+                          <p>Manage your on-device calendar cache.</p>
+                        </div>
+                        <div className="storage-meta">
+                          <div>
+                            <span className="storage-count">{storageMeta.count}</span>
+                            <span className="storage-label">Stored events</span>
+                          </div>
+                          <div>
+                            <span className="storage-label">Last updated</span>
+                            <span className="storage-date">
+                              {storageMeta.lastUpdated ? storageMeta.lastUpdated.toLocaleString() : 'No local data'}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="theme-grid">
-                        {themeOptions.map(option => (
-                          <button
-                            key={option.id}
-                            type="button"
-                            className={`theme-card ${theme === option.id ? 'active' : ''}`}
-                            style={{ '--theme-accent': option.accent }}
-                            onClick={() => setTheme(option.id)}
-                          >
-                            <div className="theme-card-header">
-                              <span className="theme-dot" />
-                              <span>{option.label}</span>
-                            </div>
-                            <p>{option.description}</p>
-                            {theme === option.id && <span className="theme-selected">Active</span>}
-                          </button>
-                        ))}
+                      <div className="grid-2">
+                        <div className="pro-action-card" onClick={handleExportData}>
+                          <Download size={24} />
+                          <h5>Export JSON</h5>
+                          <p>Backup all your events to a portable file.</p>
+                        </div>
+                        <div className="pro-action-card" onClick={handleExportICS}>
+                          <CalendarIcon size={24} />
+                          <h5>Export ICS</h5>
+                          <p>Export in universal calendar format.</p>
+                        </div>
+                      </div>
+                      <div className="danger-zone">
+                        <button onClick={handleDeleteByName} className="btn-warning">
+                          <Trash2 size={14} /> Delete Events by Name
+                        </button>
+                        <button onClick={handleClearAllData} className="danger-link">
+                          <Trash2 size={14} /> Clear Local Events
+                        </button>
                       </div>
 
                       <div className="info-box" style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
@@ -625,54 +745,6 @@ const Settings = ({ isOpen, onClose }) => {
                     </div>
                   )}
 
-                  {activeTab === 'sync' && (
-                    <div className="content-section">
-                      <div className="pro-integration-card">
-                        <div className="integration-header">
-                          <div className="icon-container google">
-                            <CalendarIcon size={24} />
-                          </div>
-                          <div className="integration-meta">
-                            <h4>Google Calendar</h4>
-                            <p>{googleCalendarService.isAuthorized ? 'Two-way synchronization active' : 'Connect to sync your schedules'}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={handleGoogleCalendarSync}
-                          disabled={isSyncing}
-                          className={`pro-button ${googleCalendarService.isAuthorized ? 'connected' : ''}`}
-                        >
-                          {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : googleCalendarService.isAuthorized ? <CheckCircle size={16} /> : 'Connect Now'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'data' && (
-                    <div className="content-section">
-                      <div className="grid-2">
-                        <div className="pro-action-card" onClick={handleExportData}>
-                          <Download size={24} />
-                          <h5>Export JSON</h5>
-                          <p>Backup all your events to a portable file.</p>
-                        </div>
-                        <div className="pro-action-card" onClick={handleExportICS}>
-                          <CalendarIcon size={24} />
-                          <h5>Export ICS</h5>
-                          <p>Export in universal calendar format.</p>
-                        </div>
-                      </div>
-                      <div className="danger-zone">
-                        <button onClick={handleDeleteByName} className="btn-warning">
-                          <Trash2 size={14} /> Delete Events by Name
-                        </button>
-                        <button onClick={handleClearAllData} className="danger-link">
-                          <Trash2 size={14} /> Clear Local Data
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
                   {activeTab === 'about' && (
                     <div className="content-section about-content">
                       <div className="about-branding">
@@ -689,7 +761,7 @@ const Settings = ({ isOpen, onClose }) => {
                           <li>✅ Gemini + Offline Brain return valid event JSON with repairs.</li>
                           <li>✅ Day/week views show all 24 hours without scrolling.</li>
                           <li>✅ Magnify focus on hovered hours in time grids.</li>
-                          <li>✅ High-contrast theme system (dark, pastel, white).</li>
+                          <li>✅ Dark glass theme system for low-light clarity.</li>
                           <li>✅ API keys stay masked when synced from Firebase.</li>
                           <li>✅ Clock picker lets you drag both hands at any time.</li>
                           <li>✅ General event packs like holidays.</li>

@@ -47,16 +47,16 @@ export const formatDuration = (start, end) => {
 
 export const getEventColor = (category) => {
   const colors = {
-    work: '#3b82f6',
-    personal: '#10b981',
-    fun: '#ec4899',
-    hobby: '#8b5cf6',
-    task: '#f59e0b',
-    todo: '#22c55e',
-    event: '#ef4444',
-    appointment: '#06b6d4',
-    holiday: '#f97316',
-    default: '#6b7280'
+    work: '#60a5fa',
+    personal: '#f472b6',
+    fun: '#facc15',
+    hobby: '#34d399',
+    task: '#a78bfa',
+    todo: '#f97316',
+    event: '#22d3ee',
+    appointment: '#f87171',
+    holiday: '#38bdf8',
+    default: '#94a3b8'
   };
   
   return colors[category] || colors.default;
