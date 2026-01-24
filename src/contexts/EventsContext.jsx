@@ -20,8 +20,8 @@ export const useEvents = () => {
 
 const STORAGE_KEY = 'calendar-events';
 
-export const EventsProvider = ({ children }) => {
-  const [events, setEvents] = useState([]);
+export const EventsProvider = ({ children, initialEvents }) => {
+  const [events, setEvents] = useState(initialEvents ?? []);
   const [isLoading, setIsLoading] = useState(true);
 
   // Poll Google Calendar for updates
@@ -137,6 +137,7 @@ export const EventsProvider = ({ children }) => {
     if (!isLoading && events.length >= 0) {
       // Save to localStorage immediately
       localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      localStorage.setItem(`${STORAGE_KEY}-updated`, new Date().toISOString());
 
       // Debounced Firebase save
       debouncedFirebaseSave(events);

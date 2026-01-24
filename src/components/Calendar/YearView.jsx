@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { startOfYear, endOfYear, startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
+import { useMemo, useState } from 'react';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { isSameMonth } from '../../utils/dateUtils';
@@ -31,25 +32,28 @@ const getIntensity = (count) => {
   return 0;
 };
 
-const withAlpha = (hex, alpha) => {
-  if (!hex) return undefined;
-  const normalized = hex.replace('#', '');
-  if (normalized.length !== 6) return hex;
-  const r = parseInt(normalized.slice(0, 2), 16);
-  const g = parseInt(normalized.slice(2, 4), 16);
-  const b = parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+const buildSegmentGradient = (colors) => {
+  if (colors.length === 0) return undefined;
+  const unique = [...new Set(colors)];
+  const segments = unique.slice(0, 4);
+  const stop = 100 / segments.length;
+  return `linear-gradient(90deg, ${segments
+    .map((color, index) => `${color} ${index * stop}% ${(index + 1) * stop}%`)
+    .join(', ')})`;
 };
 
 const YearView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
-  const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
+  const [mode, setMode] = useState('type');
+  const monthFormatter = useMemo(() => new Intl.DateTimeFormat('en-US', { month: 'short' }), []);
 
-  const weeks = getCalendarWeeks(currentDate);
-  const yearEventsCount = weeks.reduce((total, week) => {
-    return total + week.reduce((sum, day) => sum + getEventsForDate(day).length, 0);
-  }, 0);
+  const weeks = useMemo(() => getCalendarWeeks(currentDate), [currentDate]);
+  const yearEventsCount = useMemo(() => {
+    return weeks.reduce((total, week) => {
+      return total + week.reduce((sum, day) => sum + getEventsForDate(day).length, 0);
+    }, 0);
+  }, [weeks, getEventsForDate]);
 
   return (
     <div className="year-view">
@@ -62,6 +66,22 @@ const YearView = () => {
           <div className="stat">
             <span className="stat-number">{yearEventsCount}</span>
             <span className="stat-label">Events</span>
+          </div>
+          <div className="year-mode-toggle" role="group" aria-label="Year color mode">
+            <button
+              type="button"
+              className={cn('mode-btn', mode === 'type' && 'active')}
+              onClick={() => setMode('type')}
+            >
+              Type
+            </button>
+            <button
+              type="button"
+              className={cn('mode-btn', mode === 'frequency' && 'active')}
+              onClick={() => setMode('frequency')}
+            >
+              Frequency
+            </button>
           </div>
         </div>
       </div>
@@ -87,15 +107,18 @@ const YearView = () => {
                 const dayEvents = getEventsForDate(day);
                 const count = dayEvents.length;
                 const intensity = getIntensity(count);
-                const primaryColor = dayEvents[0]?.color;
-                const dayStyle = primaryColor ? {
-                  backgroundColor: withAlpha(primaryColor, 0.22),
-                  borderColor: withAlpha(primaryColor, 0.55)
-                } : undefined;
+                const typeGradient = buildSegmentGradient(dayEvents.map(event => event.color).filter(Boolean));
+                const dayStyle = mode === 'type'
+                  ? { background: typeGradient }
+                  : undefined;
                 return (
                   <motion.div
                     key={day.toISOString()}
-                    className={cn('year-day', count > 0 && 'has-events', intensity > 0 && `level-${intensity}`)}
+                    className={cn(
+                      'year-day',
+                      count > 0 && 'has-events',
+                      mode === 'frequency' && intensity > 0 && `level-${intensity}`
+                    )}
                     title={`${format(day, 'MMM d')} · ${count} event${count === 1 ? '' : 's'}`}
                     style={dayStyle}
                     onClick={() => {

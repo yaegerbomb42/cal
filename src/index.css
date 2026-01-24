@@ -6,63 +6,33 @@
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
-}
-
-/* Codex Dark (OpenAI-inspired) */
-[data-theme='codex'] {
-  --bg-primary: #0b1120;
-  --bg-secondary: #111827;
-  --bg-tertiary: #1f2937;
-  --accent: #38bdf8;
-  --accent-hover: #7dd3fc;
-  --accent-glow: rgba(56, 189, 248, 0.35);
-  --text-primary: #e2e8f0;
-  --text-secondary: #cbd5f5;
+  --bg-primary: #0a0f1d;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #111c34;
+  --accent: #5cc8ff;
+  --accent-hover: #7fd9ff;
+  --accent-glow: rgba(92, 200, 255, 0.35);
+  --text-primary: #ecf1ff;
+  --text-secondary: #c7d2fe;
   --text-muted: #94a3b8;
-  --glass-bg: rgba(15, 23, 42, 0.75);
+  --text-disabled: #64748b;
+  --glass-bg: rgba(14, 20, 38, 0.72);
+  --glass-strong: rgba(18, 25, 46, 0.85);
   --glass-border: rgba(148, 163, 184, 0.2);
-  --glass-shadow: 0 18px 42px rgba(2, 6, 23, 0.5);
-  --backdrop-blur: blur(18px);
+  --glass-divider: rgba(148, 163, 184, 0.12);
+  --glass-shadow: 0 24px 60px rgba(2, 6, 23, 0.55);
+  --backdrop-blur: blur(22px);
   --border: rgba(148, 163, 184, 0.2);
-  --shadow: 0 16px 40px rgba(2, 6, 23, 0.45);
-}
-
-/* Vibrant Pastel */
-[data-theme='pastel'] {
-  --bg-primary: #f8f7ff;
-  --bg-secondary: #f1f5ff;
-  --bg-tertiary: #eae9ff;
-  --accent: #a855f7;
-  --accent-hover: #c084fc;
-  --accent-glow: rgba(168, 85, 247, 0.35);
-  --text-primary: #1f2937;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --glass-bg: rgba(255, 255, 255, 0.78);
-  --glass-border: rgba(148, 163, 184, 0.35);
-  --glass-shadow: 0 12px 32px rgba(148, 163, 184, 0.22);
-  --backdrop-blur: blur(14px);
-  --border: rgba(148, 163, 184, 0.3);
-  --shadow: 0 12px 28px rgba(148, 163, 184, 0.2);
-}
-
-/* Crisp White */
-[data-theme='white'] {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --accent: #2563eb;
-  --accent-hover: #3b82f6;
-  --accent-glow: rgba(37, 99, 235, 0.25);
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --glass-bg: rgba(248, 250, 252, 0.9);
-  --glass-border: rgba(148, 163, 184, 0.3);
-  --glass-shadow: 0 10px 24px rgba(148, 163, 184, 0.2);
-  --backdrop-blur: blur(12px);
-  --border: rgba(148, 163, 184, 0.3);
-  --shadow: 0 10px 24px rgba(148, 163, 184, 0.2);
+  --shadow: 0 20px 48px rgba(2, 6, 23, 0.45);
+  --accent-work: #60a5fa;
+  --accent-personal: #f472b6;
+  --accent-fun: #facc15;
+  --accent-hobby: #34d399;
+  --accent-task: #a78bfa;
+  --accent-todo: #f97316;
+  --accent-event: #22d3ee;
+  --accent-appointment: #f87171;
+  --accent-holiday: #38bdf8;
 }
 
 /* Base Body Style */
@@ -109,9 +79,9 @@ html {
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(20, 28, 52, 0.78);
   transform: translateY(-2px);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.45);
 }
 
 /* Button styles */
@@ -135,7 +105,7 @@ html {
 }
 
 .btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(26, 35, 64, 0.6);
   transform: translateY(-1px);
 }
 
@@ -180,7 +150,7 @@ html {
 .input:focus {
   outline: none;
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(20, 28, 52, 0.85);
 }
 
 .input::placeholder {

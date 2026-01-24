@@ -203,7 +203,7 @@ Return ONLY a JSON object with keys: title, start, end, description, location, c
 No extra text. Use ISO 8601 UTC strings for start/end.`;
                 const repaired = await this.chat(text, `${systemPrompt}\n\n${repairPrompt}`);
                 return parseJsonResponse(repaired);
-            } catch (error) {
+            } catch {
                 console.error("Failed to parse local brain response as JSON", response);
                 throw new Error("Local model failed to generate valid JSON");
             }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, CalendarRange, SlidersHorizontal } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft } from 'lucide-react';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { getEventColor } from '../../utils/helpers';
@@ -29,6 +29,14 @@ const roundToNearestFiveMinutes = (date) => {
     rounded.setHours(rounded.getHours() + 1);
   }
   return rounded;
+};
+
+const ensureValidStartTime = (date) => {
+  const normalized = new Date(date);
+  if (normalized.getHours() === 0 && normalized.getMinutes() === 0) {
+    normalized.setHours(9, 0, 0, 0);
+  }
+  return normalized;
 };
 
 const ClockTimePicker = ({ label, value, onChange }) => {
@@ -230,7 +238,6 @@ const EventModal = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
-  const [activeSection, setActiveSection] = useState('details');
 
   useEffect(() => {
     if (!isEventModalOpen) return;
@@ -247,15 +254,14 @@ const EventModal = () => {
         recurring: selectedEvent.recurring || { type: RECURRENCE_TYPES.NONE }
       });
       setIsEditing(true);
-      setActiveSection('details');
       return;
     }
 
     const baseDate = selectedEvent?.start ? new Date(selectedEvent.start) : new Date();
     const isDefaultToday = selectedEvent?.start ? isToday(baseDate) : true;
     const startTime = selectedEvent?.start
-      ? baseDate
-      : (isDefaultToday ? roundToNearestFiveMinutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
+      ? ensureValidStartTime(baseDate)
+      : ensureValidStartTime(isDefaultToday ? roundToNearestFiveMinutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
     const endTime = selectedEvent?.end
       ? new Date(selectedEvent.end)
       : new Date(startTime.getTime() + 60 * 60 * 1000);
@@ -272,7 +278,6 @@ const EventModal = () => {
       recurring: { type: RECURRENCE_TYPES.NONE }
     });
     setIsEditing(false);
-    setActiveSection('details');
   }, [selectedEvent, isEventModalOpen]);
 
   const handleDurationChange = (minutes) => {
@@ -346,19 +351,19 @@ const EventModal = () => {
     current.setFullYear(year, month - 1, day);
     if (!isEditing && field === 'start') {
       if (isToday(current)) {
-        const rounded = roundToNearestFiveMinutes(current);
+        const rounded = ensureValidStartTime(roundToNearestFiveMinutes(current));
         handleChange(field, toLocalInputValue(rounded));
         return;
       }
       current.setHours(12, 0, 0, 0);
     }
-    handleChange(field, toLocalInputValue(current));
+    handleChange(field, toLocalInputValue(ensureValidStartTime(current)));
   };
 
   const handleTimeChange = (field, { hours, minutes }) => {
     const current = formData[field] ? new Date(formData[field]) : new Date();
     current.setHours(hours, minutes, 0, 0);
-    handleChange(field, toLocalInputValue(current));
+    handleChange(field, toLocalInputValue(ensureValidStartTime(current)));
   };
 
   const categories = [
@@ -385,12 +390,6 @@ const EventModal = () => {
     getEventColor('holiday')
   ];
 
-  const sections = [
-    { id: 'details', label: 'Details', icon: Tag },
-    { id: 'schedule', label: 'Schedule', icon: CalendarRange },
-    { id: 'preferences', label: 'Preferences', icon: SlidersHorizontal }
-  ];
-
   if (!isEventModalOpen) return null;
 
   return (
@@ -412,7 +411,7 @@ const EventModal = () => {
           <div className="modal-header">
             <div>
               <h3>{isEditing ? 'Edit Event' : 'Create Event'}</h3>
-              <p className="modal-subtitle">Plan it in seconds — no scrolling required.</p>
+              <p className="modal-subtitle">Plan it in seconds — everything is visible at once.</p>
             </div>
             <button
               onClick={closeEventModal}
@@ -423,257 +422,214 @@ const EventModal = () => {
             </button>
           </div>
 
-          <div className="modal-tabs" role="tablist" aria-label="Event form sections">
-            {sections.map(section => {
-              const Icon = section.icon;
-              return (
-                <button
-                  key={section.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeSection === section.id}
-                  className={`modal-tab ${activeSection === section.id ? 'active' : ''}`}
-                  onClick={() => setActiveSection(section.id)}
-                >
-                  <Icon size={14} />
-                  {section.label}
-                </button>
-              );
-            })}
-          </div>
-
           <form onSubmit={handleSubmit} className="modal-form">
-            <AnimatePresence mode="wait">
-              {activeSection === 'details' && (
-                <motion.div
-                  key="details"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="modal-section"
-                  role="tabpanel"
-                >
+            <div className="modal-panels">
+              <div className="modal-section" aria-label="Event details">
+                <h4 className="panel-title"><Tag size={14} /> Main details</h4>
+                <div className="form-group">
+                  <label htmlFor="title">
+                    <Tag size={16} />
+                    Title *
+                  </label>
+                  <input
+                    id="title"
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => handleChange('title', e.target.value)}
+                    className="input"
+                    placeholder="Event title"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    className="input textarea"
+                    placeholder="Event description"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="location">
+                    <MapPin size={16} />
+                    Location
+                  </label>
+                  <input
+                    id="location"
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => handleChange('location', e.target.value)}
+                    className="input"
+                    placeholder="Event location"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-section" aria-label="Schedule details">
+                <h4 className="panel-title"><Clock size={14} /> Schedule details</h4>
+                <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="title">
-                      <Tag size={16} />
-                      Title *
+                    <label htmlFor="start-date">
+                      <Clock size={16} />
+                      Start Date
                     </label>
                     <input
-                      id="title"
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => handleChange('title', e.target.value)}
+                      id="start-date"
+                      type="date"
+                      value={formData.start ? toLocalDateInput(new Date(formData.start)) : ''}
+                      onChange={(e) => handleDateChange('start', e.target.value)}
                       className="input"
-                      placeholder="Event title"
                       required
                     />
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="description">Description</label>
-                    <textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => handleChange('description', e.target.value)}
-                      className="input textarea"
-                      placeholder="Event description"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="location">
-                      <MapPin size={16} />
-                      Location
-                    </label>
+                    <label htmlFor="end-date">End Date</label>
                     <input
-                      id="location"
-                      type="text"
-                      value={formData.location}
-                      onChange={(e) => handleChange('location', e.target.value)}
+                      id="end-date"
+                      type="date"
+                      value={formData.end ? toLocalDateInput(new Date(formData.end)) : ''}
+                      onChange={(e) => handleDateChange('end', e.target.value)}
                       className="input"
-                      placeholder="Event location"
+                      required
                     />
                   </div>
-                </motion.div>
-              )}
+                </div>
 
-              {activeSection === 'schedule' && (
-                <motion.div
-                  key="schedule"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="modal-section"
-                  role="tabpanel"
-                >
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="start-date">
-                        <Clock size={16} />
-                        Start Date
-                      </label>
-                      <input
-                        id="start-date"
-                        type="date"
-                        value={formData.start ? toLocalDateInput(new Date(formData.start)) : ''}
-                        onChange={(e) => handleDateChange('start', e.target.value)}
-                        className="input"
-                        required
-                      />
-                    </div>
+                <div className="time-picker-grid">
+                  <ClockTimePicker
+                    label="Start Time"
+                    value={formData.start}
+                    onChange={(time) => handleTimeChange('start', time)}
+                  />
+                  <ClockTimePicker
+                    label="End Time"
+                    value={formData.end}
+                    onChange={(time) => handleTimeChange('end', time)}
+                  />
+                </div>
 
-                    <div className="form-group">
-                      <label htmlFor="end-date">End Date</label>
-                      <input
-                        id="end-date"
-                        type="date"
-                        value={formData.end ? toLocalDateInput(new Date(formData.end)) : ''}
-                        onChange={(e) => handleDateChange('end', e.target.value)}
-                        className="input"
-                        required
-                      />
-                    </div>
+                <div className="form-group quick-duration">
+                  <label>Quick Duration</label>
+                  <div className="duration-buttons">
+                    {[15, 30, 60, 120].map(minutes => (
+                      <button
+                        key={minutes}
+                        type="button"
+                        onClick={() => handleDurationChange(minutes)}
+                        className="duration-btn"
+                      >
+                        {minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}
+                      </button>
+                    ))}
                   </div>
+                </div>
+              </div>
 
-                  <div className="time-picker-grid">
-                    <ClockTimePicker
-                      label="Start Time"
-                      value={formData.start}
-                      onChange={(time) => handleTimeChange('start', time)}
-                    />
-                    <ClockTimePicker
-                      label="End Time"
-                      value={formData.end}
-                      onChange={(time) => handleTimeChange('end', time)}
-                    />
-                  </div>
-
-                  <div className="form-group quick-duration">
-                    <label>Quick Duration</label>
-                    <div className="duration-buttons">
-                      {[15, 30, 60, 120].map(minutes => (
+              <div className="modal-section" aria-label="Event preferences">
+                <h4 className="panel-title"><Palette size={14} /> Preferences</h4>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="category">Category</label>
+                    <select
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => {
+                        const category = e.target.value;
+                        const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
+                        handleChange('category', category);
+                        handleChange('color', color);
+                      }}
+                      className="input"
+                    >
+                      {categories.map(category => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="category-pills">
+                      {categories.map(category => (
                         <button
-                          key={minutes}
+                          key={category.value}
                           type="button"
-                          onClick={() => handleDurationChange(minutes)}
-                          className="duration-btn"
+                          className={`category-pill ${formData.category === category.value ? 'active' : ''}`}
+                          style={{ '--pill-color': category.color }}
+                          onClick={() => {
+                            handleChange('category', category.value);
+                            handleChange('color', category.color);
+                          }}
                         >
-                          {minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}
+                          {category.label}
                         </button>
                       ))}
                     </div>
                   </div>
-                </motion.div>
-              )}
 
-              {activeSection === 'preferences' && (
-                <motion.div
-                  key="preferences"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="modal-section"
-                  role="tabpanel"
-                >
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="category">Category</label>
-                      <select
-                        id="category"
-                        value={formData.category}
-                        onChange={(e) => {
-                          const category = e.target.value;
-                          const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
-                          handleChange('category', category);
-                          handleChange('color', color);
-                        }}
-                        className="input"
-                      >
-                        {categories.map(category => (
-                          <option key={category.value} value={category.value}>
-                            {category.label}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="category-pills">
-                        {categories.map(category => (
-                          <button
-                            key={category.value}
-                            type="button"
-                            className={`category-pill ${formData.category === category.value ? 'active' : ''}`}
-                            style={{ '--pill-color': category.color }}
-                            onClick={() => {
-                              handleChange('category', category.value);
-                              handleChange('color', category.color);
-                            }}
-                          >
-                            {category.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="form-group">
-                      <label>
-                        <Palette size={16} />
-                        Color
-                      </label>
-                      <div className="color-picker">
-                        {colorOptions.map(color => (
-                          <button
-                            key={color}
-                            type="button"
-                            onClick={() => handleChange('color', color)}
-                            className={`color-option ${formData.color === color ? 'selected' : ''}`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                      </div>
+                  <div className="form-group">
+                    <label>
+                      <Palette size={16} />
+                      Color
+                    </label>
+                    <div className="color-picker">
+                      {colorOptions.map(color => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => handleChange('color', color)}
+                          className={`color-option ${formData.color === color ? 'selected' : ''}`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
                     </div>
                   </div>
+                </div>
 
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>
-                        <Repeat size={16} />
-                        Recurrence
-                      </label>
-                      <select
-                        value={formData.recurring?.type || RECURRENCE_TYPES.NONE}
-                        onChange={(e) => handleChange('recurring', { type: e.target.value })}
-                        className="input"
-                      >
-                        {Object.values(RECURRENCE_TYPES).map(type => (
-                          <option key={type} value={type}>
-                            {formatRecurrenceText({ type })}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>
-                        <Bell size={16} />
-                        Reminder
-                      </label>
-                      <select
-                        value={formData.reminder || ''}
-                        onChange={(e) => handleChange('reminder', e.target.value || null)}
-                        className="input"
-                      >
-                        <option value="">No reminder</option>
-                        <option value="5">5 minutes before</option>
-                        <option value="15">15 minutes before</option>
-                        <option value="30">30 minutes before</option>
-                        <option value="60">1 hour before</option>
-                        <option value="1440">1 day before</option>
-                      </select>
-                    </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>
+                      <Repeat size={16} />
+                      Recurrence
+                    </label>
+                    <select
+                      value={formData.recurring?.type || RECURRENCE_TYPES.NONE}
+                      onChange={(e) => handleChange('recurring', { type: e.target.value })}
+                      className="input"
+                    >
+                      {Object.values(RECURRENCE_TYPES).map(type => (
+                        <option key={type} value={type}>
+                          {formatRecurrenceText({ type })}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+
+                  <div className="form-group">
+                    <label>
+                      <Bell size={16} />
+                      Reminder
+                    </label>
+                    <select
+                      value={formData.reminder || ''}
+                      onChange={(e) => handleChange('reminder', e.target.value || null)}
+                      className="input"
+                    >
+                      <option value="">No reminder</option>
+                      <option value="5">5 minutes before</option>
+                      <option value="15">15 minutes before</option>
+                      <option value="30">30 minutes before</option>
+                      <option value="60">1 hour before</option>
+                      <option value="1440">1 day before</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {validationErrors.length > 0 && (
               <div className="validation-errors" role="alert">

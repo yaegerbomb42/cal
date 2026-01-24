@@ -150,13 +150,27 @@ const Login = () => {
                             <form onSubmit={handleSubmit}>
                                 <div className="input-group">
                                     <Mail size={18} className="input-icon" />
-                                    <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+                                    <input
+                                        type="email"
+                                        placeholder="Email"
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                        data-testid="login-email"
+                                        required
+                                    />
                                 </div>
                                 <div className="input-group">
                                     <Lock size={18} className="input-icon" />
-                                    <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
+                                    <input
+                                        type="password"
+                                        placeholder="Password"
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        data-testid="login-password"
+                                        required
+                                    />
                                 </div>
-                                <button type="submit" className="submit-btn" disabled={isLoading}>
+                                <button type="submit" className="submit-btn" disabled={isLoading} data-testid="login-submit">
                                     {isLoading ? <Loader className="animate-spin" size={20} /> : (isLogin ? 'Sign In' : 'Sign Up')}
                                 </button>
                             </form>

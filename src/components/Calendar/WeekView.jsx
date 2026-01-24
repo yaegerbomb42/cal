@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
-import { cn, getEventColor } from '../../utils/helpers';
+import { cn, formatDuration, getEventColor } from '../../utils/helpers';
 import { useHourScale } from '../../utils/useHourScale';
+import { layoutOverlappingEvents } from '../../utils/eventLayout';
 import './WeekView.css';
 
 const WeekView = () => {
@@ -130,9 +131,12 @@ const WeekView = () => {
                 ))}
 
                 <div className="week-events-layer">
-                  {dayEvents.map((event, index) => {
-                    const { top, height } = getEventPosition(event, day, pixelsPerHour);
+                  {layoutOverlappingEvents(dayEvents).map(({ event, column, columns }, index) => {
+                    const { top, height: rawHeight } = getEventPosition(event, day, pixelsPerHour);
+                    const height = Math.max(rawHeight * 0.7, 18);
                     const isPastEvent = new Date(event.end || event.start) < now;
+                    const width = `${100 / columns}%`;
+                    const left = `calc(${column * (100 / columns)}% + 2px)`;
                     return (
                       <motion.div
                         key={event.id}
@@ -140,7 +144,9 @@ const WeekView = () => {
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
-                          backgroundColor: event.color || getEventColor(event.category)
+                          backgroundColor: event.color || getEventColor(event.category),
+                          width,
+                          left
                         }}
                         onClick={(e) => handleEventClick(event, e)}
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -148,9 +154,10 @@ const WeekView = () => {
                         transition={{ delay: index * 0.05 }}
                       >
                         <div className="week-event-title">{event.title}</div>
-                        {height > 40 && (
+                        {height > 24 && (
                           <div className="week-event-time">
                             {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
+                            <span className="week-event-duration">· {formatDuration(event.start, event.end)}</span>
                           </div>
                         )}
                       </motion.div>

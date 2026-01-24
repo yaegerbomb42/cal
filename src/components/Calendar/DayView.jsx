@@ -1,64 +1,65 @@
 import { motion } from 'framer-motion';
-import { useRef, useState } from 'react';
-import { getDayHours, getDayHoursWithHalf, formatTime24, getEventPosition, isToday, getCurrentTimePosition, isBusinessHour } from '../../utils/dateUtils';
+import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
-import { cn, getEventColor } from '../../utils/helpers';
-import { Clock } from 'lucide-react';
-import { useHourScale } from '../../utils/useHourScale';
+import { cn, getEventColor, formatDuration } from '../../utils/helpers';
+import { countRemainingEvents, formatFullDate, formatTime, getRelativeDayLabel, sortEventsByStart } from '../../utils/dateUtils';
+import { Clock, Plus } from 'lucide-react';
 import './DayView.css';
+
+const MAX_VISIBLE_EVENTS = 30;
+
+const buildEventSnippet = (event) => {
+  const pieces = [];
+  if (event.category) {
+    pieces.push(`${event.category.charAt(0).toUpperCase()}${event.category.slice(1)}`);
+  }
+  pieces.push(event.title || 'Untitled');
+  if (event.location) {
+    pieces.push(event.location);
+  }
+  if (event.reminder) {
+    pieces.push(`${event.reminder}m reminder`);
+  }
+  return pieces.join(' · ');
+};
 
 const DayView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [layout, setLayout] = useState({ base: 36, expanded: 48, compressed: 32 });
+  const listRef = useRef(null);
 
-  const dayHours = getDayHours();
-  const daySlots = getDayHoursWithHalf();
-  const dayEvents = getEventsForDate(currentDate);
-  const dayGridRef = useRef(null);
-  const [magnifyHour, setMagnifyHour] = useState(null);
-  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
-  const showCurrentTime = isToday(currentDate);
-  const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+  const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
+  const remainingCount = countRemainingEvents(dayEvents, now);
+  const visibleEvents = dayEvents.slice(0, MAX_VISIBLE_EVENTS);
 
-  const handleTimeSlotClick = (hour) => {
+  useEffect(() => {
+    const container = listRef.current;
+    if (!container) return;
+
+    const updateLayout = () => {
+      const available = container.clientHeight;
+      const count = Math.max(visibleEvents.length, 1);
+      const base = Math.max(22, Math.min(46, available / count));
+      const expanded = Math.min(base * 1.4, base + 20);
+      const compressed = count > 1 ? Math.max(18, (available - expanded) / (count - 1)) : base;
+      setLayout({ base, expanded, compressed });
+    };
+
+    updateLayout();
+    const observer = new ResizeObserver(updateLayout);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [visibleEvents.length, currentDate]);
+
+  const handleAddEvent = () => {
     const startTime = new Date(currentDate);
-    startTime.setHours(hour.getHours(), 0, 0, 0);
-    const endTime = new Date(startTime);
-    endTime.setHours(startTime.getHours() + 1);
-
-    openEventModal({
-      start: startTime,
-      end: endTime
-    });
-  };
-
-  const handleEventClick = (event) => {
-    openEventModal(event);
-  };
-
-  const handleGridMouseMove = (event) => {
-    if (!dayGridRef.current) return;
-    const rect = dayGridRef.current.getBoundingClientRect();
-    const localY = event.clientY - rect.top;
-    const slotHeight = rect.height / 24;
-    const hour = Math.min(23, Math.max(0, Math.floor(localY / slotHeight)));
-    setMagnifyHour(hour);
-  };
-
-  const handleGridMouseLeave = () => {
-    setMagnifyHour(null);
-  };
-
-  const getMagnifyClass = (dateValue) => {
-    if (magnifyHour === null || magnifyHour === undefined) return '';
-    const hourValue = dateValue.getHours() + (dateValue.getMinutes() >= 30 ? 0.5 : 0);
-    const distance = Math.abs(hourValue - magnifyHour);
-    if (distance < 0.25) return 'magnify-core';
-    if (distance < 0.75) return 'magnify-near';
-    if (distance < 1.5) return 'magnify-far';
-    return '';
+    startTime.setHours(9, 0, 0, 0);
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+    openEventModal({ start: startTime, end: endTime });
   };
 
   return (
@@ -66,166 +67,78 @@ const DayView = () => {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       className="day-view"
-      style={{
-        '--hour-height': `${pixelsPerHour}px`,
-        '--half-hour-height': `${pixelsPerHour / 2}px`,
-        '--magnify-index': magnifyHour ?? -1
-      }}
     >
-      {/* Day Header */}
-      <div className={cn(
-        'day-header',
-        'glass-card',
-        isToday(currentDate) && 'today'
-      )}>
+      <div className={cn('day-header', 'glass-card')}>
         <div className="day-info">
-          <div className="day-name">
-            {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}
-          </div>
-          <div className="day-date">
-            {currentDate.toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </div>
+          <div className="day-name">{getRelativeDayLabel(currentDate)}</div>
+          <div className="day-date">{formatFullDate(currentDate)}</div>
         </div>
         <div className="day-stats">
           <div className="stat">
+            <span className="stat-number">{remainingCount}</span>
+            <span className="stat-label">Remaining</span>
+          </div>
+          <div className="stat">
             <span className="stat-number">{dayEvents.length}</span>
-            <span className="stat-label">Events</span>
+            <span className="stat-label">Total</span>
           </div>
+          <button className="btn btn-primary day-add-btn" onClick={handleAddEvent}>
+            <Plus size={16} /> Add Event
+          </button>
         </div>
       </div>
 
-      {/* Day Grid */}
-      <div
-        className="day-grid"
-        ref={dayGridRef}
-        onMouseMove={handleGridMouseMove}
-        onMouseLeave={handleGridMouseLeave}
-      >
-        <div className="day-grid-scroll">
-          {/* Time Column */}
-          <div className="time-column">
-            {daySlots.map((slot, index) => (
-              <div
-                key={index}
-                className={cn(
-                  'time-slot',
-                  slot.isHalfHour && 'half-hour',
-                  !slot.isHalfHour && isBusinessHour(slot.time) && 'business-hour',
-                  getMagnifyClass(slot.time)
-                )}
-              >
-                {!slot.isHalfHour && (
-                  <span className="time-label">
-                    {formatTime24(slot.time)}
-                  </span>
-                )}
-                {slot.isHalfHour && (
-                  <span className="time-label-half">30</span>
-                )}
-              </div>
-            ))}
+      <div className="day-list-wrapper glass-card" ref={listRef}>
+        {visibleEvents.length === 0 ? (
+          <div className="day-empty-state">
+            <div className="empty-title">No events scheduled</div>
+            <div className="empty-subtitle">Add something for this day to get started.</div>
           </div>
+        ) : (
+          <div className="day-list" role="list">
+            {visibleEvents.map((event, index) => {
+              const isPastEvent = new Date(event.end || event.start) < now;
+              const height = hoveredIndex === null
+                ? layout.base
+                : hoveredIndex === index
+                  ? layout.expanded
+                  : layout.compressed;
 
-          {/* Events Column */}
-          <div className="events-column">
-            {/* Hour Slots */}
-            {dayHours.map((hour) => (
-              <div
-                key={hour.getHours()}
-                onClick={() => handleTimeSlotClick(hour)}
-                className={cn(
-                  'hour-slot',
-                  isBusinessHour(hour) && 'business-hour',
-                  getMagnifyClass(hour)
-                )}
-                data-time={formatTime24(hour)}
-              />
-            ))}
-
-            {/* Current Time Indicator */}
-            {showCurrentTime && currentTimePosition !== null && (
-              <div
-                className="current-time-indicator"
-                style={{ top: `${currentTimePosition}px` }}
-              >
-                <div className="current-time-line"></div>
-                <div className="current-time-dot">
-                  <Clock size={12} />
-                </div>
-                <div className="current-time-label">
-                  {formatTime24(new Date())}
-                </div>
-              </div>
-            )}
-
-            {dayEvents.length === 0 && (
-              <div className="day-empty-state">
-                <div className="empty-title">No events yet</div>
-                <div className="empty-subtitle">Click any hour to schedule something.</div>
-              </div>
-            )}
-
-            {/* Events Layer */}
-            <div className="events-layer">
-              {dayEvents.map((event, index) => {
-                const { top, height } = getEventPosition(event, currentDate, pixelsPerHour);
-                const isPastEvent = new Date(event.end || event.start) < now;
-
-                return (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, scale: 0.9, x: -20 }}
-                    animate={{ opacity: 1, scale: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02, zIndex: 10 }}
-                    onClick={() => handleEventClick(event)}
-                    className={cn('day-event', 'glass-card', isPastEvent && 'past-event')}
-                    style={{
-                      top: `${top}px`,
-                      height: `${height}px`,
-                      backgroundColor: event.color || getEventColor(event.category)
-                    }}
-                  >
-                    <div className="event-content">
-                      <div className="event-title">{event.title}</div>
-                      {event.description && height > 60 && (
-                        <div className="event-description">
-                          {event.description}
-                        </div>
-                      )}
-                      {event.location && height > 80 && (
-                        <div className="event-location">
-                          📍 {event.location}
-                        </div>
-                      )}
-                      <div className="event-time">
-                        {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+              return (
+                <button
+                  key={event.id}
+                  type="button"
+                  className={cn('day-event-card', isPastEvent && 'past-event', hoveredIndex === index && 'is-focused')}
+                  style={{
+                    height: `${height}px`,
+                    borderColor: event.color || getEventColor(event.category)
+                  }}
+                  onClick={() => openEventModal(event)}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  onFocus={() => setHoveredIndex(index)}
+                  onBlur={() => setHoveredIndex(null)}
+                >
+                  <div className="event-time">
+                    <Clock size={12} />
+                    <span>
+                      {formatTime(new Date(event.start))}–{formatTime(new Date(event.end))}
+                    </span>
+                    <span className="event-duration">{formatDuration(event.start, event.end)}</span>
+                  </div>
+                  <div className="event-snippet">{buildEventSnippet(event)}</div>
+                </button>
+              );
+            })}
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Quick Add Button */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => openEventModal()}
-        className="quick-add-btn btn-primary"
-        title="Add Event"
-      >
-        +
-      </motion.button>
+      {dayEvents.length > MAX_VISIBLE_EVENTS && (
+        <div className="day-overflow-hint">
+          Showing {MAX_VISIBLE_EVENTS} of {dayEvents.length} events
+        </div>
+      )}
     </motion.div>
   );
 };
