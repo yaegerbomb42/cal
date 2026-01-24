@@ -81,6 +81,17 @@ const ClockTimePicker = ({ label, value, onChange }) => {
     }
   };
 
+  const getClosestHand = (degrees) => {
+    const normalize = (angle) => (angle + 360) % 360;
+    const diff = (a, b) => {
+      const delta = Math.abs(normalize(a) - normalize(b));
+      return Math.min(delta, 360 - delta);
+    };
+    const hourDiff = diff(degrees, hourAngle);
+    const minuteDiff = diff(degrees, minuteAngle);
+    return hourDiff <= minuteDiff ? 'hour' : 'minute';
+  };
+
   const startDrag = (event, targetMode) => {
     event.preventDefault();
     event.stopPropagation();
@@ -92,7 +103,15 @@ const ClockTimePicker = ({ label, value, onChange }) => {
   };
 
   const handlePointerDown = (event) => {
-    startDrag(event, modeRef.current);
+    if (!clockRef.current) return;
+    const rect = clockRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left - rect.width / 2;
+    const y = event.clientY - rect.top - rect.height / 2;
+    const angle = Math.atan2(y, x);
+    const degrees = (angle * 180) / Math.PI;
+    const adjusted = (degrees + 90 + 360) % 360;
+    const closest = getClosestHand(adjusted);
+    startDrag(event, closest);
   };
 
   const handleHandPointerDown = (event, targetMode) => {
@@ -176,7 +195,7 @@ const ClockTimePicker = ({ label, value, onChange }) => {
           Back
         </button>
         <div className="clock-mode-indicator">
-          {mode === 'hour' ? 'Select hour' : 'Select minutes (5m)'}
+          Drag either hand to refine time
         </div>
         <button
           type="button"
@@ -350,7 +369,8 @@ const EventModal = () => {
     { value: 'task', label: 'Task', color: getEventColor('task') },
     { value: 'todo', label: 'To-Do', color: getEventColor('todo') },
     { value: 'event', label: 'Event', color: getEventColor('event') },
-    { value: 'appointment', label: 'Appointment', color: getEventColor('appointment') }
+    { value: 'appointment', label: 'Appointment', color: getEventColor('appointment') },
+    { value: 'holiday', label: 'Holiday', color: getEventColor('holiday') }
   ];
 
   const colorOptions = [
@@ -361,7 +381,8 @@ const EventModal = () => {
     getEventColor('task'),
     getEventColor('todo'),
     getEventColor('event'),
-    getEventColor('appointment')
+    getEventColor('appointment'),
+    getEventColor('holiday')
   ];
 
   const sections = [

@@ -55,6 +55,7 @@ export const getEventColor = (category) => {
     todo: '#22c55e',
     event: '#ef4444',
     appointment: '#06b6d4',
+    holiday: '#f97316',
     default: '#6b7280'
   };
   

@@ -114,7 +114,8 @@ const UpcomingSidebar = () => {
                         { value: 'task', label: 'Task' },
                         { value: 'todo', label: 'To-Do' },
                         { value: 'event', label: 'Event' },
-                        { value: 'appointment', label: 'Appointment' }
+                        { value: 'appointment', label: 'Appointment' },
+                        { value: 'holiday', label: 'Holiday' }
                     ].map(filter => (
                         <button
                             key={filter.value}
@@ -166,12 +167,14 @@ const UpcomingSidebar = () => {
                         <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
                     </div>
                 ) : (
-                    displayEvents.map(event => (
-                        <div
-                            key={event.id}
-                            className="upcoming-event-item"
-                            style={{ '--category-color': getEventColor(event.category) }}
-                        >
+                    displayEvents.map(event => {
+                        const isPastEvent = new Date(event.end || event.start) < now;
+                        return (
+                            <div
+                                key={event.id}
+                                className={`upcoming-event-item ${isPastEvent ? 'past-event' : ''}`}
+                                style={{ '--category-color': getEventColor(event.category) }}
+                            >
                             <div className="event-date-badge">
                                 <span className="month">
                                     {new Date(event.start).toLocaleString('default', { month: 'short' })}
@@ -212,8 +215,9 @@ const UpcomingSidebar = () => {
                                     <Trash2 size={14} />
                                 </button>
                             </div>
-                        </div>
-                    ))
+                            </div>
+                        );
+                    })
                 )}
             </div>
         </div>

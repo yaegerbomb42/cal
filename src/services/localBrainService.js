@@ -177,6 +177,7 @@ User timezone: ${timeZone}
 Rules:
 - Interpret times in the user's timezone.
 - If end time is missing, assume a 1-hour duration unless context implies otherwise.
+- Category must be one of: work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, other.
 - Return ONLY valid JSON (no markdown, no extra text).
 Example:
 User: "Lunch with Bob tomorrow at 12pm"
@@ -185,16 +186,27 @@ JSON: { "title": "Lunch with Bob", "start": "2024-01-02T20:00:00.000Z", "end": "
 
         const response = await this.chat(text, systemPrompt);
 
-        // Attempt to extract JSON from response
-        try {
-            const jsonMatch = response.match(/\{[\s\S]*\}/);
+        const parseJsonResponse = (candidate) => {
+            const jsonMatch = candidate.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 return JSON.parse(jsonMatch[0]);
             }
-            return JSON.parse(response);
+            return JSON.parse(candidate);
+        };
+
+        try {
+            return parseJsonResponse(response);
         } catch {
-            console.error("Failed to parse local brain response as JSON", response);
-            throw new Error("Local model failed to generate valid JSON");
+            try {
+                const repairPrompt = `
+Return ONLY a JSON object with keys: title, start, end, description, location, category.
+No extra text. Use ISO 8601 UTC strings for start/end.`;
+                const repaired = await this.chat(text, `${systemPrompt}\n\n${repairPrompt}`);
+                return parseJsonResponse(repaired);
+            } catch (error) {
+                console.error("Failed to parse local brain response as JSON", response);
+                throw new Error("Local model failed to generate valid JSON");
+            }
         }
     }
 };

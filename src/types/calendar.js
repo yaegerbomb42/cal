@@ -1,5 +1,5 @@
 /**
- * @typedef {'work'|'personal'|'fun'|'hobby'|'task'|'todo'|'event'|'appointment'|'health'|'social'|'travel'|'other'} EventCategory
+ * @typedef {'work'|'personal'|'fun'|'hobby'|'task'|'todo'|'event'|'appointment'|'holiday'|'health'|'social'|'travel'|'other'} EventCategory
  */
 
 /**

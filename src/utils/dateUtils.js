@@ -107,6 +107,7 @@ export const parseNaturalLanguageDate = (text) => {
   // Simple natural language parsing - can be enhanced
   const now = new Date();
   const lowerText = text.toLowerCase();
+  const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   
   if (lowerText.includes('today')) {
     return new Date();
@@ -122,6 +123,22 @@ export const parseNaturalLanguageDate = (text) => {
   
   if (lowerText.includes('next week')) {
     return addDays(now, 7);
+  }
+
+  const nextWeekdayMatch = lowerText.match(/\bnext\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+  if (nextWeekdayMatch) {
+    const targetIndex = weekdays.indexOf(nextWeekdayMatch[1]);
+    const currentIndex = now.getDay();
+    const delta = (7 - currentIndex + targetIndex) % 7 || 7;
+    return addDays(now, delta);
+  }
+
+  const thisWeekdayMatch = lowerText.match(/\bthis\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/);
+  if (thisWeekdayMatch) {
+    const targetIndex = weekdays.indexOf(thisWeekdayMatch[1]);
+    const currentIndex = now.getDay();
+    const delta = (7 - currentIndex + targetIndex) % 7;
+    return addDays(now, delta);
   }
   
   // Try to parse standard date formats

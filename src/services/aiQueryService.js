@@ -45,7 +45,7 @@ export const buildQueryResponse = (text, events, now = new Date()) => {
     return `Events for ${dateRange.label}: ${summary}.`;
   }
 
-  if (lower.includes('next') && lower.includes('event')) {
+  if (lower.includes('next') && (lower.includes('event') || lower.includes('appointment'))) {
     const upcoming = sortEventsByStart(getUpcomingEvents(events, now));
     logger.info('AI query: next event', { count: upcoming.length });
     if (upcoming.length === 0) {

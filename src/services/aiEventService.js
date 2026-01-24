@@ -1,6 +1,7 @@
 import { parseNaturalLanguageDate } from '../utils/dateUtils.js';
 import { applyTimeToDate, extractDurationMinutes, parseTimeRangeToDates, parseTimeToken } from '../utils/timeParser.js';
 import { sanitizeDraft } from '../utils/eventSchema.js';
+import { getEventColor } from '../utils/helpers.js';
 import { AIParseError, AIServiceError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 import { geminiService } from './geminiService.js';
@@ -162,5 +163,6 @@ export const finalizeDraft = (draft) => ({
   description: draft.description || '',
   location: draft.location || '',
   category: draft.category || 'personal',
-  recurring: draft.recurring || { type: 'none' }
+  recurring: draft.recurring || { type: 'none' },
+  color: draft.color || getEventColor(draft.category || 'personal')
 });

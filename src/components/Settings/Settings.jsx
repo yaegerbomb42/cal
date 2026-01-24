@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Upload, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, Palette } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { downloadICS } from '../../utils/icsExport';
+import { GENERAL_EVENT_PACKS, buildGeneralEvents } from '../../utils/generalEvents';
 import { toastService } from '../../utils/toast';
 import './Settings.css';
 
@@ -30,6 +32,9 @@ const Settings = ({ isOpen, onClose }) => {
   const [preferLocalBrain, setPreferLocalBrain] = useState(false);
   const [localBrainTestStatus, setLocalBrainTestStatus] = useState('idle');
   const [localBrainTestResult, setLocalBrainTestResult] = useState('');
+  const [generalEventPacks, setGeneralEventPacks] = useState({});
+
+  const { theme, setTheme } = useTheme();
 
   const handleInitLocalBrain = async () => {
     try {
@@ -88,9 +93,31 @@ const Settings = ({ isOpen, onClose }) => {
   const tabs = [
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
     { id: 'ai', label: 'AI Engine', icon: Sparkles, color: '#8b5cf6' },
+    { id: 'appearance', label: 'Appearance', icon: Palette, color: '#38bdf8' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
     { id: 'data', label: 'Storage', icon: Download, color: '#f43f5e' },
     { id: 'about', label: 'About', icon: CheckCircle, color: '#10b981' }
+  ];
+
+  const themeOptions = [
+    {
+      id: 'codex',
+      label: 'Codex Dark',
+      description: 'OpenAI-inspired graphite with a cyan tech glow.',
+      accent: '#38bdf8'
+    },
+    {
+      id: 'pastel',
+      label: 'Vibrant Pastel',
+      description: 'Soft gradients with a playful neon pop.',
+      accent: '#a855f7'
+    },
+    {
+      id: 'white',
+      label: 'Crisp White',
+      description: 'Minimal, bright, and focused with deep-blue edges.',
+      accent: '#2563eb'
+    }
   ];
 
   const testConnection = async (keyOverride) => {
@@ -140,6 +167,53 @@ const Settings = ({ isOpen, onClose }) => {
     setPreferLocalBrain(localBrainService.getPreferLocal());
   }, [isOpen]);
 
+  useEffect(() => {
+    const loadGeneralEvents = async () => {
+      const localStored = localStorage.getItem('calai-general-event-packs');
+      let stored = localStored ? JSON.parse(localStored) : {};
+      if (user) {
+        const userData = await firebaseService.getUserData();
+        if (userData?.generalEventPacks) {
+          stored = userData.generalEventPacks;
+        }
+      }
+      setGeneralEventPacks(stored || {});
+    };
+    if (isOpen) {
+      loadGeneralEvents();
+    }
+  }, [isOpen, user]);
+
+  const handleToggleGeneralPack = async (packId, enabled) => {
+    const updated = { ...generalEventPacks, [packId]: enabled };
+    setGeneralEventPacks(updated);
+    localStorage.setItem('calai-general-event-packs', JSON.stringify(updated));
+    if (user) {
+      await firebaseService.saveUserData({ generalEventPacks: updated });
+    }
+
+    if (enabled) {
+      const currentYear = new Date().getFullYear();
+      const generated = buildGeneralEvents(packId, [currentYear, currentYear + 1]);
+      const existingKeys = new Set(events.map(event => `${event.title}-${event.start}-${event.autoPack || ''}`));
+      for (const event of generated) {
+        const key = `${event.title}-${event.start}-${event.autoPack}`;
+        if (!existingKeys.has(key)) {
+          await addEvent(event, { allowConflicts: true, skipConflictCheck: true, silent: true, skipNotifications: true });
+        }
+      }
+      toastService.success('General events added to your calendar.');
+      return;
+    }
+
+    deleteEventsByFilter(
+      event => event.autoPack === packId,
+      `General pack: ${packId}`,
+      { skipConfirm: true, silent: true }
+    );
+    toastService.info('General events removed from your calendar.');
+  };
+
   const handleSaveApiKey = async () => {
     const trimmedKey = apiKey.trim();
     if (!trimmedKey) return;
@@ -160,6 +234,19 @@ const Settings = ({ isOpen, onClose }) => {
     } finally {
       setIsTestingConnection(false);
     }
+  };
+
+  const maskedApiValue = showApiKey
+    ? apiKey
+    : apiKey || (hasSavedApiKey ? '********' : '');
+
+  const handleApiKeyChange = (value) => {
+    if (!showApiKey && hasSavedApiKey && value.includes('*')) {
+      const cleaned = value.replace(/\*/g, '');
+      setApiKey(cleaned);
+      return;
+    }
+    setApiKey(value);
   };
 
   const handleGoogleCalendarSync = async () => {
@@ -355,8 +442,8 @@ const Settings = ({ isOpen, onClose }) => {
                             <Key size={16} className="input-icon-inner" />
                             <input
                               type={showApiKey ? "text" : "password"}
-                              value={apiKey}
-                              onChange={(e) => setApiKey(e.target.value)}
+                              value={maskedApiValue}
+                              onChange={(e) => handleApiKeyChange(e.target.value)}
                               placeholder={hasSavedApiKey ? "Stored securely in your account" : "sk-..."}
                             />
                             <button onClick={() => setShowApiKey(!showApiKey)} className="eye-toggle">
@@ -481,6 +568,63 @@ const Settings = ({ isOpen, onClose }) => {
                     </div>
                   )}
 
+                  {activeTab === 'appearance' && (
+                    <div className="content-section">
+                      <div className="info-box">
+                        <Palette size={20} className="sparkle-icon" />
+                        <div>
+                          <h4>Choose Your Theme</h4>
+                          <p>Each theme is tuned for clarity, contrast, and a signature CalAI glow.</p>
+                        </div>
+                      </div>
+
+                      <div className="theme-grid">
+                        {themeOptions.map(option => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={`theme-card ${theme === option.id ? 'active' : ''}`}
+                            style={{ '--theme-accent': option.accent }}
+                            onClick={() => setTheme(option.id)}
+                          >
+                            <div className="theme-card-header">
+                              <span className="theme-dot" />
+                              <span>{option.label}</span>
+                            </div>
+                            <p>{option.description}</p>
+                            {theme === option.id && <span className="theme-selected">Active</span>}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="info-box" style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                        <div>
+                          <h4>General Event Packs</h4>
+                          <p>Auto-add curated event collections like holidays.</p>
+                        </div>
+                      </div>
+
+                      <div className="general-event-list">
+                        {GENERAL_EVENT_PACKS.map(pack => (
+                          <div key={pack.id} className="general-event-item">
+                            <div>
+                              <h5>{pack.label}</h5>
+                              <p>{pack.description}</p>
+                            </div>
+                            <label className="toggle-switch">
+                              <input
+                                type="checkbox"
+                                checked={Boolean(generalEventPacks?.[pack.id])}
+                                onChange={(e) => handleToggleGeneralPack(pack.id, e.target.checked)}
+                              />
+                              <span className="toggle-slider" />
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {activeTab === 'sync' && (
                     <div className="content-section">
                       <div className="pro-integration-card">
@@ -541,16 +685,17 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="upgrade-todo">
                         <h4>Cal Upgrade TODO</h4>
                         <ol>
-                          <li>Route quick add input straight into Cal chat.</li>
-                          <li>Correct explicit times so 1:45pm stays 1:45pm.</li>
-                          <li>Open day view when clicking a date in month view.</li>
-                          <li>Add AI draft editing before confirming events.</li>
-                          <li>Refresh the event modal for faster edits.</li>
-                          <li>Always-show trash controls in upcoming events.</li>
-                          <li>Ensure AI-created events always carry times.</li>
-                          <li>Expand category + color system to 8 tags.</li>
-                          <li>Add category filters for upcoming events.</li>
-                          <li>Enable quick edit actions from the upcoming list.</li>
+                          <li>✅ Image uploads in Cal chat for multi-event extraction.</li>
+                          <li>✅ Gemini + Offline Brain return valid event JSON with repairs.</li>
+                          <li>✅ Day/week views show all 24 hours without scrolling.</li>
+                          <li>✅ Magnify focus on hovered hours in time grids.</li>
+                          <li>✅ High-contrast theme system (dark, pastel, white).</li>
+                          <li>✅ API keys stay masked when synced from Firebase.</li>
+                          <li>✅ Clock picker lets you drag both hands at any time.</li>
+                          <li>✅ General event packs like holidays.</li>
+                          <li>✅ AI-created events are editable with correct time saved.</li>
+                          <li>✅ Past events are greyed out but still clickable.</li>
+                          <li>✅ “Next appointment” query reliability improved.</li>
                         </ol>
                       </div>
                       <div className="legal-links-alt">
