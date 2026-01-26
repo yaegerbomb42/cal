@@ -120,6 +120,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateDate(-1)}
                   className="btn nav-btn"
+                  aria-label="Previous date"
                 >
                   <ChevronLeft size={20} />
                 </motion.button>
@@ -128,9 +129,11 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={goToToday}
-                  className="btn btn-primary today-btn"
+                  className="btn icon-link today-btn"
+                  title="Jump to today"
+                  aria-label="Jump to today"
                 >
-                  Today
+                  <Calendar size={18} />
                 </motion.button>
 
                 <motion.button
@@ -138,6 +141,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateDate(1)}
                   className="btn nav-btn"
+                  aria-label="Next date"
                 >
                   <ChevronRight size={20} />
                 </motion.button>

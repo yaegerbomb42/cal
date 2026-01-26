@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Trash2, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, MessageSquare, Clock } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, MessageSquare, Clock } from 'lucide-react';
+import Button from '@mui/material/Button';
+import { CloudDownloadOutlined, DeleteOutline, DeleteSweepOutlined, EventNoteOutlined } from '@mui/icons-material';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { downloadICS } from '../../utils/icsExport';
 import { GENERAL_EVENT_PACKS, buildGeneralEvents } from '../../utils/generalEvents';
 import { toastService } from '../../utils/toast';
@@ -14,6 +17,7 @@ import './Settings.css';
 
 const Settings = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, isDark } = useTheme();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -461,193 +465,243 @@ const Settings = ({ isOpen, onClose }) => {
                           <span className="lbl">Engine</span>
                         </div>
                       </div>
+
+                      <div className="pro-card theme-card">
+                        <div>
+                          <h4>Theme Preference</h4>
+                          <p>Switch between light and dark mode with CSS variable theming.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={toggleTheme}
+                          className="theme-toggle-button"
+                          aria-pressed={isDark}
+                        >
+                          <span className="theme-toggle-label">{isDark ? 'Dark' : 'Light'} Mode</span>
+                          <span className="theme-toggle-meta">Current: {theme}</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 
                   {activeTab === 'ai' && (
-                    <div className="content-section">
-                      <div className="info-box">
-                        <Sparkles size={20} className="sparkle-icon" />
-                        <div>
-                          <h4>Gemini 3.0 Pro</h4>
-                          <p>Your calendar is powered by the latest frontier models for intelligent parsing and chat.</p>
-                        </div>
-                      </div>
-
-                      <div className="form-group-alt">
-                        <label>Gemini API Key</label>
-                        <div className="pro-input-group">
-                          <div className="input-container">
-                            <Key size={16} className="input-icon-inner" />
-                            <input
-                              type={showApiKey ? "text" : "password"}
-                              value={maskedApiValue}
-                              onChange={(e) => handleApiKeyChange(e.target.value)}
-                              placeholder={hasSavedApiKey ? "Stored securely in your account" : "sk-..."}
-                            />
-                            <button onClick={() => setShowApiKey(!showApiKey)} className="eye-toggle">
-                              {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => testConnection()}
-                            disabled={(!apiKey.trim() && !hasSavedApiKey) || isTestingConnection}
-                            className="pro-btn-secondary"
-                            style={{ marginRight: '8px' }}
-                          >
-                            {isTestingConnection ? <RefreshCw className="animate-spin" size={16} /> : <RefreshCw size={16} />}
-                            Test
-                          </button>
-                          <button
-                            onClick={handleSaveApiKey}
-                            disabled={!apiKey.trim() || isTestingConnection}
-                            className="pro-btn-primary"
-                          >
-                            <Save size={16} />
-                            Save
-                          </button>
-                        </div>
-                        {hasSavedApiKey && (
-                          <div className="pro-status success" style={{ marginTop: '8px' }}>
-                            <CheckCircle size={14} /> Saved key is hidden for security.
-                          </div>
-                        )}
-                        {connectionStatus === 'success' && (
-                          <div className="pro-status success"><CheckCircle size={14} /> Gemini 3.0 Connected</div>
-                        )}
-                        {connectionStatus === 'error' && (
-                          <div className="pro-status error" style={{ color: '#f43f5e' }}>X Connection Failed</div>
-                        )}
-                      </div>
-                      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="external-link-alt">
-                        Get your key from Google AI Studio <ExternalLink size={14} />
-                      </a>
-
-                      <div className="info-box" style={{ marginTop: '16px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Sparkles size={20} className="sparkle-icon" style={{ color: '#6366f1' }} />
-                          <div>
-                            <h4>Offline Backup Brain (Beta)</h4>
-                            <p>Run a small AI model directly in your browser. Perfect for offline use or saving Gemini costs.</p>
-                          </div>
-                        </div>
-
-                        {!isLocalBrainLoaded && !localBrainProgress && (
-                          <div style={{ marginTop: '12px' }}>
-                            <p style={{ fontSize: '12px', color: '#aaa', marginBottom: '8px' }}>
-                              Requires ~1.5GB download (first time only). Uses your device's GPU.
-                            </p>
-                            <button onClick={handleInitLocalBrain} className="pro-btn-secondary">
-                              <Download size={14} /> Initialize Backup Brain
-                            </button>
-                          </div>
-                        )}
-
-                        {localBrainProgress && (
-                          <div style={{ marginTop: '12px' }}>
-                            <div className="pro-progress-bar">
-                              <div className="progress-fill" style={{ width: `${localBrainProgress.progress * 100}%` }}></div>
+                    <div className="content-section ai-settings">
+                      <div className="ai-settings-grid">
+                        <section className="ai-card">
+                          <div className="ai-card-header">
+                            <Sparkles size={20} className="sparkle-icon" />
+                            <div>
+                              <h4>Gemini 3.0 Pro</h4>
+                              <p>Your calendar uses frontier models for intelligent parsing, assistant replies, and scheduling logic.</p>
                             </div>
-                            <p style={{ fontSize: '11px', marginTop: '4px', color: '#ccc' }}>{localBrainProgress.text}</p>
                           </div>
-                        )}
 
-                        {isLocalBrainLoaded && (
-                          <>
-                            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 2.5 3B)</div>
-                              <button onClick={handleUnloadBrain} className="danger-link" style={{ marginLeft: 'auto', fontSize: '11px' }}>
-                                Unload
+                          <div className="form-group-alt">
+                            <label>Gemini API Key</label>
+                            <div className="pro-input-group">
+                              <div className="input-container">
+                                <Key size={16} className="input-icon-inner" />
+                                <input
+                                  type={showApiKey ? "text" : "password"}
+                                  value={maskedApiValue}
+                                  onChange={(e) => handleApiKeyChange(e.target.value)}
+                                  placeholder={hasSavedApiKey ? "Stored securely in your account" : "sk-..."}
+                                />
+                                <button onClick={() => setShowApiKey(!showApiKey)} className="eye-toggle">
+                                  {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => testConnection()}
+                                disabled={(!apiKey.trim() && !hasSavedApiKey) || isTestingConnection}
+                                className="pro-btn-secondary"
+                                style={{ marginRight: '8px' }}
+                              >
+                                {isTestingConnection ? <RefreshCw className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                                Test
+                              </button>
+                              <button
+                                onClick={handleSaveApiKey}
+                                disabled={!apiKey.trim() || isTestingConnection}
+                                className="pro-btn-primary"
+                              >
+                                <Save size={16} />
+                                Save
                               </button>
                             </div>
-                            <p className="local-brain-note">Offline Brain is ready. Use it anytime by toggling the switch below.</p>
-                          </>
-                        )}
-
-                        <div className="local-brain-toggle">
-                          <div>
-                            <h5>Prefer Offline Brain</h5>
-                            <p>Route chats + event parsing to the local model even if Gemini is connected.</p>
-                          </div>
-                          <label className="toggle-switch">
-                            <input
-                              type="checkbox"
-                              checked={preferLocalBrain}
-                              onChange={(e) => handlePreferLocalBrain(e.target.checked)}
-                            />
-                            <span className="toggle-slider" />
-                          </label>
-                        </div>
-
-                        <div className="local-brain-test">
-                          <div className="local-brain-test-header">
-                            <div>
-                              <h5>Local Model Test Chat</h5>
-                              <p>Send a custom message and confirm live generation.</p>
-                            </div>
-                            <button
-                              onClick={handleLocalBrainTest}
-                              className="pro-btn-secondary"
-                              disabled={localBrainTestStatus === 'loading'}
-                            >
-                              {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Run Test'}
-                            </button>
-                          </div>
-                          <div className="local-brain-meta">
-                            <div className="meta-item">
-                              <Clock size={14} />
-                              <span>{localBrainNow.toLocaleString()}</span>
-                            </div>
-                            <div className="meta-item">
-                              <MessageSquare size={14} />
-                              <span>Model: {localBrainService.type || 'local'}</span>
-                            </div>
-                          </div>
-                          {localBrainTestResult && (
-                            <div className="local-brain-test-output">
-                              <span className="label">Sample Response</span>
-                              <p>{localBrainTestResult}</p>
-                            </div>
-                          )}
-                          <form onSubmit={handleLocalBrainChatSubmit} className="local-brain-chat-form">
-                            <input
-                              type="text"
-                              value={localBrainTestInput}
-                              onChange={(e) => setLocalBrainTestInput(e.target.value)}
-                              placeholder="Send a message to the local model..."
-                              className="local-brain-input"
-                            />
-                            <button type="submit" className="pro-btn-primary" disabled={localBrainTestStatus === 'loading'}>
-                              {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Send'}
-                            </button>
-                          </form>
-                          <div className="local-brain-chat-log">
-                            {localBrainChatHistory.map(entry => (
-                              <div key={entry.id} className={`chat-entry ${entry.role}`}>
-                                <div className="chat-entry-header">
-                                  <span className="role">{entry.role === 'ai' ? 'Cal' : 'You'}</span>
-                                  <span className="timestamp">{entry.timestamp.toLocaleTimeString()}</span>
-                                </div>
-                                <p>{entry.content}</p>
-                                {entry.role === 'ai' && entry.model && (
-                                  <span className="chat-model">{entry.model}</span>
-                                )}
-                              </div>
-                            ))}
-                            {localBrainTestStatus === 'loading' && (
-                              <div className="chat-entry ai">
-                                <div className="chat-entry-header">
-                                  <span className="role">Cal</span>
-                                  <span className="timestamp">Generating...</span>
-                                </div>
-                                <p className="streaming-indicator">Streaming response…</p>
+                            {hasSavedApiKey && (
+                              <div className="pro-status success" style={{ marginTop: '8px' }}>
+                                <CheckCircle size={14} /> Saved key is hidden for security.
                               </div>
                             )}
+                            {connectionStatus === 'success' && (
+                              <div className="pro-status success"><CheckCircle size={14} /> Gemini 3.0 Connected</div>
+                            )}
+                            {connectionStatus === 'error' && (
+                              <div className="pro-status error" style={{ color: '#f43f5e' }}>X Connection Failed</div>
+                            )}
                           </div>
-                          {localBrainTestStatus === 'error' && (
-                            <p className="local-brain-test-error">We couldn't complete the test. Try loading the Offline Brain again.</p>
-                          )}
-                        </div>
+                          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="external-link-alt">
+                            Get your key from Google AI Studio <ExternalLink size={14} />
+                          </a>
+                        </section>
+
+                        <section className="ai-card">
+                          <details className="ai-accordion" open>
+                            <summary>
+                              <div className="ai-accordion-title">
+                                <Sparkles size={18} />
+                                <div>
+                                  <h4>Offline Backup Brain (Beta)</h4>
+                                  <p>Run a compact model locally for offline sessions or cost control.</p>
+                                </div>
+                              </div>
+                              <span className="ai-accordion-meta">Local model controls</span>
+                            </summary>
+                            <div className="ai-accordion-body">
+                              {!isLocalBrainLoaded && !localBrainProgress && (
+                                <div className="ai-inline-note">
+                                  <p>
+                                    Requires ~1.5GB download (first time only). Uses your device GPU and stays on-device.
+                                  </p>
+                                  <button onClick={handleInitLocalBrain} className="pro-btn-secondary">
+                                    <Download size={14} /> Initialize Backup Brain
+                                  </button>
+                                </div>
+                              )}
+
+                              {localBrainProgress && (
+                                <div>
+                                  <div className="pro-progress-bar">
+                                    <div className="progress-fill" style={{ width: `${localBrainProgress.progress * 100}%` }}></div>
+                                  </div>
+                                  <p style={{ fontSize: '11px', marginTop: '4px', color: '#ccc' }}>{localBrainProgress.text}</p>
+                                </div>
+                              )}
+
+                              {isLocalBrainLoaded && (
+                                <>
+                                  <div className="ai-inline-status">
+                                    <div className="pro-status success"><CheckCircle size={14} /> Ready (Qwen 2.5 3B)</div>
+                                    <button onClick={handleUnloadBrain} className="danger-link">
+                                      Unload
+                                    </button>
+                                  </div>
+                                  <p className="local-brain-note">Offline Brain is ready. Toggle the switch below to prefer local inference.</p>
+                                </>
+                              )}
+
+                              <div className="local-brain-toggle">
+                                <div>
+                                  <h5>Prefer Offline Brain</h5>
+                                  <p>Route chats + event parsing to the local model even if Gemini is connected.</p>
+                                </div>
+                                <label className="toggle-switch">
+                                  <input
+                                    type="checkbox"
+                                    checked={preferLocalBrain}
+                                    onChange={(e) => handlePreferLocalBrain(e.target.checked)}
+                                  />
+                                  <span className="toggle-slider" />
+                                </label>
+                              </div>
+
+                              <div className="local-brain-test">
+                                <div className="local-brain-test-header">
+                                  <div>
+                                    <h5>Local Model Test Chat</h5>
+                                    <p>Send a custom message and confirm live generation.</p>
+                                  </div>
+                                  <button
+                                    onClick={handleLocalBrainTest}
+                                    className="pro-btn-secondary"
+                                    disabled={localBrainTestStatus === 'loading'}
+                                  >
+                                    {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Run Test'}
+                                  </button>
+                                </div>
+                                <div className="local-brain-meta">
+                                  <div className="meta-item">
+                                    <Clock size={14} />
+                                    <span>{localBrainNow.toLocaleString()}</span>
+                                  </div>
+                                  <div className="meta-item">
+                                    <MessageSquare size={14} />
+                                    <span>Model: {localBrainService.type || 'local'}</span>
+                                  </div>
+                                </div>
+                                {localBrainTestResult && (
+                                  <div className="local-brain-test-output">
+                                    <span className="label">Sample Response</span>
+                                    <p>{localBrainTestResult}</p>
+                                  </div>
+                                )}
+                                <form onSubmit={handleLocalBrainChatSubmit} className="local-brain-chat-form">
+                                  <input
+                                    type="text"
+                                    value={localBrainTestInput}
+                                    onChange={(e) => setLocalBrainTestInput(e.target.value)}
+                                    placeholder="Send a message to the local model..."
+                                    className="local-brain-input"
+                                  />
+                                  <button type="submit" className="pro-btn-primary" disabled={localBrainTestStatus === 'loading'}>
+                                    {localBrainTestStatus === 'loading' ? <RefreshCw className="animate-spin" size={14} /> : 'Send'}
+                                  </button>
+                                </form>
+                                <div className="local-brain-chat-log">
+                                  {localBrainChatHistory.map(entry => (
+                                    <div key={entry.id} className={`chat-entry ${entry.role}`}>
+                                      <div className="chat-entry-header">
+                                        <span className="role">{entry.role === 'ai' ? 'Cal' : 'You'}</span>
+                                        <span className="timestamp">{entry.timestamp.toLocaleTimeString()}</span>
+                                      </div>
+                                      <p>{entry.content}</p>
+                                      {entry.role === 'ai' && entry.model && (
+                                        <span className="chat-model">{entry.model}</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                  {localBrainTestStatus === 'loading' && (
+                                    <div className="chat-entry ai">
+                                      <div className="chat-entry-header">
+                                        <span className="role">Cal</span>
+                                        <span className="timestamp">Generating...</span>
+                                      </div>
+                                      <p className="streaming-indicator">Streaming response…</p>
+                                    </div>
+                                  )}
+                                </div>
+                                {localBrainTestStatus === 'error' && (
+                                  <p className="local-brain-test-error">We couldn't complete the test. Try loading the Offline Brain again.</p>
+                                )}
+                              </div>
+                            </div>
+                          </details>
+                        </section>
+
+                        <section className="ai-card ai-card-wide">
+                          <div className="ai-card-header">
+                            <Sparkles size={18} />
+                            <div>
+                              <h4>Engine Guidance</h4>
+                              <p>CalAI uses your connected services to improve scheduling and protect your data.</p>
+                            </div>
+                          </div>
+                          <div className="ai-guidance">
+                            <div className="ai-guidance-item">
+                              <span className="ai-guidance-title">Privacy-first flows</span>
+                              <p>Keys are stored securely and never displayed once saved. Local Brain runs entirely on-device.</p>
+                            </div>
+                            <div className="ai-guidance-item">
+                              <span className="ai-guidance-title">Smart parsing</span>
+                              <p>Natural language commands translate into structured events with timezone-aware defaults.</p>
+                            </div>
+                            <div className="ai-guidance-item">
+                              <span className="ai-guidance-title">Cost controls</span>
+                              <p>Switch to the Offline Brain to save API credits while preserving the assistant experience.</p>
+                            </div>
+                          </div>
+                        </section>
                       </div>
                     </div>
                   )}
@@ -697,24 +751,42 @@ const Settings = ({ isOpen, onClose }) => {
                       </div>
 
                       <div className="grid-2">
-                        <div className="pro-action-card" onClick={handleExportData}>
-                          <Download size={24} />
-                          <h5>Export JSON</h5>
-                          <p>Backup all your events to a portable file.</p>
-                        </div>
-                        <div className="pro-action-card" onClick={handleExportICS}>
-                          <CalendarIcon size={24} />
-                          <h5>Export ICS</h5>
-                          <p>Export in universal calendar format.</p>
-                        </div>
+                        <Button
+                          variant="outlined"
+                          onClick={handleExportData}
+                          startIcon={<CloudDownloadOutlined />}
+                          className="mui-storage-button"
+                        >
+                          Export JSON
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={handleExportICS}
+                          startIcon={<EventNoteOutlined />}
+                          className="mui-storage-button"
+                        >
+                          Export ICS
+                        </Button>
                       </div>
-                      <div className="danger-zone">
-                        <button onClick={handleDeleteByName} className="btn-warning">
-                          <Trash2 size={14} /> Delete Events by Name
-                        </button>
-                        <button onClick={handleClearAllData} className="danger-link">
-                          <Trash2 size={14} /> Clear Local Events
-                        </button>
+                      <div className="storage-actions">
+                        <Button
+                          variant="outlined"
+                          color="warning"
+                          onClick={handleDeleteByName}
+                          startIcon={<DeleteSweepOutlined />}
+                          className="mui-storage-button"
+                        >
+                          Delete Events by Name
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          onClick={handleClearAllData}
+                          startIcon={<DeleteOutline />}
+                          className="mui-storage-button"
+                        >
+                          Clear Local Events
+                        </Button>
                       </div>
 
                       <div className="info-box" style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
@@ -754,26 +826,26 @@ const Settings = ({ isOpen, onClose }) => {
                         <h3>CalAI</h3>
                         <p>Version 2.0.1 (Nitro)</p>
                       </div>
-                      <div className="upgrade-todo">
-                        <h4>Cal Upgrade TODO</h4>
-                        <ol>
-                          <li>✅ Image uploads in Cal chat for multi-event extraction.</li>
-                          <li>✅ Gemini + Offline Brain return valid event JSON with repairs.</li>
-                          <li>✅ Day/week views show all 24 hours without scrolling.</li>
-                          <li>✅ Magnify focus on hovered hours in time grids.</li>
-                          <li>✅ Dark glass theme system for low-light clarity.</li>
-                          <li>✅ API keys stay masked when synced from Firebase.</li>
-                          <li>✅ Clock picker lets you drag both hands at any time.</li>
-                          <li>✅ General event packs like holidays.</li>
-                          <li>✅ AI-created events are editable with correct time saved.</li>
-                          <li>✅ Past events are greyed out but still clickable.</li>
-                          <li>✅ “Next appointment” query reliability improved.</li>
-                        </ol>
+                      <div className="about-details">
+                        <h4>Professional AI Calendar</h4>
+                        <p>
+                          CalAI is an intelligent scheduling workspace that pairs real-time calendaring with AI-powered
+                          orchestration. From natural language entries to resilient syncing, it keeps every commitment
+                          aligned with your day.
+                        </p>
+                        <ul>
+                          <li>AI-first scheduling with verified event parsing and timezone awareness.</li>
+                          <li>Offline Backup Brain to keep planning available even without connectivity.</li>
+                          <li>Secure storage for API credentials with masked UI protection.</li>
+                          <li>Integrated Google Calendar sync and export-ready formats.</li>
+                        </ul>
                       </div>
                       <div className="legal-links-alt">
-                        <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+                        <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
                         <span>•</span>
-                        <a href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                        <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+                        <span>•</span>
+                        <a href="/contact" target="_blank" rel="noopener noreferrer">Contact</a>
                       </div>
                       <div className="feedback-section">
                         <p>Built with ❤️ by Yaegerbomb</p>
