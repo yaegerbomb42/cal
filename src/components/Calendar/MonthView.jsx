@@ -47,8 +47,7 @@ const MonthView = () => {
       <div className="month-summary glass-card">
         <div className="month-summary-title">This Month</div>
         <div className="month-summary-stat">
-          <span className="stat-number">{monthEventsCount}</span>
-          <span className="stat-label">Events</span>
+          {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
         </div>
       </div>
 
@@ -116,7 +115,7 @@ const MonthView = () => {
                 
                 {dayEvents.length > 3 && (
                   <div className="more-events">
-                    +{dayEvents.length - 3} more
+                    {`+${dayEvents.length - 3} more event${dayEvents.length - 3 !== 1 ? 's' : ''}`}
                   </div>
                 )}
               </div>

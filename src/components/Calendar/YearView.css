@@ -28,6 +28,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .year-mode-toggle {
@@ -55,48 +56,61 @@
   font-weight: 700;
 }
 
+.year-select {
+  display: inline-flex;
+  align-items: center;
+}
+
+.year-select select {
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--text-primary);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.year-view .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .year-grid {
-  padding: 1.5rem 2rem;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
 
-.year-month-labels {
+.year-month {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.year-month-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.year-month-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18px, 1fr));
-  gap: 4px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.month-label {
-  opacity: 0.2;
-}
-
-.month-label.visible {
-  opacity: 0.9;
-}
-
-.year-weeks {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(18px, 1fr);
-  gap: 4px;
-  align-items: start;
-}
-
-.year-week-column {
-  display: grid;
-  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(20px, 1fr));
   gap: 4px;
 }
 
 .year-day {
-  width: 18px;
-  height: 18px;
+  position: relative;
+  min-width: 20px;
+  min-height: 20px;
   border-radius: 6px;
   background: rgba(148, 163, 184, 0.2);
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -104,9 +118,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.year-day.outside-month {
+  opacity: 0.35;
 }
 
 .year-day.level-1 {
@@ -129,59 +147,25 @@
   border-color: rgba(253, 186, 248, 0.8);
 }
 
+.year-day.past-event {
+  opacity: 0.7;
+  filter: grayscale(80%);
+}
+
+.year-day-number {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.55rem;
+  opacity: 0.8;
+}
+
 .year-day-count {
   line-height: 1;
 }
 
-.year-legend {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.legend-scale {
-  display: flex;
-  gap: 4px;
-}
-
-.legend-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  background: rgba(148, 163, 184, 0.2);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-.legend-dot.level-1 {
-  background: rgba(167, 197, 255, 0.4);
-  border-color: rgba(167, 197, 255, 0.6);
-}
-
-.legend-dot.level-2 {
-  background: rgba(186, 230, 253, 0.55);
-  border-color: rgba(186, 230, 253, 0.7);
-}
-
-.legend-dot.level-3 {
-  background: rgba(216, 180, 254, 0.6);
-  border-color: rgba(216, 180, 254, 0.7);
-}
-
-.legend-dot.level-4 {
-  background: rgba(253, 186, 248, 0.7);
-  border-color: rgba(253, 186, 248, 0.8);
-}
-
 @media (max-width: 1024px) {
-  .year-grid {
+  .year-header {
     padding: 1.25rem;
-  }
-
-  .year-day,
-  .legend-dot {
-    width: 14px;
-    height: 14px;
   }
 }
