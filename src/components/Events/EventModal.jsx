@@ -471,7 +471,7 @@ const EventModal = () => {
               </div>
 
               <div className="modal-section" aria-label="Schedule details">
-                <h4 className="panel-title"><Clock size={14} /> Schedule details</h4>
+                <h4 className="panel-title"><Clock size={14} /> Schedule time</h4>
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="start-date">
@@ -531,8 +531,8 @@ const EventModal = () => {
                 </div>
               </div>
 
-              <div className="modal-section" aria-label="Event preferences">
-                <h4 className="panel-title"><Palette size={14} /> Preferences</h4>
+              <div className="modal-section" aria-label="Event type">
+                <h4 className="panel-title"><Palette size={14} /> Type & preferences</h4>
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="category">Category</label>

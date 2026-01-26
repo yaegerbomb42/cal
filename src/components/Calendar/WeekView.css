@@ -212,6 +212,15 @@
   opacity: 0.8;
 }
 
+.week-event-location {
+  font-size: 0.62rem;
+  opacity: 0.8;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .week-current-time {
   position: absolute;
   left: 70px;

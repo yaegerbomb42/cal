@@ -137,6 +137,7 @@ const WeekView = () => {
                     const isPastEvent = new Date(event.end || event.start) < now;
                     const width = `${100 / columns}%`;
                     const left = `calc(${column * (100 / columns)}% + 2px)`;
+                    const showLocation = height > 42;
                     return (
                       <motion.div
                         key={event.id}
@@ -153,12 +154,13 @@ const WeekView = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <div className="week-event-title">{event.title}</div>
-                        {height > 24 && (
-                          <div className="week-event-time">
-                            {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
-                            <span className="week-event-duration">· {formatDuration(event.start, event.end)}</span>
-                          </div>
+                        <div className="week-event-title">{event.title || 'Untitled'}</div>
+                        <div className="week-event-time">
+                          {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
+                          <span className="week-event-duration">· {formatDuration(event.start, event.end)}</span>
+                        </div>
+                        {showLocation && event.location && (
+                          <div className="week-event-location">{event.location}</div>
                         )}
                       </motion.div>
                     );

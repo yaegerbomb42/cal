@@ -16,7 +16,7 @@
 
 .event-modal {
   width: 100%;
-  max-width: 1100px;
+  max-width: 960px;
   height: fit-content;
   max-height: 86vh;
   overflow: visible;
@@ -91,7 +91,7 @@
 
 .modal-panels {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 
@@ -115,7 +115,7 @@
 }
 
 .form-group {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .form-group label {
@@ -138,7 +138,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .clock-picker {

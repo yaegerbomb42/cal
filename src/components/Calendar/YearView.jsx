@@ -119,7 +119,7 @@ const YearView = () => {
                       count > 0 && 'has-events',
                       mode === 'frequency' && intensity > 0 && `level-${intensity}`
                     )}
-                    title={`${format(day, 'MMM d')} · ${count} event${count === 1 ? '' : 's'}`}
+                    title={`${format(day, 'MMM d')} · ${count} ${count === 1 ? 'event' : 'events'}`}
                     style={dayStyle}
                     onClick={() => {
                       const selectedDay = new Date(day);
