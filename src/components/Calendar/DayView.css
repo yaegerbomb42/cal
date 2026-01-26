@@ -102,10 +102,14 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(var(--overlap-count, 1), 1fr);
+  grid-auto-rows: 1px;
+  column-gap: 6px;
 }
 
 .day-event-card {
-  position: absolute;
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -127,9 +131,9 @@
   transform: translateY(-1px);
 }
 
-.day-event-card.past-event {
-  opacity: 0.7;
-  filter: grayscale(80%);
+.day-event-card.past {
+  opacity: 0.75;
+  filter: grayscale(70%);
 }
 
 .day-event-card .event-time {

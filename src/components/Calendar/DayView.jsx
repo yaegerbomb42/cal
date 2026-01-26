@@ -15,7 +15,7 @@ import {
 } from '../../utils/dateUtils';
 import { Clock, Plus } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
-import { layoutOverlappingEvents } from '../../utils/eventLayout';
+import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import './DayView.css';
 
 const buildEventSnippet = (event) => {
@@ -43,6 +43,7 @@ const DayView = () => {
   const remainingCount = countRemainingEvents(dayEvents, now);
   const dayHours = getDayHours();
   const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
+  const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
 
   const handleAddEvent = () => {
     const startTime = new Date(currentDate);
@@ -64,16 +65,16 @@ const DayView = () => {
         </div>
         <div className="day-stats">
           <div className="stat">
-            <span className="stat-number">{remainingCount}</span>
-            <span className="stat-label">
-              {`event${remainingCount !== 1 ? 's' : ''} remaining`}
+            <span className="stat-number">
+              {`${remainingCount} event${remainingCount !== 1 ? 's' : ''}`}
             </span>
+            <span className="stat-label">remaining</span>
           </div>
           <div className="stat">
-            <span className="stat-number">{dayEvents.length}</span>
-            <span className="stat-label">
-              {`event${dayEvents.length !== 1 ? 's' : ''} total`}
+            <span className="stat-number">
+              {`${dayEvents.length} event${dayEvents.length !== 1 ? 's' : ''}`}
             </span>
+            <span className="stat-label">total</span>
           </div>
           <button className="btn btn-primary day-add-btn" onClick={handleAddEvent}>
             <Plus size={16} /> Add Event
@@ -101,24 +102,22 @@ const DayView = () => {
             <div key={`hour-${hour.getHours()}`} className="day-hour-cell" />
           ))}
 
-          <div className="day-events-layer">
-            {layoutOverlappingEvents(dayEvents).map(({ event, column, columns }, index) => {
+          <div className="day-events-layer" style={{ '--overlap-count': maxOverlap }}>
+            {dayLayout.map(({ event, column }, index) => {
               const { top, height: rawHeight } = getEventPosition(event, currentDate, pixelsPerHour);
               const height = Math.max(rawHeight * 0.7, 18);
               const isPastEvent = new Date(event.end || event.start) < now;
-              const gap = 6;
-              const width = `calc((100% / ${columns}) - ${gap}px)`;
-              const left = `calc(${column} * (100% / ${columns}) + ${gap / 2}px)`;
+              const rowStart = Math.max(1, Math.floor(top) + 1);
+              const rowSpan = Math.max(18, Math.ceil(height));
               return (
                 <motion.button
                   key={event.id}
                   type="button"
-                  className={cn('day-event-card', isPastEvent && 'past-event')}
+                  className={cn('day-event-card', isPastEvent && 'past')}
                   style={{
-                    top: `${top}px`,
-                    height: `${height}px`,
-                    left,
-                    width,
+                    gridColumnStart: column + 1,
+                    gridColumnEnd: column + 2,
+                    gridRow: `${rowStart} / span ${rowSpan}`,
                     zIndex: 5 + column,
                     backgroundColor: event.color || getEventColor(event.category)
                   }}

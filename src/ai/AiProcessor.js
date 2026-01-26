@@ -19,7 +19,6 @@ const DATE_PATTERNS = [
 const TIME_RANGE_REGEX = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:-|to)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i;
 const TIME_REGEX = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/i;
 
-const LOCATION_HINTS = ['at', 'in', '@'];
 const MEETING_HINTS = ['meeting', 'meet', 'call', 'sync', 'standup'];
 const AMBIGUITY_HINTS = ['sometime', 'later', 'soon', 'this week', 'next week', 'sometime next'];
 
@@ -109,10 +108,22 @@ const inferTitle = (text) => {
   return '';
 };
 
+const extractLocation = (input) => {
+  const locationRegex = /(?:^|\s)(?:at|in|@)\s+([^\n,.;]+?)(?=\s+(?:on|tomorrow|today|next|this|at|from|between|until|for|with)\b|$)/i;
+  const match = input.match(locationRegex);
+  if (!match) return null;
+
+  const candidate = match[1].trim();
+  if (!candidate) return null;
+  if (TIME_REGEX.test(candidate) || TIME_RANGE_REGEX.test(candidate)) return null;
+  return candidate;
+};
+
 const buildRuleBasedDraft = (input, now = new Date()) => {
   const baseDate = extractExplicitDate(input, now);
   const range = extractTimeRange(input);
   const timeToken = extractTime(input);
+  const location = extractLocation(input);
 
   let start = null;
   let end = null;
@@ -130,7 +141,8 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
   return {
     title: title || undefined,
     start: start ? start.toISOString() : undefined,
-    end: end ? end.toISOString() : undefined
+    end: end ? end.toISOString() : undefined,
+    location: location || undefined
   };
 };
 
@@ -145,7 +157,7 @@ const hasExplicitDate = (input) => {
   );
 };
 
-const hasLocationHint = (input) => LOCATION_HINTS.some((hint) => input.toLowerCase().includes(` ${hint} `));
+const hasLocationHint = (input) => Boolean(extractLocation(input));
 const hasMeetingHint = (input) => MEETING_HINTS.some((hint) => input.toLowerCase().includes(hint));
 const hasAmbiguityHint = (input) => AMBIGUITY_HINTS.some((hint) => input.toLowerCase().includes(hint));
 
@@ -154,7 +166,7 @@ const scoreDraftConfidence = ({ draft, input }) => {
   const dateScore = hasExplicitDate(input) ? 0.3 : 0;
   const timeScore = hasExplicitTime(input) ? 0.3 : 0;
   const endScore = draft.end ? 0.1 : 0;
-  const locationScore = hasLocationHint(input) ? 0.1 : 0;
+  const locationScore = draft.location || hasLocationHint(input) ? 0.1 : 0;
   let score = titleScore + dateScore + timeScore + endScore + locationScore;
 
   if (hasAmbiguityHint(input)) score -= 0.1;
@@ -169,7 +181,7 @@ const determineClarificationFields = ({ draft, input }) => {
   if (!draft.start || !hasExplicitTime(input)) missing.push('start');
   if (!draft.end) missing.push('end');
 
-  if (hasMeetingHint(input) && !draft.location) missing.push('location');
+  if ((hasMeetingHint(input) || hasLocationHint(input)) && !draft.location) missing.push('location');
 
   return missing;
 };
@@ -261,6 +273,7 @@ export const processEventInput = async (
   }
 
   const webLLMReady = Boolean(benchmark?.ready);
+  const webLLMUnreliable = Boolean(benchmark && !benchmark.ready);
 
   if (webLLMReady && localBrainService?.isLoaded) {
     try {
@@ -270,7 +283,7 @@ export const processEventInput = async (
     } catch (error) {
       aiEventEmitter.emit('calai-webllm-error', { message: error.message });
     }
-  } else if (geminiService?.isInitialized) {
+  } else if (!webLLMUnreliable && geminiService?.isInitialized) {
     try {
       const parsed = await geminiService.parseEventFromText(input);
       draft = { ...draft, ...parsed };
@@ -278,6 +291,8 @@ export const processEventInput = async (
     } catch (error) {
       aiEventEmitter.emit('calai-gemini-error', { message: error.message });
     }
+  } else if (webLLMUnreliable) {
+    source = 'rule';
   }
 
   const sanitized = sanitizeDraft({ ...draft });
