@@ -61,6 +61,8 @@ const EventForm = ({ eventData, mode, onSubmit, onCancel }: EventFormProps) => {
   useEffect(() => {
     if (mode === 'edit' && eventData) {
       resetForm(buildInitialValues(eventData));
+      setImageStatus(eventData.imageUrl ? 'ready' : 'idle');
+      setImageError('');
     }
   }, [eventData, mode, resetForm]);
 
