@@ -1,4 +1,5 @@
 const NONCE_PATTERN = /\/nonce\s+\w+/gi;
+const VERIFICATION_LINE = /^\s*(verification|verified|confidence|analysis|final|assistant|response)\s*[:\-].*$/gim;
 const EXTRA_WHITESPACE = /\s{2,}/g;
 
 const isMathExpression = (input) => {
@@ -31,7 +32,12 @@ const evaluateMathExpression = (input) => {
 export const sanitizeAIOutput = (output, { input = '', verbose = false } = {}) => {
   if (typeof output !== 'string') return output;
 
-  let cleaned = output.replace(NONCE_PATTERN, '').replace(EXTRA_WHITESPACE, ' ').trim();
+  let cleaned = output
+    .replace(NONCE_PATTERN, '')
+    .replace(VERIFICATION_LINE, '')
+    .replace(/\n{2,}/g, '\n')
+    .replace(EXTRA_WHITESPACE, ' ')
+    .trim();
 
   if (isMathExpression(input)) {
     const result = evaluateMathExpression(input);
