@@ -85,8 +85,7 @@ const WeekView = () => {
       <div className="week-summary glass-card">
         <div className="week-summary-title">This Week</div>
         <div className="week-summary-stat">
-          <span className="stat-number">{weekEventsCount}</span>
-          <span className="stat-label">Events</span>
+          {`${weekEventsCount} event${weekEventsCount !== 1 ? 's' : ''}`}
         </div>
       </div>
 
@@ -135,8 +134,9 @@ const WeekView = () => {
                     const { top, height: rawHeight } = getEventPosition(event, day, pixelsPerHour);
                     const height = Math.max(rawHeight * 0.7, 18);
                     const isPastEvent = new Date(event.end || event.start) < now;
-                    const width = `${100 / columns}%`;
-                    const left = `calc(${column * (100 / columns)}% + 2px)`;
+                    const gap = 6;
+                    const width = `calc((100% / ${columns}) - ${gap}px)`;
+                    const left = `calc(${column} * (100% / ${columns}) + ${gap / 2}px)`;
                     const showLocation = height > 42;
                     return (
                       <motion.div
@@ -147,7 +147,8 @@ const WeekView = () => {
                           height: `${height}px`,
                           backgroundColor: event.color || getEventColor(event.category),
                           width,
-                          left
+                          left,
+                          zIndex: 5 + column
                         }}
                         onClick={(e) => handleEventClick(event, e)}
                         initial={{ opacity: 0, scale: 0.95 }}

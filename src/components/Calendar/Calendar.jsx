@@ -7,7 +7,7 @@ import YearView from './YearView';
 import './Calendar.css';
 
 const Calendar = () => {
-  const { view } = useCalendar();
+  const { view, setCurrentDate } = useCalendar();
 
   const renderView = () => {
     switch (view) {
@@ -18,7 +18,7 @@ const Calendar = () => {
       case CALENDAR_VIEWS.MONTH:
         return <MonthView key="month" />;
       case CALENDAR_VIEWS.YEAR:
-        return <YearView key="year" />;
+        return <YearView key="year" onYearChange={setCurrentDate} />;
       default:
         return <MonthView key="month" />;
     }

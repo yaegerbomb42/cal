@@ -61,46 +61,75 @@
   padding: 0.45rem 0.9rem;
 }
 
-.day-list-wrapper {
+.day-grid {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  border-radius: 16px;
   overflow: hidden;
   min-height: 0;
+  --hour-height: 32px;
 }
 
-.day-list {
+.day-time-column {
+  display: grid;
+  grid-template-rows: repeat(24, var(--hour-height));
+  border-right: 1px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.day-time-slot {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  height: 100%;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.day-grid-body {
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(24, var(--hour-height));
+}
+
+.day-hour-cell {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.day-events-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .day-event-card {
+  position: absolute;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.6);
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
   color: var(--text-primary);
   text-align: left;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease, height 0.2s ease;
+  pointer-events: auto;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+  transition: transform 0.2s ease, background 0.2s ease;
+  overflow: hidden;
 }
 
 .day-event-card:hover,
-.day-event-card.is-focused {
-  background: rgba(24, 33, 61, 0.8);
+.day-event-card:focus-visible {
   transform: translateY(-1px);
 }
 
 .day-event-card.past-event {
-  opacity: 0.55;
-  filter: grayscale(0.3);
+  opacity: 0.7;
+  filter: grayscale(80%);
 }
 
 .day-event-card .event-time {
@@ -127,7 +156,8 @@
 }
 
 .day-empty-state {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -135,17 +165,12 @@
   text-align: center;
   gap: 0.35rem;
   color: var(--text-muted);
+  pointer-events: none;
 }
 
 .day-empty-state .empty-title {
   font-weight: 700;
   color: var(--text-primary);
-}
-
-.day-overflow-hint {
-  text-align: right;
-  font-size: 0.75rem;
-  color: var(--text-muted);
 }
 
 @media (max-width: 900px) {
@@ -164,5 +189,9 @@
 @media (max-width: 600px) {
   .day-event-card .event-snippet {
     white-space: normal;
+  }
+
+  .day-grid {
+    grid-template-columns: 55px 1fr;
   }
 }
