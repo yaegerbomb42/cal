@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
-import { useCalendar } from '../../contexts/CalendarContext';
-import { useEvents } from '../../contexts/EventsContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { useEvents } from '../../contexts/useEvents';
 import { cn, formatDuration, getEventColor } from '../../utils/helpers';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
@@ -11,6 +11,7 @@ import './WeekView.css';
 const WeekView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { events, getEventsForDate } = useEvents();
+  const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
   const weekStart = startOfDay(weekDays[0]);
@@ -139,7 +140,7 @@ const WeekView = () => {
                     const rowSpan = Math.max(18, Math.ceil(height));
                     const showLocation = height > 42;
                     return (
-                      <motion.div
+                      <MotionDiv
                         key={event.id}
                         className={cn('week-event', isPastEvent && 'past')}
                         style={{
@@ -162,7 +163,7 @@ const WeekView = () => {
                         {showLocation && event.location && (
                           <div className="week-event-location">{event.location}</div>
                         )}
-                      </motion.div>
+                      </MotionDiv>
                     );
                   })}
                 </div>

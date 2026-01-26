@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
-import { useEvents } from '../../contexts/EventsContext';
-import { useCalendar } from '../../contexts/CalendarContext';
+import { useEvents } from '../../contexts/useEvents';
+import { useCalendar } from '../../contexts/useCalendar';
 import { detectIntent } from '../../services/aiIntentService';
 import { buildQueryResponse } from '../../services/aiQueryService';
 import { finalizeDraft } from '../../services/aiEventService';
@@ -31,6 +31,7 @@ const AIChat = ({ isOpen, onClose }) => {
   const [statusMessage, setStatusMessage] = useState(null);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
 
+  const MotionDiv = motion.div;
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const { events, addEvent, deleteEventsByCategory } = useEvents();
@@ -335,14 +336,14 @@ const AIChat = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="ai-chat-overlay"
         onClick={onClose}
       >
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
@@ -369,7 +370,7 @@ const AIChat = ({ isOpen, onClose }) => {
 
           <div className="chat-messages" aria-live="polite">
             {messages.map((message) => (
-              <motion.div
+              <MotionDiv
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -378,11 +379,11 @@ const AIChat = ({ isOpen, onClose }) => {
                 <div className="message-content">
                   <p>{message.content}</p>
                 </div>
-              </motion.div>
+              </MotionDiv>
             ))}
 
             {pendingEvent && (
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="event-confirmation-card glass-card"
@@ -414,11 +415,11 @@ const AIChat = ({ isOpen, onClose }) => {
                     <Check size={16} /> Add Event
                   </button>
                 </div>
-              </motion.div>
+              </MotionDiv>
             )}
 
             {imageDrafts.length > 0 && (
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="event-confirmation-card glass-card image-event-batch"
@@ -433,11 +434,11 @@ const AIChat = ({ isOpen, onClose }) => {
                     <Check size={16} /> Add All
                   </button>
                 </div>
-              </motion.div>
+              </MotionDiv>
             )}
 
             {imageDrafts.map((draft, index) => (
-              <motion.div
+              <MotionDiv
                 key={`${draft.title}-${draft.start}-${index}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -463,7 +464,7 @@ const AIChat = ({ isOpen, onClose }) => {
                     <Check size={16} /> Add Event
                   </button>
                 </div>
-              </motion.div>
+              </MotionDiv>
             ))}
 
             {isLoading && (
@@ -505,8 +506,8 @@ const AIChat = ({ isOpen, onClose }) => {
               <Send size={16} />
             </button>
           </form>
-        </motion.div>
-      </motion.div>
+        </MotionDiv>
+      </MotionDiv>
     </AnimatePresence>
   );
 };

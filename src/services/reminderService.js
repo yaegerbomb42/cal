@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 // Reminder scheduling service
 class ReminderService {
   constructor() {
@@ -15,7 +17,7 @@ class ReminderService {
         });
       }
     } catch (error) {
-      console.error('Error loading reminders:', error);
+      logger.error('Error loading reminders', { error });
     }
   }
 
@@ -79,9 +81,9 @@ class ReminderService {
           tags: ['calendar', 'reminder'],
           priority: minutesBefore <= 5 ? 5 : 3
         })
-      }).catch(err => console.warn('ntfy.sh notification failed:', err));
+      }).catch(error => logger.warn('ntfy.sh notification failed', { error }));
     } catch (error) {
-      console.error('Error sending reminder:', error);
+      logger.error('Error sending reminder', { error });
     }
   }
 

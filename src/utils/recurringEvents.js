@@ -45,18 +45,20 @@ export const generateRecurringEvents = (baseEvent, recurrence, count = 10) => {
         break;
 
       case RECURRENCE_TYPES.WEEKDAYS:
-        let daysAdded = 0;
-        let currentDate = new Date(startDate);
-        while (daysAdded < i) {
-          currentDate.setDate(currentDate.getDate() + 1);
-          const dayOfWeek = currentDate.getDay();
-          if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday or Saturday
-            daysAdded++;
+        {
+          let daysAdded = 0;
+          let currentDate = new Date(startDate);
+          while (daysAdded < i) {
+            currentDate.setDate(currentDate.getDate() + 1);
+            const dayOfWeek = currentDate.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday or Saturday
+              daysAdded++;
+            }
           }
+          newStart.setTime(currentDate.getTime());
+          newEnd.setTime(newStart.getTime() + duration);
+          break;
         }
-        newStart.setTime(currentDate.getTime());
-        newEnd.setTime(newStart.getTime() + duration);
-        break;
 
       default:
         return events;

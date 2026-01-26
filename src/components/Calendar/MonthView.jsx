@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { getMonthDays, isSameMonth, isToday, formatTime24 } from '../../utils/dateUtils';
-import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
-import { useEvents } from '../../contexts/EventsContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { useEvents } from '../../contexts/useEvents';
+import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { cn, getEventColor } from '../../utils/helpers';
 import './MonthView.css';
 
 const MonthView = () => {
   const { currentDate, openEventModal, setView, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const MotionDiv = motion.div;
   const now = new Date();
 
   const monthDays = getMonthDays(currentDate);
@@ -68,7 +70,7 @@ const MonthView = () => {
           const isDayToday = isToday(day);
 
           return (
-            <motion.div
+            <MotionDiv
               key={day.toISOString()}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -99,7 +101,7 @@ const MonthView = () => {
 
               <div className="day-events">
                 {dayEvents.slice(0, 3).map((event) => (
-                  <motion.div
+                  <MotionDiv
                     key={event.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -110,7 +112,7 @@ const MonthView = () => {
                   >
                     <span className="event-time">{formatTime24(new Date(event.start))}</span>
                     <span className="event-title">{event.title}</span>
-                  </motion.div>
+                  </MotionDiv>
                 ))}
                 
                 {dayEvents.length > 3 && (
@@ -119,7 +121,7 @@ const MonthView = () => {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </MotionDiv>
           );
         })}
       </div>

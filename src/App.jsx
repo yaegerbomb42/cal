@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { CalendarProvider } from './contexts/CalendarContext';
 import { EventsProvider } from './contexts/EventsContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/useAuth';
 import Login from './components/Auth/Login';
 import Header from './components/Header/Header';
 import Calendar from './components/Calendar/Calendar';
@@ -22,6 +23,8 @@ import Contact from './pages/Contact';
 import './App.css';
 
 function App() {
+
+  const MotionDiv = motion.div;
 
   return (
     <ThemeProvider>
@@ -87,7 +90,7 @@ const MainLayout = () => {
 
   return (
     <div className="app">
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -121,7 +124,7 @@ const MainLayout = () => {
         />
 
         <Toast />
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };

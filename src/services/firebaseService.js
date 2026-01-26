@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import {
   getAuth,
   signInWithPopup,
@@ -9,6 +9,7 @@ import {
   signOut,
   onAuthStateChanged
 } from "firebase/auth";
+import { logger } from '../utils/logger';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -33,7 +34,7 @@ class FirebaseService {
     try {
       this.initialize();
     } catch (e) {
-      console.error("Firebase auto-init failed", e);
+      logger.error('Firebase auto-init failed', { error: e });
     }
   }
 
@@ -46,7 +47,7 @@ class FirebaseService {
       this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize Firebase:', error);
+      logger.error('Failed to initialize Firebase', { error });
       this.isInitialized = false;
       return false;
     }
@@ -62,7 +63,7 @@ class FirebaseService {
       this.userId = result.user.uid;
       return result.user;
     } catch (error) {
-      console.error('Google login error:', error);
+      logger.error('Google login error', { error });
       throw error;
     }
   }
@@ -74,7 +75,7 @@ class FirebaseService {
       this.userId = result.user.uid;
       return result.user;
     } catch (error) {
-      console.error('Email login error:', error);
+      logger.error('Email login error', { error });
       throw error;
     }
   }
@@ -86,7 +87,7 @@ class FirebaseService {
       this.userId = result.user.uid;
       return result.user;
     } catch (error) {
-      console.error('Signup error:', error);
+      logger.error('Signup error', { error });
       throw error;
     }
   }
@@ -97,7 +98,7 @@ class FirebaseService {
       await signOut(this.auth);
       this.userId = null;
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error', { error });
       throw error;
     }
   }
@@ -133,7 +134,7 @@ class FirebaseService {
       await setDoc(userDocRef, { apiKey }, { merge: true });
       return true;
     } catch (error) {
-      console.error('Error saving API key to Firebase:', error);
+      logger.error('Error saving API key to Firebase', { error });
       throw error;
     }
   }
@@ -150,7 +151,7 @@ class FirebaseService {
       }
       return null;
     } catch (error) {
-      console.error('Error getting API key from Firebase:', error);
+      logger.error('Error getting API key from Firebase', { error });
       return null;
     }
   }
@@ -164,7 +165,7 @@ class FirebaseService {
       await setDoc(userDocRef, { events }, { merge: true });
       return true;
     } catch (error) {
-      console.error('Error saving events to Firebase:', error);
+      logger.error('Error saving events to Firebase', { error });
       throw error;
     }
   }
@@ -181,12 +182,12 @@ class FirebaseService {
       }
       return [];
     } catch (error) {
-      console.error('Error getting events from Firebase:', error);
+      logger.error('Error getting events from Firebase', { error });
       return [];
     }
   }
 
-  subscribeToEvents(callback) {
+  subscribeToEvents() {
     return () => { };
   }
 
@@ -199,7 +200,7 @@ class FirebaseService {
       await setDoc(userDocRef, data, { merge: true });
       return true;
     } catch (error) {
-      console.error('Error saving user data to Firebase:', error);
+      logger.error('Error saving user data to Firebase', { error });
       throw error;
     }
   }
@@ -212,7 +213,7 @@ class FirebaseService {
       const userDoc = await getDoc(userDocRef);
       return userDoc.exists() ? userDoc.data() : null;
     } catch (error) {
-      console.error('Error getting user data from Firebase:', error);
+      logger.error('Error getting user data from Firebase', { error });
       return null;
     }
   }

@@ -1,21 +1,6 @@
-import { createContext, useContext, useState } from 'react';
-
-const CalendarContext = createContext();
-
-export const useCalendar = () => {
-  const context = useContext(CalendarContext);
-  if (!context) {
-    throw new Error('useCalendar must be used within a CalendarProvider');
-  }
-  return context;
-};
-
-export const CALENDAR_VIEWS = {
-  DAY: 'day',
-  WEEK: 'week',
-  MONTH: 'month',
-  YEAR: 'year'
-};
+import { useState } from 'react';
+import { CalendarContext } from './calendarContext';
+import { CALENDAR_VIEWS } from './calendarViews';
 
 export const CalendarProvider = ({
   children,

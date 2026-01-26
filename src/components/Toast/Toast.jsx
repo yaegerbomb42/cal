@@ -6,6 +6,7 @@ import './Toast.css';
 
 const Toast = () => {
   const [toasts, setToasts] = useState([]);
+  const MotionDiv = motion.div;
 
   useEffect(() => {
     const unsubscribe = toastService.subscribe(setToasts);
@@ -29,7 +30,7 @@ const Toast = () => {
     <div className="toast-container">
       <AnimatePresence>
         {toasts.map((toast) => (
-          <motion.div
+          <MotionDiv
             key={toast.id}
             initial={{ opacity: 0, y: -20, x: 100 }}
             animate={{ opacity: 1, y: 0, x: 0 }}
@@ -44,7 +45,7 @@ const Toast = () => {
             >
               <X size={16} />
             </button>
-          </motion.div>
+          </MotionDiv>
         ))}
       </AnimatePresence>
     </div>

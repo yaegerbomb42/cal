@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion';
 import { eachDayOfInterval, endOfMonth, endOfWeek, endOfYear, format, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { memo, useMemo, useState } from 'react';
-import { useCalendar } from '../../contexts/CalendarContext';
-import { useEvents } from '../../contexts/EventsContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { useEvents } from '../../contexts/useEvents';
 import { endOfDay, isSameMonth } from '../../utils/dateUtils';
 import { cn } from '../../utils/helpers';
 import './YearView.css';
 
 const WEEK_START = 0;
+const MotionButton = motion.button;
 
 const getMonthGrid = (date) => {
   const monthStart = startOfMonth(date);
@@ -46,7 +47,7 @@ const YearDayCell = memo(({
   onSelect
 }) => {
   return (
-    <motion.button
+    <MotionButton
       type="button"
       className={cn(
         'year-day',
@@ -62,7 +63,7 @@ const YearDayCell = memo(({
     >
       <span className="year-day-number">{day.getDate()}</span>
       {count > 0 && <span className="year-day-count">{count}</span>}
-    </motion.button>
+    </MotionButton>
   );
 });
 

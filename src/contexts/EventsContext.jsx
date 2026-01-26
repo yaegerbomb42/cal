@@ -1,22 +1,14 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { firebaseService } from '../services/firebaseService';
 import { debounce } from '../utils/helpers';
-import { validateEvent, checkEventConflicts, validateEventOrThrow } from '../utils/eventValidator';
+import { checkEventConflicts, validateEvent, validateEventOrThrow } from '../utils/eventValidator';
 import { getActiveEvents as getActiveEventsList, getArchivedEvents as getArchivedEventsList, getUpcomingEvents as getUpcomingEventsList } from '../utils/eventQueries';
 import { ValidationError } from '../utils/errors';
 import { toastService } from '../utils/toast';
 import { reminderService } from '../services/reminderService';
 import { googleCalendarService } from '../services/googleCalendarService';
-
-const EventsContext = createContext();
-
-export const useEvents = () => {
-  const context = useContext(EventsContext);
-  if (!context) {
-    throw new Error('useEvents must be used within an EventsProvider');
-  }
-  return context;
-};
+import { logger } from '../utils/logger';
+import { EventsContext } from './eventsContext';
 
 const STORAGE_KEY = 'calendar-events';
 
@@ -62,7 +54,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
             });
           }
         } catch (error) {
-          console.error("Auto-sync failed", error);
+          logger.error('Auto-sync failed', { error });
         }
       }
     };
@@ -107,7 +99,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
           }
         }
       } catch (error) {
-        console.log('Firebase not available, using localStorage:', error);
+        logger.warn('Firebase not available, using localStorage', { error });
         // Fallback to localStorage only
         const localEvents = localStorage.getItem(STORAGE_KEY);
         setEvents(localEvents ? JSON.parse(localEvents) : []);
@@ -125,7 +117,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
       try {
         await firebaseService.saveEvents(eventsToSave);
       } catch (error) {
-        console.log('Could not save to Firebase, localStorage backup available:', error);
+        logger.warn('Could not save to Firebase, localStorage backup available', { error });
         toastService.warning('Could not sync to cloud. Data saved locally.');
       }
     }, 1000),
@@ -147,7 +139,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
   // Handle Online/Offline Sync
   useEffect(() => {
     const handleOnline = () => {
-      console.log("Network restored. Syncing to cloud...");
+      logger.info('Network restored. Syncing to cloud...');
       toastService.success("Back online! Syncing events...");
       debouncedFirebaseSave(events);
     };
@@ -197,7 +189,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
       try {
         await googleCalendarService.addEvent(newEvent);
       } catch (error) {
-        console.error('Failed to sync to Google Calendar:', error);
+        logger.error('Failed to sync to Google Calendar', { error });
       }
     }
 
@@ -210,10 +202,10 @@ export const EventsProvider = ({ children, initialEvents }) => {
     if (!options.skipNotifications) {
       import('../services/notificationService').then(({ notificationService }) => {
         notificationService.sendEventNotification(newEvent).catch(error => {
-          console.log('Could not send notification:', error);
+          logger.warn('Could not send notification', { error });
         });
       }).catch(error => {
-        console.log('Could not load notification service:', error);
+        logger.warn('Could not load notification service', { error });
       });
     }
 
@@ -262,7 +254,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
         try {
           await googleCalendarService.deleteEvent(event.gcalId);
         } catch (error) {
-          console.error('Failed to delete from Google Calendar:', error);
+          logger.error('Failed to delete from Google Calendar', { error });
         }
       }
     }
