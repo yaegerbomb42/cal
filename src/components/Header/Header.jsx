@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles, ImagePlus, ChevronDown } from 'lucide-react';
+import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles, ImagePlus } from 'lucide-react';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { formatDate, formatFullDate, formatViewLabel } from '../../utils/dateUtils';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
@@ -10,10 +10,8 @@ import './Header.css';
 const Header = ({ onOpenSettings, onOpenAI }) => {
   const [quickInput, setQuickInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const imageInputRef = useRef(null);
   const quickInputRef = useRef(null);
-  const viewMenuRef = useRef(null);
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
   const viewButtons = [
@@ -53,17 +51,6 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
       unregisterT();
     };
   }, [openEventModal, goToToday]);
-
-  useEffect(() => {
-    if (!isViewMenuOpen) return;
-    const handleClickOutside = (event) => {
-      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target)) {
-        setIsViewMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isViewMenuOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -122,7 +109,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     onOpenAI();
   };
 
-  const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'View';
+  const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'Day';
 
   return (
     <motion.header
@@ -162,17 +149,6 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={goToToday}
-                  className="btn icon-link today-btn"
-                  title="Jump to today"
-                  aria-label="Jump to today"
-                >
-                  <Calendar size={18} />
-                </motion.button>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => navigateDate(1)}
                   className="btn nav-btn"
                   aria-label="Next date"
@@ -181,8 +157,21 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 </motion.button>
               </div>
 
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={goToToday}
+                className="btn today-cta"
+                title="Jump to today"
+                aria-label="Jump to today"
+              >
+                <Calendar size={16} />
+                Today
+              </motion.button>
+
               <div className="header-title-group">
                 <h2 className="header-title">{getHeaderTitle()}</h2>
+                <p className="header-subtitle">{getViewLabel(activeViewLabel).replace(' View', '')}</p>
               </div>
             </div>
           </div>
@@ -190,42 +179,19 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
           {/* View Controls and Actions */}
           <div className="header-right">
             <div className="view-utility-row">
-              <div className="view-dropdown" ref={viewMenuRef}>
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setIsViewMenuOpen((prev) => !prev)}
-                  className="view-dropdown-trigger glass"
-                  aria-haspopup="listbox"
-                  aria-expanded={isViewMenuOpen}
-                >
-                  <div className="view-dropdown-label">
-                    <span className="view-dropdown-title">{getViewLabel(activeViewLabel)}</span>
-                    <span className="view-dropdown-subtitle">Select view</span>
-                  </div>
-                  <ChevronDown size={16} className={isViewMenuOpen ? 'rotate' : ''} />
-                </motion.button>
-                {isViewMenuOpen && (
-                  <div className="view-dropdown-menu glass" role="listbox">
-                    {viewButtons.map(({ key, label }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        role="option"
-                        aria-selected={view === key}
-                        className={`view-dropdown-option ${view === key ? 'active' : ''}`}
-                        onClick={() => {
-                          setView(key);
-                          setIsViewMenuOpen(false);
-                        }}
-                      >
-                        <span className="option-title">{label} View</span>
-                        <span className="option-subtitle">{getViewLabel(label)}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="view-switch" role="tablist" aria-label="Calendar view">
+                {viewButtons.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={view === key}
+                    className={`view-switch-btn ${view === key ? 'active' : ''}`}
+                    onClick={() => setView(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
 
               <form onSubmit={handleAICommand} className="quick-event-form inline">
