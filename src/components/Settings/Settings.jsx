@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, MessageSquare, Clock } from 'lucide-react';
-import Button from '@mui/material/Button';
 import { CloudDownloadOutlined, DeleteOutline, DeleteSweepOutlined, EventNoteOutlined } from '@mui/icons-material';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
@@ -469,7 +468,7 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="pro-card theme-card">
                         <div>
                           <h4>Theme Preference</h4>
-                          <p>Switch between light and dark mode with CSS variable theming.</p>
+                          <p>Toggle light or dark mode across the workspace.</p>
                         </div>
                         <button
                           type="button"
@@ -491,8 +490,8 @@ const Settings = ({ isOpen, onClose }) => {
                           <div className="ai-card-header">
                             <Sparkles size={20} className="sparkle-icon" />
                             <div>
-                              <h4>Gemini 3.0 Pro</h4>
-                              <p>Your calendar uses frontier models for intelligent parsing, assistant replies, and scheduling logic.</p>
+                              <h4>Gemini Pro</h4>
+                              <p>Connect Gemini to power scheduling, smart parsing, and assistant replies.</p>
                             </div>
                           </div>
 
@@ -547,13 +546,13 @@ const Settings = ({ isOpen, onClose }) => {
                         </section>
 
                         <section className="ai-card">
-                          <details className="ai-accordion" open>
+                          <details className="ai-accordion">
                             <summary>
                               <div className="ai-accordion-title">
                                 <Sparkles size={18} />
                                 <div>
                                   <h4>Offline Backup Brain (Beta)</h4>
-                                  <p>Run a compact model locally for offline sessions or cost control.</p>
+                                  <p>Run a compact model locally for offline coverage and cost control.</p>
                                 </div>
                               </div>
                               <span className="ai-accordion-meta">Local model controls</span>
@@ -562,7 +561,7 @@ const Settings = ({ isOpen, onClose }) => {
                               {!isLocalBrainLoaded && !localBrainProgress && (
                                 <div className="ai-inline-note">
                                   <p>
-                                    Requires ~1.5GB download (first time only). Uses your device GPU and stays on-device.
+                                    Requires ~1.5GB download the first time. Uses your device GPU and stays on-device.
                                   </p>
                                   <button onClick={handleInitLocalBrain} className="pro-btn-secondary">
                                     <Download size={14} /> Initialize Backup Brain
@@ -587,7 +586,7 @@ const Settings = ({ isOpen, onClose }) => {
                                       Unload
                                     </button>
                                   </div>
-                                  <p className="local-brain-note">Offline Brain is ready. Toggle the switch below to prefer local inference.</p>
+                                  <p className="local-brain-note">Offline Brain is ready. Toggle below to route chats locally.</p>
                                 </>
                               )}
 
@@ -610,7 +609,7 @@ const Settings = ({ isOpen, onClose }) => {
                                 <div className="local-brain-test-header">
                                   <div>
                                     <h5>Local Model Test Chat</h5>
-                                    <p>Send a custom message and confirm live generation.</p>
+                                    <p>Send a message and confirm live generation.</p>
                                   </div>
                                   <button
                                     onClick={handleLocalBrainTest}
@@ -684,21 +683,21 @@ const Settings = ({ isOpen, onClose }) => {
                             <Sparkles size={18} />
                             <div>
                               <h4>Engine Guidance</h4>
-                              <p>CalAI uses your connected services to improve scheduling and protect your data.</p>
+                              <p>CalAI uses your connected services to improve scheduling and data safety.</p>
                             </div>
                           </div>
                           <div className="ai-guidance">
                             <div className="ai-guidance-item">
                               <span className="ai-guidance-title">Privacy-first flows</span>
-                              <p>Keys are stored securely and never displayed once saved. Local Brain runs entirely on-device.</p>
+                              <p>Keys are stored securely and never displayed once saved. Local Brain stays on-device.</p>
                             </div>
                             <div className="ai-guidance-item">
                               <span className="ai-guidance-title">Smart parsing</span>
-                              <p>Natural language commands translate into structured events with timezone-aware defaults.</p>
+                              <p>Natural language commands become structured events with timezone-aware defaults.</p>
                             </div>
                             <div className="ai-guidance-item">
                               <span className="ai-guidance-title">Cost controls</span>
-                              <p>Switch to the Offline Brain to save API credits while preserving the assistant experience.</p>
+                              <p>Use the Offline Brain to save API credits while preserving the assistant flow.</p>
                             </div>
                           </div>
                         </section>
@@ -734,7 +733,7 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="storage-summary glass-card">
                         <div>
                           <h4>Local Event Storage</h4>
-                          <p>Manage your on-device calendar cache.</p>
+                          <p>Review and manage the on-device calendar cache.</p>
                         </div>
                         <div className="storage-meta">
                           <div>
@@ -750,43 +749,37 @@ const Settings = ({ isOpen, onClose }) => {
                         </div>
                       </div>
 
-                      <div className="grid-2">
-                        <Button
-                          variant="outlined"
-                          onClick={handleExportData}
-                          startIcon={<CloudDownloadOutlined />}
-                          className="mui-storage-button"
-                        >
-                          Export JSON
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          onClick={handleExportICS}
-                          startIcon={<EventNoteOutlined />}
-                          className="mui-storage-button"
-                        >
-                          Export ICS
-                        </Button>
+                      <div className="storage-actions-grid">
+                        <button type="button" onClick={handleExportData} className="storage-action-button">
+                          <CloudDownloadOutlined fontSize="small" />
+                          <div>
+                            <span>Export JSON</span>
+                            <small>Download a full calendar backup.</small>
+                          </div>
+                        </button>
+                        <button type="button" onClick={handleExportICS} className="storage-action-button">
+                          <EventNoteOutlined fontSize="small" />
+                          <div>
+                            <span>Export ICS</span>
+                            <small>Share events with other calendars.</small>
+                          </div>
+                        </button>
                       </div>
                       <div className="storage-actions">
-                        <Button
-                          variant="outlined"
-                          color="warning"
-                          onClick={handleDeleteByName}
-                          startIcon={<DeleteSweepOutlined />}
-                          className="mui-storage-button"
-                        >
-                          Delete Events by Name
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          onClick={handleClearAllData}
-                          startIcon={<DeleteOutline />}
-                          className="mui-storage-button"
-                        >
-                          Clear Local Events
-                        </Button>
+                        <button type="button" onClick={handleDeleteByName} className="storage-action-button warning">
+                          <DeleteSweepOutlined fontSize="small" />
+                          <div>
+                            <span>Delete by Name</span>
+                            <small>Remove repeated events by exact title.</small>
+                          </div>
+                        </button>
+                        <button type="button" onClick={handleClearAllData} className="storage-action-button danger">
+                          <DeleteOutline fontSize="small" />
+                          <div>
+                            <span>Clear Local Events</span>
+                            <small>Reset cached data on this device.</small>
+                          </div>
+                        </button>
                       </div>
 
                       <div className="info-box" style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
@@ -829,15 +822,15 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="about-details">
                         <h4>Professional AI Calendar</h4>
                         <p>
-                          CalAI is an intelligent scheduling workspace that pairs real-time calendaring with AI-powered
-                          orchestration. From natural language entries to resilient syncing, it keeps every commitment
-                          aligned with your day.
+                          CalAI is a dedicated AI calendar designed for teams and professionals who need fast, reliable
+                          scheduling. It blends real-time calendaring with AI-driven parsing so every commitment stays
+                          aligned and searchable.
                         </p>
                         <ul>
-                          <li>AI-first scheduling with verified event parsing and timezone awareness.</li>
-                          <li>Offline Backup Brain to keep planning available even without connectivity.</li>
+                          <li>AI-first scheduling with verified parsing and timezone awareness.</li>
+                          <li>Offline Backup Brain to keep planning available without connectivity.</li>
                           <li>Secure storage for API credentials with masked UI protection.</li>
-                          <li>Integrated Google Calendar sync and export-ready formats.</li>
+                          <li>Integrated Google Calendar sync plus export-ready formats.</li>
                         </ul>
                       </div>
                       <div className="legal-links-alt">
