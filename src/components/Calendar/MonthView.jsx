@@ -105,7 +105,7 @@ const MonthView = () => {
                     animate={{ opacity: 1, x: 0 }}
                     whileHover={{ scale: 1.02 }}
                     onClick={(e) => handleEventClick(event, e)}
-                    className={cn('day-event', new Date(event.end || event.start) < now && 'past-event')}
+                    className={cn('day-event', new Date(event.end || event.start) < now && 'past')}
                     style={{ backgroundColor: event.color || getEventColor(event.category) }}
                   >
                     <span className="event-time">{formatTime24(new Date(event.start))}</span>
