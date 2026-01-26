@@ -2,20 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
+import { localBrainService } from '../../services/localBrainService';
 import { useEvents } from '../../contexts/EventsContext';
 import { useCalendar } from '../../contexts/CalendarContext';
 import { detectIntent } from '../../services/aiIntentService';
 import { buildQueryResponse } from '../../services/aiQueryService';
-import { applyClarificationAnswer, finalizeDraft, listMissingFields, parseEventDraft } from '../../services/aiEventService';
+import { finalizeDraft } from '../../services/aiEventService';
+import { applyClarificationAnswer, getClarificationPrompt, listClarificationFields, processEventInput } from '../../ai/AiProcessor';
+import { sanitizeAIOutput } from '../../ai/OutputSanitizer';
 import { AIParseError, AIServiceError, ValidationError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 import './AIChat.css';
-
-const CLARIFICATION_PROMPTS = {
-  title: 'What should I call this event?',
-  start: 'When should it start? (date and time)',
-  end: 'When should it end? (time is enough)'
-};
 
 const AIChat = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
@@ -91,12 +88,12 @@ const AIChat = ({ isOpen, onClose }) => {
     const currentField = missingFields[0];
 
     const updatedDraft = applyClarificationAnswer(draft, currentField, text);
-    const remainingFields = listMissingFields(updatedDraft);
+    const remainingFields = listClarificationFields(updatedDraft, text);
 
     if (remainingFields.length > 0) {
       const nextField = remainingFields[0];
       setClarificationState({ draft: updatedDraft, missingFields: remainingFields });
-      addMessage('ai', CLARIFICATION_PROMPTS[nextField]);
+      addMessage('ai', getClarificationPrompt(nextField, { draft: updatedDraft }));
       return;
     }
 
@@ -127,11 +124,11 @@ const AIChat = ({ isOpen, onClose }) => {
       }
 
       if (intent === 'event_create') {
-        const draftResult = await parseEventDraft(text);
+        const draftResult = await processEventInput(text, { geminiService, localBrainService });
 
         if (draftResult.status === 'needs_clarification') {
           setClarificationState({ draft: draftResult.draft, missingFields: draftResult.missingFields });
-          addMessage('ai', CLARIFICATION_PROMPTS[draftResult.missingFields[0]]);
+          addMessage('ai', getClarificationPrompt(draftResult.missingFields[0], { draft: draftResult.draft }));
           return;
         }
 
@@ -143,7 +140,7 @@ const AIChat = ({ isOpen, onClose }) => {
       }
 
       const response = await geminiService.chatResponse(text, events);
-      handleAIResponse(response);
+      handleAIResponse(sanitizeAIOutput(response, { input: text }));
     } catch (error) {
       if (error instanceof AIParseError) {
         addMessage('ai', "I couldn't parse that event yet. Could you rephrase with a time or date?");
@@ -167,7 +164,8 @@ const AIChat = ({ isOpen, onClose }) => {
 
   const handleAIResponse = (response) => {
     try {
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const cleanedResponse = sanitizeAIOutput(response);
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const data = JSON.parse(jsonMatch[0]);
         if (data.type === 'action' && data.intent === 'delete_category' && data.category) {
@@ -196,7 +194,7 @@ const AIChat = ({ isOpen, onClose }) => {
           return;
         }
       }
-      addMessage('ai', response);
+      addMessage('ai', cleanedResponse);
     } catch {
       addMessage('ai', response);
     }

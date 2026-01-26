@@ -12,6 +12,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const imageInputRef = useRef(null);
+  const quickInputRef = useRef(null);
   const viewMenuRef = useRef(null);
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
@@ -64,6 +65,32 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isViewMenuOpen]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.defaultPrevented) return;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if (event.key.length !== 1) return;
+
+      event.preventDefault();
+      setQuickInput((prev) => `${prev}${event.key}`);
+      quickInputRef.current?.focus();
+      requestAnimationFrame(() => {
+        const input = quickInputRef.current;
+        if (input) {
+          const end = input.value.length;
+          input.setSelectionRange(end, end);
+        }
+      });
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleAICommand = async (e) => {
     e.preventDefault();
     if (!quickInput.trim() || isProcessing) return;
@@ -86,6 +113,13 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     onOpenAI();
     window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
     event.target.value = '';
+  };
+
+  const handleCalAIButtonClick = () => {
+    setView(CALENDAR_VIEWS.DAY);
+    goToToday();
+    window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: CALENDAR_VIEWS.DAY, date: new Date().toISOString() } }));
+    onOpenAI();
   };
 
   const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'View';
@@ -199,6 +233,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   placeholder="Ask or add with Cal"
                   className="quick-event-input"
                   disabled={isProcessing}
+                  ref={quickInputRef}
                 />
                 <input
                   ref={imageInputRef}
@@ -235,7 +270,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={onOpenAI}
+                onClick={handleCalAIButtonClick}
                 className="btn ai-btn logo-btn"
                 title="AI Assistant"
               >
