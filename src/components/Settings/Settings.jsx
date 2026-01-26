@@ -6,17 +6,19 @@ import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
-import { useEvents } from '../../contexts/EventsContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useEvents } from '../../contexts/useEvents';
+import { useAuth } from '../../contexts/useAuth';
+import { useTheme } from '../../contexts/useTheme';
 import { downloadICS } from '../../utils/icsExport';
 import { GENERAL_EVENT_PACKS, buildGeneralEvents } from '../../utils/generalEvents';
+import { logger } from '../../utils/logger';
 import { toastService } from '../../utils/toast';
 import './Settings.css';
 
 const Settings = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
+  const MotionDiv = motion.div;
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -49,7 +51,7 @@ const Settings = ({ isOpen, onClose }) => {
       setLocalBrainProgress(null);
       toastService.success("Offline Backup Brain Ready!");
     } catch (error) {
-      console.error(error);
+      logger.error('Failed to load offline brain', { error });
       toastService.error("Failed to load offline brain: " + error.message);
       setLocalBrainProgress(null);
     }
@@ -84,7 +86,7 @@ const Settings = ({ isOpen, onClose }) => {
       setLocalBrainTestResult(response);
       setLocalBrainTestStatus('success');
     } catch (error) {
-      console.error(error);
+      logger.error('Offline Brain test failed', { error });
       setLocalBrainTestStatus('error');
       toastService.error('Offline Brain test failed: ' + error.message);
     }
@@ -118,7 +120,7 @@ const Settings = ({ isOpen, onClose }) => {
         toastService.success('Connection successful: ' + result.message);
       }
     } catch (error) {
-      console.error('Connection test failed:', error);
+      logger.error('Connection test failed', { error });
       setConnectionStatus('error');
       toastService.error(error.message);
     } finally {
@@ -127,7 +129,7 @@ const Settings = ({ isOpen, onClose }) => {
   };
 
   useEffect(() => {
-    googleCalendarService.initialize().catch(err => console.error("GCal init error", err));
+    googleCalendarService.initialize().catch((error) => logger.error('GCal init error', { error }));
     const loadApiKey = async () => {
       if (user) {
         const savedKey = await firebaseService.getApiKey();
@@ -230,7 +232,7 @@ const Settings = ({ isOpen, onClose }) => {
       await testConnection(trimmedKey);
       toastService.success('API Key saved successfully!');
     } catch (error) {
-      console.error('Failed to save API key:', error);
+      logger.error('Failed to save API key', { error });
       toastService.error('Failed to save API key');
     } finally {
       setIsTestingConnection(false);
@@ -264,10 +266,14 @@ const Settings = ({ isOpen, onClose }) => {
             });
             toastService.success(`Synced ${gEvents.length} events!`);
           }
-        } catch (e) { console.error(e); } finally { setIsSyncing(false); }
+        } catch (error) {
+          logger.error('Failed to sync Google Calendar events', { error });
+        } finally {
+          setIsSyncing(false);
+        }
       }, 2000);
     } catch (error) {
-      console.error(error);
+      logger.error('Google Calendar sync failed', { error });
       toastService.error('Sync failed');
       setIsSyncing(false);
     }
@@ -337,7 +343,7 @@ const Settings = ({ isOpen, onClose }) => {
       ]);
       setLocalBrainTestStatus('success');
     } catch (error) {
-      console.error(error);
+      logger.error('Offline Brain chat failed', { error });
       setLocalBrainTestStatus('error');
       toastService.error('Offline Brain test failed: ' + error.message);
     }
@@ -363,14 +369,14 @@ const Settings = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="settings-overlay"
         onClick={onClose}
       >
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -398,7 +404,7 @@ const Settings = ({ isOpen, onClose }) => {
                   <tab.icon size={18} />
                   <span>{tab.label}</span>
                   {activeTab === tab.id && (
-                    <motion.div
+                    <MotionDiv
                       layoutId="active-pill"
                       className="active-pill"
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
@@ -428,7 +434,7 @@ const Settings = ({ isOpen, onClose }) => {
 
             <div className="tab-content-wrapper">
               <AnimatePresence mode="wait">
-                <motion.div
+                <MotionDiv
                   key={activeTab}
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -845,12 +851,12 @@ const Settings = ({ isOpen, onClose }) => {
                       </div>
                     </div>
                   )}
-                </motion.div>
+                </MotionDiv>
               </AnimatePresence>
             </div>
           </main>
-        </motion.div>
-      </motion.div>
+        </MotionDiv>
+      </MotionDiv>
     </AnimatePresence >
   );
 };

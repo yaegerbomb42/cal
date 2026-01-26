@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { useEvents } from '../../contexts/EventsContext';
-import { useCalendar } from '../../contexts/CalendarContext';
+import { useEvents } from '../../contexts/useEvents';
+import { useCalendar } from '../../contexts/useCalendar';
 import './SearchBar.css';
 
 const SearchBar = () => {

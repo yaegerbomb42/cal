@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { logger } from '../utils/logger';
 import './PolicyPages.css';
 
 const ADSENSE_CLIENT = import.meta.env.VITE_ADSENSE_CLIENT || 'ca-pub-0000000000000000';
@@ -30,7 +31,7 @@ export const AdSlot = ({ className }) => {
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
       } catch (error) {
-        console.warn('Adsense failed to load', error);
+        logger.warn('Adsense failed to load', { error });
       }
     };
 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft } from 'lucide-react';
-import { useCalendar } from '../../contexts/CalendarContext';
-import { useEvents } from '../../contexts/EventsContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { useEvents } from '../../contexts/useEvents';
 import { getEventColor } from '../../utils/helpers';
 import { validateEvent } from '../../utils/eventValidator';
 import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEvents';
@@ -223,6 +223,7 @@ const ClockTimePicker = ({ label, value, onChange }) => {
 const EventModal = () => {
   const { selectedEvent, isEventModalOpen, closeEventModal } = useCalendar();
   const { addEvent, updateEvent, deleteEvent } = useEvents();
+  const MotionDiv = motion.div;
 
   const [formData, setFormData] = useState({
     title: '',
@@ -394,14 +395,14 @@ const EventModal = () => {
 
   return (
     <AnimatePresence>
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="modal-overlay"
         onClick={closeEventModal}
       >
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -669,8 +670,8 @@ const EventModal = () => {
               </div>
             </div>
           </form>
-        </motion.div>
-      </motion.div>
+        </MotionDiv>
+      </MotionDiv>
     </AnimatePresence>
   );
 };

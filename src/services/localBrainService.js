@@ -1,4 +1,5 @@
 import { CreateMLCEngine } from "@mlc-ai/web-llm";
+import { logger } from '../utils/logger';
 
 // Qwen2.5-3B-Instruct offers stronger reasoning while staying feasible for in-browser use.
 const SELECTED_MODEL = "Qwen2.5-3B-Instruct-q4f16_1-MLC";
@@ -37,7 +38,7 @@ const readStoredPreference = () => {
     try {
         return window.localStorage.getItem(LOCAL_BRAIN_PREF_KEY) === "true";
     } catch (error) {
-        console.warn("Local Brain: Unable to read preference", error);
+        logger.warn('Local Brain: Unable to read preference', { error });
         return false;
     }
 };
@@ -64,11 +65,11 @@ export const localBrainService = {
                     this.engine = await window.ai.languageModel.create();
                     this.type = 'window.ai';
                     this.isLoaded = true;
-                    console.log("Local Brain: Using Chrome Built-in AI (Gemini Nano)");
+                    logger.info('Local Brain: Using Chrome Built-in AI (Gemini Nano)');
                     return;
                 }
             } catch (e) {
-                console.warn("Chrome AI failed, falling back to WebLLM", e);
+                logger.warn('Chrome AI failed, falling back to WebLLM', { error: e });
             }
         }
 
@@ -93,9 +94,9 @@ export const localBrainService = {
             );
             this.type = 'webllm';
             this.isLoaded = true;
-            console.log("Local Brain: Using WebLLM (Qwen 2.5 3B)");
+            logger.info('Local Brain: Using WebLLM (Qwen 2.5 3B)');
         } catch (error) {
-            console.error("Failed to initialize Local Brain:", error);
+            logger.error('Failed to initialize Local Brain', { error });
             throw error;
         }
     },
@@ -117,7 +118,7 @@ export const localBrainService = {
         try {
             window.localStorage.setItem(LOCAL_BRAIN_PREF_KEY, String(this.preferLocal));
         } catch (error) {
-            console.warn("Local Brain: Unable to save preference", error);
+            logger.warn('Local Brain: Unable to save preference', { error });
         }
     },
 
@@ -155,7 +156,7 @@ export const localBrainService = {
 
             return reply.choices[0].message.content;
         } catch (error) {
-            console.error("Local Brain chat error:", error);
+            logger.error('Local Brain chat error', { error });
             throw error;
         }
     },
@@ -204,7 +205,7 @@ No extra text. Use ISO 8601 UTC strings for start/end.`;
                 const repaired = await this.chat(text, `${systemPrompt}\n\n${repairPrompt}`);
                 return parseJsonResponse(repaired);
             } catch {
-                console.error("Failed to parse local brain response as JSON", response);
+                logger.error('Failed to parse local brain response as JSON', { response });
                 throw new Error("Local model failed to generate valid JSON");
             }
         }

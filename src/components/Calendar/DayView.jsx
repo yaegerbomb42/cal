@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useRef } from 'react';
-import { useCalendar } from '../../contexts/CalendarContext';
-import { useEvents } from '../../contexts/EventsContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor, formatDuration } from '../../utils/helpers';
 import {
   countRemainingEvents,
@@ -36,6 +36,8 @@ const buildEventSnippet = (event) => {
 const DayView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const MotionDiv = motion.div;
+  const MotionButton = motion.button;
   const dayGridRef = useRef(null);
 
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
@@ -53,7 +55,7 @@ const DayView = () => {
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       className="day-view"
@@ -110,7 +112,7 @@ const DayView = () => {
               const rowStart = Math.max(1, Math.floor(top) + 1);
               const rowSpan = Math.max(18, Math.ceil(height));
               return (
-                <motion.button
+                <MotionButton
                   key={event.id}
                   type="button"
                   className={cn('day-event-card', isPastEvent && 'past')}
@@ -134,7 +136,7 @@ const DayView = () => {
                     <span className="event-duration">{formatDuration(event.start, event.end)}</span>
                   </div>
                   <div className="event-snippet">{buildEventSnippet(event)}</div>
-                </motion.button>
+                </MotionButton>
               );
             })}
           </div>
@@ -147,7 +149,7 @@ const DayView = () => {
           )}
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

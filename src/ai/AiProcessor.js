@@ -259,7 +259,6 @@ export const processEventInput = async (
     geminiService,
     localBrainService,
     evaluator = defaultEvaluator,
-    verbose = false,
     now = new Date()
   } = {}
 ) => {

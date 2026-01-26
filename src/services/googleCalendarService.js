@@ -1,5 +1,7 @@
 /* global google, gapi */
 
+import { logger } from '../utils/logger';
+
 const CLIENT_ID = '749125970287-9tc6qk0j8qjm9g5rqmm3ha92co8tr054.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyDsErhKwzgqPNltgPjwVhGWMvZyc8VCUjU';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
@@ -72,7 +74,7 @@ class GoogleCalendarService {
             await this.loadScripts();
             return true;
         } catch (e) {
-            console.error("Failed to init Google Calendar Service", e);
+            logger.error('Failed to init Google Calendar Service', { error: e });
             return false;
         }
     }
@@ -126,7 +128,7 @@ class GoogleCalendarService {
                 gcalId: item.id
             }));
         } catch (err) {
-            console.error("Error listing events", err);
+            logger.error('Error listing events', { error: err });
             return [];
         }
     }
@@ -156,7 +158,7 @@ class GoogleCalendarService {
             const response = await request;
             return response.result;
         } catch (err) {
-            console.error("Error creating event", err);
+            logger.error('Error creating event', { error: err });
             throw err;
         }
     }
@@ -172,7 +174,7 @@ class GoogleCalendarService {
             await request;
             return true;
         } catch (err) {
-            console.error("Error deleting event from Google", err);
+            logger.error('Error deleting event from Google', { error: err });
             throw err;
         }
     }

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles, ImagePlus } from 'lucide-react';
-import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { formatDate, formatFullDate, formatViewLabel } from '../../utils/dateUtils';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
 import SearchBar from '../Search/SearchBar';
@@ -13,6 +14,9 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
   const imageInputRef = useRef(null);
   const quickInputRef = useRef(null);
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
+  const MotionHeader = motion.header;
+  const MotionDiv = motion.div;
+  const MotionButton = motion.button;
 
   const viewButtons = [
     { key: CALENDAR_VIEWS.DAY, label: 'Day' },
@@ -112,7 +116,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
   const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'Day';
 
   return (
-    <motion.header
+    <MotionHeader
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       className="header glass"
@@ -121,7 +125,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
         <div className="header-content">
           {/* Logo */}
           <div className="header-left">
-            <motion.div
+            <MotionDiv
               whileHover={{ scale: 1.05 }}
               className="logo-section"
             >
@@ -129,14 +133,14 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               <div className="logo-text">
                 <h1>CalAI</h1>
               </div>
-            </motion.div>
+            </MotionDiv>
           </div>
 
           {/* Navigation Controls & Title */}
           <div className="header-center">
             <div className="date-nav-wrapper">
               <div className="nav-controls">
-                <motion.button
+                <MotionButton
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateDate(-1)}
@@ -144,9 +148,9 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   aria-label="Previous date"
                 >
                   <ChevronLeft size={20} />
-                </motion.button>
+                </MotionButton>
 
-                <motion.button
+                <MotionButton
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateDate(1)}
@@ -154,10 +158,10 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   aria-label="Next date"
                 >
                   <ChevronRight size={20} />
-                </motion.button>
+                </MotionButton>
               </div>
 
-              <motion.button
+              <MotionButton
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={goToToday}
@@ -167,7 +171,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
               >
                 <Calendar size={16} />
                 Today
-              </motion.button>
+              </MotionButton>
 
               <div className="header-title-group">
                 <h2 className="header-title">{getHeaderTitle()}</h2>
@@ -221,7 +225,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 >
                   <ImagePlus size={16} />
                 </button>
-                <motion.button
+                <MotionButton
                   type="submit"
                   disabled={!quickInput.trim() || isProcessing}
                   whileHover={{ scale: 1.05 }}
@@ -229,7 +233,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                   className="quick-event-submit"
                 >
                   <Send size={16} />
-                </motion.button>
+                </MotionButton>
               </form>
             </div>
 
@@ -237,7 +241,7 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
             <div className="action-buttons">
               <SearchBar />
 
-              <motion.button
+              <MotionButton
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleCalAIButtonClick}
@@ -245,9 +249,9 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 title="AI Assistant"
               >
                 <span className="ai-label">Cal AI</span>
-              </motion.button>
+              </MotionButton>
 
-              <motion.button
+              <MotionButton
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onOpenSettings}
@@ -255,12 +259,12 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 title="Settings"
               >
                 <Settings size={18} />
-              </motion.button>
+              </MotionButton>
             </div>
           </div>
         </div>
       </div>
-    </motion.header>
+    </MotionHeader>
   );
 };
 

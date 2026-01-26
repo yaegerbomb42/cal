@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useEvents } from '../../contexts/EventsContext';
-import { useCalendar } from '../../contexts/CalendarContext';
+import { useEvents } from '../../contexts/useEvents';
+import { useCalendar } from '../../contexts/useCalendar';
 import { Calendar, Trash2, Archive, History, X, Search, Edit2 } from 'lucide-react';
 import { getEventColor } from '../../utils/helpers';
 import { paginateItems } from '../../utils/pagination';

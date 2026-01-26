@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/useAuth';
+import { logger } from '../../utils/logger';
 import { toastService } from '../../utils/toast';
 import { Calendar, Mail, Lock, ArrowRight, Loader, Sparkles, Shield, Zap, CheckCircle } from 'lucide-react';
 import './Login.css';
 
 const Login = () => {
     const { loginWithGoogle, loginWithEmail, signupWithEmail } = useAuth();
+    const MotionH1 = motion.h1;
+    const MotionP = motion.p;
+    const MotionDiv = motion.div;
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -25,7 +29,7 @@ const Login = () => {
                 toastService.success('Account created successfully!');
             }
         } catch (error) {
-            console.error(error);
+            logger.error('Email authentication failed', { error });
             toastService.error(error.message || 'Authentication failed');
         } finally {
             setIsLoading(false);
@@ -38,7 +42,7 @@ const Login = () => {
             await loginWithGoogle();
             toastService.success('Welcome!');
         } catch (error) {
-            console.error(error);
+            logger.error('Google sign-in failed', { error });
             toastService.error('Google sign-in failed');
         } finally {
             setIsLoading(false);
@@ -64,25 +68,25 @@ const Login = () => {
 
             <main className="landing-content">
                 <section className="hero-section">
-                    <motion.h1
+                    <MotionH1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
                     >
                         AI calendar.
                         <span>Save time.</span>
-                    </motion.h1>
+                    </MotionH1>
 
-                    <motion.p
+                    <MotionP
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                         className="hero-desc"
                     >
                         Type it. We place it.
-                    </motion.p>
+                    </MotionP>
 
-                    <motion.div
+                    <MotionDiv
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
@@ -91,7 +95,7 @@ const Login = () => {
                         <button onClick={() => setShowAuth(true)} className="cta-btn primary">
                             Sign In <ArrowRight size={18} />
                         </button>
-                    </motion.div>
+                    </MotionDiv>
                 </section>
 
                 <section className="value-row">
@@ -121,14 +125,14 @@ const Login = () => {
 
             <AnimatePresence>
                 {showAuth && (
-                    <motion.div
+                    <MotionDiv
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="auth-overlay"
                         onClick={() => setShowAuth(false)}
                     >
-                        <motion.div
+                        <MotionDiv
                             initial={{ scale: 0.9, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.9, y: 20 }}
@@ -180,8 +184,8 @@ const Login = () => {
                             </button>
 
                             <button className="close-modal" onClick={() => setShowAuth(false)}><X size={20} /></button>
-                        </motion.div>
-                    </motion.div>
+                        </MotionDiv>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
 

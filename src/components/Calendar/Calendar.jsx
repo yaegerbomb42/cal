@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
+import { useCalendar } from '../../contexts/useCalendar';
+import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import DayView from './DayView';
 import WeekView from './WeekView';
 import MonthView from './MonthView';
@@ -8,6 +9,7 @@ import './Calendar.css';
 
 const Calendar = () => {
   const { view, setCurrentDate } = useCalendar();
+  const MotionDiv = motion.div;
 
   const renderView = () => {
     switch (view) {
@@ -27,7 +29,7 @@ const Calendar = () => {
   return (
     <div className="calendar-container">
       <AnimatePresence mode="wait">
-        <motion.div
+        <MotionDiv
           key={view}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -36,7 +38,7 @@ const Calendar = () => {
           className="calendar-view"
         >
           {renderView()}
-        </motion.div>
+        </MotionDiv>
       </AnimatePresence>
     </div>
   );

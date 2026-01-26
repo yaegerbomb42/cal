@@ -1,5 +1,5 @@
 const NONCE_PATTERN = /\/nonce\s+\w+/gi;
-const VERIFICATION_LINE = /^\s*(verification|verified|confidence|analysis|final|assistant|response)\s*[:\-].*$/gim;
+const VERIFICATION_LINE = /^\s*(verification|verified|confidence|analysis|final|assistant|response)\s*[:-].*$/gim;
 const EXTRA_WHITESPACE = /\s{2,}/g;
 
 const isMathExpression = (input) => {

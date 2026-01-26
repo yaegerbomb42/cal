@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 class NotificationService {
   constructor() {
     this.ntfyTopic = 'cal';
@@ -22,7 +24,7 @@ class NotificationService {
 
       return true;
     } catch (error) {
-      console.error('Error sending phone notification:', error);
+      logger.error('Error sending phone notification', { error });
       return false;
     }
   }
