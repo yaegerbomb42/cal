@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EventFormValues } from '../../utils/formValidators';
 import './EventModals.css';
 
@@ -11,17 +11,73 @@ type EventCollectionsPanelProps = {
 };
 
 const BulkDeleteIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path
-      d="M4 7h6l1 12H5L4 7zm9 0h6l-1 12h-6l1-12zM9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"
+      d="M3.5 6.5h6.2l.8 12.3H4.8L3.5 6.5zm6.7 0h6.2l-.8 12.3h-5.4l.7-12.3zm6.7 0h4.4l-.8 12.3h-3.7l.7-12.3zM9.5 6.5V4.8A1.8 1.8 0 0 1 11.3 3h1.4a1.8 1.8 0 0 1 1.8 1.8v1.7"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="1.4"
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
     />
   </svg>
 );
+
+type TypeDropdownProps = {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (next: string) => void;
+};
+
+const TypeDropdown = ({ label, value, options, onChange }: TypeDropdownProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!containerRef.current || containerRef.current.contains(event.target as Node)) return;
+      setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isOpen]);
+
+  return (
+    <div className="event-type-dropdown" ref={containerRef}>
+      <button
+        type="button"
+        className="event-type-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <span>{value || label}</span>
+        <span aria-hidden="true">▾</span>
+      </button>
+      {isOpen && (
+        <div className="event-type-menu" role="listbox" aria-label={label}>
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`event-type-option ${option === value ? 'active' : ''}`}
+              role="option"
+              aria-selected={option === value}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const getTypeOptions = (events: EventListItem[]) => {
   const types = new Set<string>();
@@ -85,21 +141,16 @@ const EventCollectionsPanel = ({ upcomingEvents = [], archivedEvents = [], onDel
       <div className="event-collection-header">
         <strong>{title}</strong>
         <div className="event-collection-actions">
-          <select
-            className="event-type-filter"
-            aria-label={`${title} filter`}
+          <TypeDropdown
+            label={`${title} filter`}
             value={filterValue}
-            onChange={(event) => setFilterValue(event.target.value)}
-          >
-            {options.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+            options={options}
+            onChange={setFilterValue}
+          />
           <button
             type="button"
             className="bulk-delete-btn"
+            disabled={selected.size === 0}
             onClick={() => handleBulkDelete(events, selected, () => setSelected(new Set()))}
           >
             <BulkDeleteIcon />
