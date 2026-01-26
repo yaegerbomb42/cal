@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { CalendarProvider } from './contexts/CalendarContext';
@@ -15,19 +16,34 @@ import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
 import ThemeBackground from './components/Common/ThemeBackground';
 import { geminiService } from './services/geminiService';
 import { localBrainService } from './services/localBrainService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import Contact from './pages/Contact';
 import './App.css';
 
 function App() {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <EventsProvider>
-          <CalendarProvider>
-            <MainLayout />
-          </CalendarProvider>
-        </EventsProvider>
-      </AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={(
+              <AuthProvider>
+                <EventsProvider>
+                  <CalendarProvider>
+                    <MainLayout />
+                  </CalendarProvider>
+                </EventsProvider>
+              </AuthProvider>
+            )}
+          />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/contact" element={<Contact />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

@@ -1,0 +1,126 @@
+.policy-page {
+  min-height: 100vh;
+  background: var(--bg-color, #0b1120);
+  color: var(--text-color, #f8fafc);
+  display: flex;
+  flex-direction: column;
+}
+
+.policy-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+  background: var(--surface-color, #0f172a);
+}
+
+.policy-logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--text-color, #f8fafc);
+  text-decoration: none;
+}
+
+.policy-nav {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.policy-nav a {
+  color: var(--text-color, #f8fafc);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.policy-nav a:hover {
+  border-color: var(--accent-color, #6366f1);
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.policy-main {
+  flex: 1;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.policy-hero {
+  background: var(--card-bg, rgba(15, 23, 42, 0.8));
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.policy-hero h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+}
+
+.policy-hero p {
+  margin: 0;
+  color: var(--muted-text, #94a3b8);
+}
+
+.policy-card {
+  background: var(--card-bg, rgba(15, 23, 42, 0.8));
+  border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+  border-radius: 20px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.policy-card h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.policy-card p,
+.policy-card li {
+  color: var(--muted-text, #94a3b8);
+  line-height: 1.6;
+}
+
+.policy-card ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.policy-ad {
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px dashed var(--border-color, rgba(148, 163, 184, 0.3));
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.policy-footer {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted-text, #94a3b8);
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+}
+
+@media (max-width: 720px) {
+  .policy-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 24px;
+  }
+
+  .policy-main {
+    padding: 24px 16px 32px;
+  }
+}
