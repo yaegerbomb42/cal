@@ -117,10 +117,10 @@ const YearView = ({ onYearChange }) => {
         </div>
         <div className="year-stats">
           <div className="stat">
-            <span className="stat-number">{yearEventsCount}</span>
-            <span className="stat-label">
-              {`event${yearEventsCount !== 1 ? 's' : ''}`}
+            <span className="stat-number">
+              {`${yearEventsCount} event${yearEventsCount !== 1 ? 's' : ''}`}
             </span>
+            <span className="stat-label">this year</span>
           </div>
           <div className="year-mode-toggle" role="group" aria-label="Year color mode">
             <button
@@ -154,7 +154,7 @@ const YearView = ({ onYearChange }) => {
       <div className="year-grid">
         {months.map((month) => {
           const monthDays = getMonthGrid(month);
-          const monthLabel = `${format(month, 'MMM')} ${selectedYear}`;
+          const monthLabel = format(month, 'MMM yyyy');
           return (
             <div key={month.toISOString()} className="year-month glass-card">
               <div className="year-month-title">{monthLabel}</div>

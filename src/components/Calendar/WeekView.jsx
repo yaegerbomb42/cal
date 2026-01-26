@@ -5,7 +5,7 @@ import { useCalendar } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
 import { cn, formatDuration, getEventColor } from '../../utils/helpers';
 import { useHourScale } from '../../utils/useHourScale';
-import { layoutOverlappingEvents } from '../../utils/eventLayout';
+import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import './WeekView.css';
 
 const WeekView = () => {
@@ -119,6 +119,7 @@ const WeekView = () => {
         <div className="week-days-grid">
           {weekDays.map((day) => {
             const dayEvents = getEventsForDate(day);
+            const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
             return (
               <div key={day.toISOString()} className={cn('week-day-column', isToday(day) && 'today')}>
                 {dayHours.map((hour) => (
@@ -129,25 +130,23 @@ const WeekView = () => {
                   />
                 ))}
 
-                <div className="week-events-layer">
-                  {layoutOverlappingEvents(dayEvents).map(({ event, column, columns }, index) => {
+                <div className="week-events-layer" style={{ '--overlap-count': maxOverlap }}>
+                  {dayLayout.map(({ event, column }, index) => {
                     const { top, height: rawHeight } = getEventPosition(event, day, pixelsPerHour);
                     const height = Math.max(rawHeight * 0.7, 18);
                     const isPastEvent = new Date(event.end || event.start) < now;
-                    const gap = 6;
-                    const width = `calc((100% / ${columns}) - ${gap}px)`;
-                    const left = `calc(${column} * (100% / ${columns}) + ${gap / 2}px)`;
+                    const rowStart = Math.max(1, Math.floor(top) + 1);
+                    const rowSpan = Math.max(18, Math.ceil(height));
                     const showLocation = height > 42;
                     return (
                       <motion.div
                         key={event.id}
-                        className={cn('week-event', isPastEvent && 'past-event')}
+                        className={cn('week-event', isPastEvent && 'past')}
                         style={{
-                          top: `${top}px`,
-                          height: `${height}px`,
                           backgroundColor: event.color || getEventColor(event.category),
-                          width,
-                          left,
+                          gridColumnStart: column + 1,
+                          gridColumnEnd: column + 2,
+                          gridRow: `${rowStart} / span ${rowSpan}`,
                           zIndex: 5 + column
                         }}
                         onClick={(e) => handleEventClick(event, e)}
