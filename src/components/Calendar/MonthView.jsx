@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { getMonthDays, isSameMonth, isToday, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { useEvents } from '../../contexts/EventsContext';
@@ -27,6 +28,14 @@ const MonthView = () => {
   };
 
   const handleDayDoubleClick = (day) => {
+    openEventModal({
+      start: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0),
+      end: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 10, 0)
+    });
+  };
+
+  const handleAddEventClick = (day, e) => {
+    e.stopPropagation();
     openEventModal({
       start: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0),
       end: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 10, 0)
@@ -75,8 +84,18 @@ const MonthView = () => {
                 dayEvents.length > 0 && 'has-events'
               )}
             >
-              <div className="day-number">
-                {day.getDate()}
+              <div className="day-heading">
+                <div className="day-number">
+                  {day.getDate()}
+                </div>
+                <button
+                  type="button"
+                  className="day-add-btn"
+                  onClick={(event) => handleAddEventClick(day, event)}
+                  aria-label={`Add event on ${day.toDateString()}`}
+                >
+                  <Plus size={14} />
+                </button>
               </div>
 
               <div className="day-events">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles, ImagePlus } from 'lucide-react';
+import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles, ImagePlus, ChevronDown } from 'lucide-react';
 import { useCalendar, CALENDAR_VIEWS } from '../../contexts/CalendarContext';
 import { formatDate, formatFullDate, formatViewLabel } from '../../utils/dateUtils';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
@@ -10,7 +10,9 @@ import './Header.css';
 const Header = ({ onOpenSettings, onOpenAI }) => {
   const [quickInput, setQuickInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const imageInputRef = useRef(null);
+  const viewMenuRef = useRef(null);
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
 
   const viewButtons = [
@@ -24,8 +26,10 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     switch (view) {
       case CALENDAR_VIEWS.YEAR:
         return formatDate(currentDate, 'yyyy');
-      default:
+      case CALENDAR_VIEWS.MONTH:
         return formatDate(currentDate, 'MMMM yyyy');
+      default:
+        return formatFullDate(currentDate);
     }
   };
 
@@ -48,6 +52,17 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
       unregisterT();
     };
   }, [openEventModal, goToToday]);
+
+  useEffect(() => {
+    if (!isViewMenuOpen) return;
+    const handleClickOutside = (event) => {
+      if (viewMenuRef.current && !viewMenuRef.current.contains(event.target)) {
+        setIsViewMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isViewMenuOpen]);
 
   const handleAICommand = async (e) => {
     e.preventDefault();
@@ -72,6 +87,8 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
     event.target.value = '';
   };
+
+  const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'View';
 
   return (
     <motion.header
@@ -128,7 +145,6 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
 
               <div className="header-title-group">
                 <h2 className="header-title">{getHeaderTitle()}</h2>
-                <span className="header-subtitle">{formatFullDate(currentDate)}</span>
               </div>
             </div>
           </div>
@@ -136,18 +152,42 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
           {/* View Controls and Actions */}
           <div className="header-right">
             <div className="view-utility-row">
-              <div className="view-switcher glass">
-                {viewButtons.map(({ key, label }) => (
-                  <motion.button
-                    key={key}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setView(key)}
-                    className={`view-btn ${view === key ? 'active' : ''} `}
-                  >
-                    {getViewLabel(label)}
-                  </motion.button>
-                ))}
+              <div className="view-dropdown" ref={viewMenuRef}>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsViewMenuOpen((prev) => !prev)}
+                  className="view-dropdown-trigger glass"
+                  aria-haspopup="listbox"
+                  aria-expanded={isViewMenuOpen}
+                >
+                  <div className="view-dropdown-label">
+                    <span className="view-dropdown-title">{getViewLabel(activeViewLabel)}</span>
+                    <span className="view-dropdown-subtitle">Select view</span>
+                  </div>
+                  <ChevronDown size={16} className={isViewMenuOpen ? 'rotate' : ''} />
+                </motion.button>
+                {isViewMenuOpen && (
+                  <div className="view-dropdown-menu glass" role="listbox">
+                    {viewButtons.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        role="option"
+                        aria-selected={view === key}
+                        className={`view-dropdown-option ${view === key ? 'active' : ''}`}
+                        onClick={() => {
+                          setView(key);
+                          setIsViewMenuOpen(false);
+                        }}
+                      >
+                        <span className="option-title">{label} View</span>
+                        <span className="option-subtitle">{getViewLabel(label)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <form onSubmit={handleAICommand} className="quick-event-form inline">
