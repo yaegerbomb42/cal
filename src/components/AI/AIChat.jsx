@@ -498,7 +498,7 @@ const AIChat = ({ isOpen, onClose }) => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Just chat with Cal"
+              placeholder="Chat with Cal..."
               className="chat-input-field"
               autoFocus
             />

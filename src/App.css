@@ -13,13 +13,16 @@
 
 .main-content {
   flex: 1;
-  padding: 0 2rem 2rem 2rem;
-  max-width: 1600px;
+  padding: 0 1rem 1rem 1rem;
+  /* Reduced padding */
+  max-width: 100%;
+  /* Full width */
   margin: 0 auto;
   width: 100%;
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 1.5rem;
+  /* grid-template-columns handled by inline style for resizing */
+  gap: 0;
+  /* Gap handled by resize handle or inline */
   min-height: 0;
   overflow: hidden;
 }
@@ -39,7 +42,8 @@
 /* Mobile adjustments */
 @media (max-width: 1024px) {
   .main-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    /* Force single column on mobile */
     height: auto;
     overflow: visible;
     padding: 1rem;
@@ -49,6 +53,10 @@
   .sidebar-container {
     height: auto;
     width: 100%;
+  }
+
+  .resize-handle {
+    display: none;
   }
 
   .sidebar-container .upcoming-sidebar {
@@ -61,4 +69,32 @@
     height: auto;
     width: 100%;
   }
+}
+
+/* Resize Handle */
+.resize-handle {
+  width: 12px;
+  cursor: col-resize;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.2s;
+  z-index: 10;
+  margin: 0 -4px;
+  /* Slight overlap for easier grabbing */
+}
+
+.resize-handle:hover .resize-line,
+.resize-handle:active .resize-line {
+  background: var(--accent);
+  opacity: 1;
+}
+
+.resize-line {
+  width: 2px;
+  height: 100%;
+  background: var(--glass-border);
+  border-radius: 1px;
+  opacity: 0.5;
+  transition: all 0.2s;
 }

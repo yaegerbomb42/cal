@@ -3,169 +3,169 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  overflow: hidden;
 }
 
 .year-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: 1.25rem 2rem;
   gap: 1rem;
+  flex-shrink: 0;
 }
 
-.year-title h3 {
+.year-title-group h3 {
   margin: 0;
   font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .year-subtitle {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
-.year-stats {
+.year-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 1.5rem;
 }
 
-.year-mode-toggle {
-  display: inline-flex;
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 999px;
-  padding: 4px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+.year-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
 }
 
-.year-mode-toggle .mode-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.year-mode-toggle .mode-btn.active {
-  background: var(--accent);
-  color: #0b1120;
+.year-stat .count {
+  font-size: 1.25rem;
   font-weight: 700;
+  color: var(--accent);
 }
 
-.year-select {
-  display: inline-flex;
-  align-items: center;
+.year-stat .label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.year-select select {
+.year-dropdown {
   background: rgba(15, 23, 42, 0.6);
   color: var(--text-primary);
   border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 6px 12px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
-.year-view .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.year-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-.year-month {
-  padding: 1rem;
+.year-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  padding: 1.5rem;
+  overflow: auto;
+  align-items: flex-start;
+  /* scroll alignment */
+}
+
+.github-grid-container {
+  display: flex;
   gap: 0.75rem;
 }
 
-.year-month-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--text-primary);
+.day-labels {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  gap: 4px;
+  padding-top: 1px;
+  /* Align with cells */
 }
 
-.year-month-grid {
+.day-labels span {
+  font-size: 0.65rem;
+  line-height: 14px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+/* Hide some labels for cleaner look like github? usually 1,3,5 */
+.day-labels span:nth-child(2n) {
+  visibility: hidden;
+}
+
+.github-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(20px, 1fr));
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
   gap: 4px;
 }
 
 .year-day {
-  position: relative;
-  min-width: 20px;
-  min-height: 20px;
-  border-radius: 6px;
-  background: rgba(148, 163, 184, 0.2);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
+  transition: transform 0.1s;
+  /* Reset button styles */
+  padding: 0;
+  margin: 0;
+}
+
+.year-day:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  z-index: 5;
+}
+
+.year-day.has-events {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.year-day.spacer {
+  background: transparent;
+  border: none;
+  pointer-events: none;
+}
+
+.month-labels {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  margin-top: 0.5rem;
+  padding-left: 30px;
+  /* Offset for day labels */
+  gap: 1rem;
+  /* This is tricky to align perfectly with grid columns without math, 
+     but flex gap approx works for visual distribution */
+  justify-content: space-between;
+  width: 100%;
+  max-width: 900px;
+  /* Approx width of grid */
 }
 
-.year-day.outside-month {
-  opacity: 0.35;
+.month-labels span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.year-day.level-1 {
-  background: rgba(167, 197, 255, 0.4);
-  border-color: rgba(167, 197, 255, 0.6);
-}
-
-.year-day.level-2 {
-  background: rgba(186, 230, 253, 0.55);
-  border-color: rgba(186, 230, 253, 0.7);
-}
-
-.year-day.level-3 {
-  background: rgba(216, 180, 254, 0.6);
-  border-color: rgba(216, 180, 254, 0.7);
-}
-
-.year-day.level-4 {
-  background: rgba(253, 186, 248, 0.7);
-  border-color: rgba(253, 186, 248, 0.8);
-}
-
-.year-day.past-event {
-  opacity: 0.7;
-  filter: grayscale(80%);
-}
-
-.year-day-number {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 0.75em;
-  opacity: 0.8;
-}
-
-.year-day-count {
-  line-height: 1;
-}
-
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .year-header {
-    padding: 1.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .year-controls {
+    width: 100%;
+    justify-content: space-between;
   }
 }

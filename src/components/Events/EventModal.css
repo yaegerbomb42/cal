@@ -86,7 +86,9 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: visible;
+  overflow-y: auto;
+  /* Enable scrolling */
+  overflow-x: hidden;
 }
 
 .modal-panels {
@@ -121,11 +123,36 @@
 .form-group label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  /* Allow map button to sit on right */
   gap: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
+}
+
+.map-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #818cf8;
+  border: none;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.map-link-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.flex-row.center-align {
+  display: flex;
+  align-items: center;
 }
 
 .form-row {

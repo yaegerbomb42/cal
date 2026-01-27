@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { getEventColor } from '../../utils/helpers';
@@ -457,8 +457,20 @@ const EventModal = () => {
 
                 <div className="form-group">
                   <label htmlFor="location">
-                    <MapPin size={16} />
-                    Location
+                    <div className="flex-row gap-2 center-align">
+                      <MapPin size={16} />
+                      Location
+                    </div>
+                    {formData.location && (
+                      <button
+                        type="button"
+                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`, '_blank')}
+                        className="map-link-btn"
+                        title="Open in Google Maps"
+                      >
+                        <ExternalLink size={12} /> Map
+                      </button>
+                    )}
                   </label>
                   <input
                     id="location"

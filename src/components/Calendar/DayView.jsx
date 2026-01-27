@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor, formatDuration } from '../../utils/helpers';
@@ -7,11 +8,12 @@ import {
   countRemainingEvents,
   formatFullDate,
   formatTime,
-  formatTime24,
   getDayHours,
   getEventPosition,
   getRelativeDayLabel,
-  sortEventsByStart
+  sortEventsByStart,
+  isToday,
+  getCurrentTimePosition
 } from '../../utils/dateUtils';
 import { Clock, Plus } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
@@ -46,6 +48,18 @@ const DayView = () => {
   const dayHours = getDayHours();
   const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
   const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
+
+  const [currentTick, setCurrentTick] = useState(Date.now());
+
+  useEffect(() => {
+    const updateTime = () => setCurrentTick(Date.now());
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const showCurrentTime = isToday(currentDate);
+  const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
 
   const handleAddEvent = () => {
     const startTime = new Date(currentDate);
@@ -94,7 +108,7 @@ const DayView = () => {
         <div className="day-time-column">
           {dayHours.map((hour) => (
             <div key={hour.getHours()} className="day-time-slot">
-              {formatTime24(hour)}
+              {format(hour, 'h a').toLowerCase().replace(' ', '')}
             </div>
           ))}
         </div>
@@ -140,6 +154,14 @@ const DayView = () => {
               );
             })}
           </div>
+
+          {showCurrentTime && currentTimePosition !== null && (
+            <div className="day-current-time" style={{ top: `${currentTimePosition}px` }}>
+              <div className="current-time-line"></div>
+              <div className="current-time-circle"></div>
+              <div className="current-time-label">{format(currentTick, 'h:mm a')}</div>
+            </div>
+          )}
 
           {dayEvents.length === 0 && (
             <div className="day-empty-state">

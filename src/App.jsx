@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -23,7 +23,6 @@ import Contact from './pages/Contact';
 import './App.css';
 
 function App() {
-
   const MotionDiv = motion.div;
 
   return (
@@ -55,6 +54,39 @@ const MainLayout = () => {
   const { user, loading } = useAuth();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const MotionDiv = motion.div;
+
+  // Sidebar Resize Logic
+  const [sidebarWidth, setSidebarWidth] = useState(260); // Smaller default width
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef(null);
+
+  const startResizing = useCallback((mouseDownEvent) => {
+    mouseDownEvent.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback((mouseMoveEvent) => {
+    if (isResizing) {
+      const newWidth = mouseMoveEvent.clientX - sidebarRef.current.getBoundingClientRect().left;
+      if (newWidth > 180 && newWidth < 480) { // Limits
+        setSidebarWidth(newWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
 
   useEffect(() => {
     const initializeAI = async () => {
@@ -69,7 +101,6 @@ const MainLayout = () => {
       }
 
       // Attempt to initialize Local Brain (checks for Chrome Built-in AI)
-      // This is a zero-cost check if window.ai exists.
       localBrainService.initialize();
     };
 
@@ -102,10 +133,22 @@ const MainLayout = () => {
           onOpenAI={() => setIsAIChatOpen(true)}
         />
 
-        <main className="main-content">
-          <div className="sidebar-container">
+        <main
+          className="main-content"
+          style={{ gridTemplateColumns: `${sidebarWidth}px 4px 1fr` }}
+        // Note: Modified grid columns to include divider
+        >
+          <div className="sidebar-container" ref={sidebarRef}>
             <UpcomingSidebar />
           </div>
+
+          <div
+            className="resize-handle"
+            onMouseDown={startResizing}
+          >
+            <div className="resize-line" />
+          </div>
+
           <div className="calendar-container">
             <Calendar />
           </div>

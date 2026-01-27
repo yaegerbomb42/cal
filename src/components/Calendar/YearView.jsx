@@ -1,69 +1,53 @@
 import { motion } from 'framer-motion';
-import { eachDayOfInterval, endOfMonth, endOfWeek, endOfYear, format, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
+import { eachDayOfInterval, endOfYear, format, startOfYear, getDay, isSameMonth } from 'date-fns';
 import { memo, useMemo, useState } from 'react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
-import { endOfDay, isSameMonth } from '../../utils/dateUtils';
-import { cn } from '../../utils/helpers';
+import { endOfDay, startOfDay } from '../../utils/dateUtils';
+import { cn, getEventColor } from '../../utils/helpers';
 import './YearView.css';
 
-const WEEK_START = 0;
 const MotionButton = motion.button;
 
-const getMonthGrid = (date) => {
-  const monthStart = startOfMonth(date);
-  const monthEnd = endOfMonth(date);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: WEEK_START });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: WEEK_START });
-  return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+const getEventColorSplit = (events) => {
+  if (!events || events.length === 0) return null;
+
+  const counts = {};
+  events.forEach(e => {
+    const color = e.color || getEventColor(e.category);
+    counts[color] = (counts[color] || 0) + 1;
+  });
+
+  const colors = Object.keys(counts);
+  if (colors.length === 1) return { backgroundColor: colors[0] };
+
+  const total = events.length;
+  let currentPos = 0;
+  const stops = colors.map(color => {
+    const share = (counts[color] / total) * 100;
+    const stop = `${color} ${currentPos}% ${currentPos + share}%`;
+    currentPos += share;
+    return stop;
+  });
+
+  return { background: `linear-gradient(135deg, ${stops.join(', ')})` };
 };
 
-const getIntensity = (count) => {
-  if (count >= 5) return 4;
-  if (count >= 3) return 3;
-  if (count >= 2) return 2;
-  if (count >= 1) return 1;
-  return 0;
-};
+const YearDayCell = memo(({ day, count, events, isSelectedMonth, onSelect }) => {
+  const style = getEventColorSplit(events);
 
-const buildSegmentGradient = (colors) => {
-  if (colors.length === 0) return undefined;
-  const unique = [...new Set(colors)];
-  const segments = unique.slice(0, 4);
-  const stop = 100 / segments.length;
-  return `linear-gradient(90deg, ${segments
-    .map((color, index) => `${color} ${index * stop}% ${(index + 1) * stop}%`)
-    .join(', ')})`;
-};
-
-const YearDayCell = memo(({
-  day,
-  isCurrentMonth,
-  count,
-  intensity,
-  mode,
-  dayStyle,
-  isPastDay,
-  onSelect
-}) => {
   return (
     <MotionButton
       type="button"
       className={cn(
         'year-day',
-        !isCurrentMonth && 'outside-month',
-        count > 0 && 'has-events',
-        isPastDay && count > 0 && 'past-event',
-        mode === 'frequency' && intensity > 0 && `level-${intensity}`
+        count > 0 && 'has-events'
       )}
-      title={`${format(day, 'MMM d')} · ${count} event${count !== 1 ? 's' : ''}`}
-      style={dayStyle}
+      style={style}
       onClick={() => onSelect(day)}
-      whileHover={{ scale: 1.08 }}
-    >
-      <span className="year-day-number">{day.getDate()}</span>
-      {count > 0 && <span className="year-day-count">{count}</span>}
-    </MotionButton>
+      whileHover={{ scale: 1.3, zIndex: 10 }}
+      title={`${format(day, 'MMM d, yyyy')}: ${count} events`}
+    />
   );
 });
 
@@ -72,24 +56,24 @@ YearDayCell.displayName = 'YearDayCell';
 const YearView = ({ onYearChange }) => {
   const { currentDate, openEventModal, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
-  const [mode, setMode] = useState('type');
   const selectedYear = currentDate.getFullYear();
-  const now = new Date();
 
-  const months = useMemo(() => {
-    return Array.from({ length: 12 }, (_, index) => new Date(selectedYear, index, 1));
+  // Generate all days for the year
+  const yearDays = useMemo(() => {
+    return eachDayOfInterval({
+      start: startOfYear(currentDate),
+      end: endOfYear(currentDate)
+    });
   }, [selectedYear]);
 
+  // Calculate stats
   const yearEventsCount = useMemo(() => {
-    const yearStart = startOfYear(currentDate);
-    const yearEnd = endOfYear(currentDate);
-    return eachDayOfInterval({ start: yearStart, end: yearEnd })
-      .reduce((total, day) => total + getEventsForDate(day).length, 0);
-  }, [currentDate, getEventsForDate]);
+    return yearDays.reduce((total, day) => total + getEventsForDate(day).length, 0);
+  }, [yearDays, getEventsForDate]);
 
   const yearOptions = useMemo(() => {
     const baseYear = new Date().getFullYear();
-    return Array.from({ length: 21 }, (_, index) => baseYear - 10 + index);
+    return Array.from({ length: 11 }, (_, index) => baseYear - 5 + index);
   }, []);
 
   const handleYearSelect = (event) => {
@@ -105,87 +89,86 @@ const YearView = ({ onYearChange }) => {
 
   const handleDaySelect = (day) => {
     const selectedDay = new Date(day);
-    selectedDay.setHours(12, 0, 0, 0);
+    selectedDay.setHours(9, 0, 0, 0);
     openEventModal({ start: selectedDay.toISOString() });
   };
+
+  // Grid Construction helpers
+  // We need to offset the start based on the day of week of Jan 1st
+  const startDayOfWeek = getDay(startOfYear(currentDate)); // 0 (Sun) - 6 (Sat)
+  // GitHub usually starts Mon? Or Sun. Let's assume Sun=0 is top row? 
+  // GitHub: Mon(1), Wed(3), Fri(5) labels. 
+  // Actually GitHub grid is column-flow. 
+  // If Jan 1 is Wednesday (3), we need empty cells for Sun, Mon, Tue?
+  // CSS Grid auto-flow column fills columns first. 
+  // So Row 1 = Sun, Row 2 = Mon ... Row 7 = Sat.
+  // If Jan 1 is Wed, it should be in Row 4 (index 3).
+  // So we need 3 empty spacers.
+  const spacers = Array.from({ length: startDayOfWeek });
 
   return (
     <div className="year-view">
       <div className="year-header glass-card">
-        <div className="year-title">
-          <h3>{format(currentDate, 'yyyy')}</h3>
-          <span className="year-subtitle">Year Overview</span>
+        <div className="year-title-group">
+          <h3>{selectedYear}</h3>
+          <span className="year-subtitle">Contribution Graph</span>
         </div>
-        <div className="year-stats">
-          <div className="stat">
-            <span className="stat-number">
-              {`${yearEventsCount} event${yearEventsCount !== 1 ? 's' : ''}`}
-            </span>
-            <span className="stat-label">this year</span>
+
+        <div className="year-controls">
+          <div className="year-stat">
+            <span className="count">{yearEventsCount}</span>
+            <span className="label">contributions</span>
           </div>
-          <div className="year-mode-toggle" role="group" aria-label="Year color mode">
-            <button
-              type="button"
-              className={cn('mode-btn', mode === 'type' && 'active')}
-              onClick={() => setMode('type')}
-            >
-              Type
-            </button>
-            <button
-              type="button"
-              className={cn('mode-btn', mode === 'frequency' && 'active')}
-              onClick={() => setMode('frequency')}
-            >
-              Frequency
-            </button>
-          </div>
-          <label className="year-select">
-            <span className="sr-only">Select year</span>
-            <select value={selectedYear} onChange={handleYearSelect} aria-label="Select year">
-              {yearOptions.map((yearOption) => (
-                <option key={yearOption} value={yearOption}>
-                  {yearOption}
-                </option>
-              ))}
-            </select>
-          </label>
+
+          <select
+            value={selectedYear}
+            onChange={handleYearSelect}
+            className="year-dropdown"
+          >
+            {yearOptions.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div className="year-grid">
-        {months.map((month) => {
-          const monthDays = getMonthGrid(month);
-          const monthLabel = format(month, 'MMM yyyy');
-          return (
-            <div key={month.toISOString()} className="year-month glass-card">
-              <div className="year-month-title">{monthLabel}</div>
-              <div className="year-month-grid">
-                {monthDays.map((day) => {
-                  const dayEvents = getEventsForDate(day);
-                  const count = dayEvents.length;
-                  const intensity = getIntensity(count);
-                  const typeGradient = buildSegmentGradient(dayEvents.map(event => event.color).filter(Boolean));
-                  const dayStyle = mode === 'type' && typeGradient ? { background: typeGradient } : undefined;
-                  const isCurrentMonth = isSameMonth(day, month);
-                  const isPastDay = endOfDay(day) < now;
-                  return (
-                    <YearDayCell
-                      key={day.toISOString()}
-                      day={day}
-                      isCurrentMonth={isCurrentMonth}
-                      count={count}
-                      intensity={intensity}
-                      mode={mode}
-                      dayStyle={dayStyle}
-                      isPastDay={isPastDay}
-                      onSelect={handleDaySelect}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+      <div className="year-content glass-card">
+        <div className="github-grid-container">
+          <div className="day-labels">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
+
+          <div className="github-grid">
+            {spacers.map((_, i) => (
+              <div key={`spacer-${i}`} className="year-day spacer" />
+            ))}
+            {yearDays.map((day) => {
+              const events = getEventsForDate(day);
+              return (
+                <YearDayCell
+                  key={day.toISOString()}
+                  day={day}
+                  count={events.length}
+                  events={events}
+                  onSelect={handleDaySelect}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="month-labels">
+          {Array.from({ length: 12 }).map((_, i) => {
+            const d = new Date(selectedYear, i, 1);
+            return <span key={i}>{format(d, 'MMM')}</span>
+          })}
+        </div>
       </div>
     </div>
   );

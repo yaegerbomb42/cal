@@ -1,18 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight, Send, Sparkles, ImagePlus } from 'lucide-react';
+import { Calendar, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
-import { formatDate, formatFullDate, formatViewLabel } from '../../utils/dateUtils';
+import { formatViewLabel } from '../../utils/dateUtils';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
 import SearchBar from '../Search/SearchBar';
 import './Header.css';
 
 const Header = ({ onOpenSettings, onOpenAI }) => {
-  const [quickInput, setQuickInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const imageInputRef = useRef(null);
-  const quickInputRef = useRef(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
   const MotionHeader = motion.header;
   const MotionDiv = motion.div;
@@ -25,23 +23,12 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     { key: CALENDAR_VIEWS.YEAR, label: 'Year' }
   ];
 
-  const getHeaderTitle = () => {
-    switch (view) {
-      case CALENDAR_VIEWS.YEAR:
-        return formatDate(currentDate, 'yyyy');
-      case CALENDAR_VIEWS.MONTH:
-        return formatDate(currentDate, 'MMMM yyyy');
-      default:
-        return formatFullDate(currentDate);
-    }
-  };
-
-  const getViewLabel = (viewName) => {
-    return formatViewLabel(currentDate, viewName);
-  };
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
-    // Register keyboard shortcuts
     const unregisterN = registerShortcut('n', () => {
       openEventModal();
     }, { ctrl: true });
@@ -56,61 +43,12 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     };
   }, [openEventModal, goToToday]);
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.defaultPrevented) return;
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
-      const target = event.target;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-        return;
-      }
-      if (event.key.length !== 1) return;
-
-      event.preventDefault();
-      setQuickInput((prev) => `${prev}${event.key}`);
-      quickInputRef.current?.focus();
-      requestAnimationFrame(() => {
-        const input = quickInputRef.current;
-        if (input) {
-          const end = input.value.length;
-          input.setSelectionRange(end, end);
-        }
-      });
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleAICommand = async (e) => {
-    e.preventDefault();
-    if (!quickInput.trim() || isProcessing) return;
-
-    setIsProcessing(true);
-    const userInput = quickInput.trim();
-    setQuickInput('');
-
-    try {
-      onOpenAI();
-      window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput } }));
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleQuickImageUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-    onOpenAI();
-    window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-    event.target.value = '';
-  };
-
   const handleCalAIButtonClick = () => {
-    setView(CALENDAR_VIEWS.DAY);
-    goToToday();
-    window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: CALENDAR_VIEWS.DAY, date: new Date().toISOString() } }));
+    // User requested: "clicking the cal ai button shouldnt change from month week day or between it should maintain the current view"
+    // Previously: setView(CALENDAR_VIEWS.DAY); goToToday();
+    // Now: Just open AI
     onOpenAI();
+    window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view, date: currentDate.toISOString() } }));
   };
 
   const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'Day';
@@ -123,43 +61,35 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     >
       <div className="container">
         <div className="header-content">
-          {/* Logo */}
+          {/* Left: Logo, Time, Date */}
           <div className="header-left">
             <MotionDiv
               whileHover={{ scale: 1.05 }}
               className="logo-section"
             >
-              <Calendar className="logo-icon" size={28} />
+              <Calendar className="logo-icon" size={24} />
               <div className="logo-text">
                 <h1>CalAI</h1>
+                <div className="header-datetime">
+                  <span className="current-time">{format(currentTime, 'h:mm a')}</span>
+                  <span className="current-date">{format(currentTime, 'EEE, MMM d')}</span>
+                </div>
               </div>
             </MotionDiv>
           </div>
 
-          {/* Navigation Controls & Title */}
+          {/* Center: Navigation Controls (Arrows + Today) */}
           <div className="header-center">
-            <div className="date-nav-wrapper">
-              <div className="nav-controls">
-                <MotionButton
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateDate(-1)}
-                  className="btn nav-btn"
-                  aria-label="Previous date"
-                >
-                  <ChevronLeft size={20} />
-                </MotionButton>
-
-                <MotionButton
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateDate(1)}
-                  className="btn nav-btn"
-                  aria-label="Next date"
-                >
-                  <ChevronRight size={20} />
-                </MotionButton>
-              </div>
+            <div className="nav-controls">
+              <MotionButton
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigateDate(-1)}
+                className="btn nav-btn"
+                aria-label="Previous date"
+              >
+                <ChevronLeft size={18} />
+              </MotionButton>
 
               <MotionButton
                 whileHover={{ scale: 1.03 }}
@@ -167,77 +97,39 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
                 onClick={goToToday}
                 className="btn today-cta"
                 title="Jump to today"
-                aria-label="Jump to today"
               >
-                <Calendar size={16} />
                 Today
               </MotionButton>
 
-              <div className="header-title-group">
-                <h2 className="header-title">{getHeaderTitle()}</h2>
-                <p className="header-subtitle">{getViewLabel(activeViewLabel).replace(' View', '')}</p>
-              </div>
+              <MotionButton
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigateDate(1)}
+                className="btn nav-btn"
+                aria-label="Next date"
+              >
+                <ChevronRight size={18} />
+              </MotionButton>
             </div>
           </div>
 
-          {/* View Controls and Actions */}
+          {/* Right: View Switcher & Actions (No AI Input here anymore) */}
           <div className="header-right">
-            <div className="view-utility-row">
-              <div className="view-switch" role="tablist" aria-label="Calendar view">
-                {viewButtons.map(({ key, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="tab"
-                    aria-selected={view === key}
-                    className={`view-switch-btn ${view === key ? 'active' : ''}`}
-                    onClick={() => setView(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <form onSubmit={handleAICommand} className="quick-event-form inline">
-                <Sparkles size={16} className="quick-event-icon" />
-                <input
-                  type="text"
-                  value={quickInput}
-                  onChange={(e) => setQuickInput(e.target.value)}
-                  placeholder="Ask or add with Cal"
-                  className="quick-event-input"
-                  disabled={isProcessing}
-                  ref={quickInputRef}
-                />
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleQuickImageUpload}
-                  className="quick-event-image-input"
-                />
+            <div className="view-switch" role="tablist">
+              {viewButtons.map(({ key, label }) => (
                 <button
+                  key={key}
                   type="button"
-                  className="quick-event-image-btn"
-                  onClick={() => imageInputRef.current?.click()}
-                  title="Upload event image"
+                  role="tab"
+                  aria-selected={view === key}
+                  className={`view-switch-btn ${view === key ? 'active' : ''}`}
+                  onClick={() => setView(key)}
                 >
-                  <ImagePlus size={16} />
+                  {label}
                 </button>
-                <MotionButton
-                  type="submit"
-                  disabled={!quickInput.trim() || isProcessing}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="quick-event-submit"
-                >
-                  <Send size={16} />
-                </MotionButton>
-              </form>
+              ))}
             </div>
 
-            {/* Action Buttons */}
             <div className="action-buttons">
               <SearchBar />
 

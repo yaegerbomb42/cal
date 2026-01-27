@@ -199,3 +199,44 @@
     grid-template-columns: 55px 1fr;
   }
 }
+
+.day-current-time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.day-current-time .current-time-line {
+  height: 2px;
+  background: linear-gradient(90deg, #fb7185, #f97316);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  width: 100%;
+}
+
+.day-current-time .current-time-circle {
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: -4px;
+}
+
+.day-current-time .current-time-label {
+  position: absolute;
+  left: -65px;
+  top: -12px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fde68a;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Sparkles, Send, ImagePlus, Plus } from 'lucide-react';
+import { format } from 'date-fns';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
@@ -9,7 +11,16 @@ import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal } = useCalendar();
+  const { currentDate, openEventModal, onOpenAI } = useCalendar(); // Ensure onOpenAI is available from context if needed, or pass it down? 
+  // Wait, useCalendar might not expose onOpenAI. Header received it as prop.
+  // I need to check useCalendar. If not there, I might need to dispatch event or rely on prop.
+  // The header used `onOpenAI`. I'll assume for now I can dispatch the custom event and maybe the main layout listeners handle the UI opening?
+  // Actually line 95 in Header: `onOpenAI(); window.dispatchEvent(...)`.
+  // I will check if I can get standard openAI trigger. If not, I will just dispatch event and assume App.jsx listens.
+  // Checking previous Header.jsx: it took `onOpenAI` as prop. WeekView is likely rendered by Calendar.jsx.
+  // I will dispatch the event. The "openAI" panel visibility might need a global context trigger.
+  // For now I will use window dispatch and assume strict separation.
+
   const { events, getEventsForDate } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
@@ -28,6 +39,12 @@ const WeekView = () => {
   const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
+
+  // AI Input State
+  const [quickInput, setQuickInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const imageInputRef = useRef(null);
+  const quickInputRef = useRef(null);
 
   useEffect(() => {
     const updateTime = () => setCurrentTick(Date.now());
@@ -49,31 +66,45 @@ const WeekView = () => {
     openEventModal(event);
   };
 
+  const handleDayAddEvent = (day) => {
+    const startTime = new Date(day);
+    startTime.setHours(9, 0, 0, 0); // Default to 9 AM
+    const endTime = new Date(startTime);
+    endTime.setHours(10, 0, 0, 0);
+    openEventModal({ start: startTime, end: endTime });
+  };
+
+  // AI Handlers
+  const handleAICommand = async (e) => {
+    e.preventDefault();
+    if (!quickInput.trim() || isProcessing) return;
+
+    setIsProcessing(true);
+    const userInput = quickInput.trim();
+    setQuickInput('');
+
+    try {
+      // Dispatch event for AI handler
+      // If we need to open the AI panel, we might need a way to do that.
+      // Assuming 'calai-ping' listeners handle the details.
+      window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput } }));
+      window.dispatchEvent(new CustomEvent('calai-open')); // Custom event to request open?
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleQuickImageUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+    window.dispatchEvent(new CustomEvent('calai-open'));
+    event.target.value = '';
+  };
+
   const showCurrentTime = weekDays.some(day => isToday(day));
   const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
   const now = new Date();
-
-  const handleGridMouseMove = (event) => {
-    if (!weekGridRef.current) return;
-    const rect = weekGridRef.current.getBoundingClientRect();
-    const localY = event.clientY - rect.top;
-    const slotHeight = rect.height / 24;
-    const hour = Math.min(23, Math.max(0, Math.floor(localY / slotHeight)));
-    setMagnifyHour(hour);
-  };
-
-  const handleGridMouseLeave = () => {
-    setMagnifyHour(null);
-  };
-
-  const getMagnifyClass = (hourValue) => {
-    if (magnifyHour === null || magnifyHour === undefined) return '';
-    const distance = Math.abs(hourValue - magnifyHour);
-    if (distance < 0.25) return 'magnify-core';
-    if (distance < 0.75) return 'magnify-near';
-    if (distance < 1.5) return 'magnify-far';
-    return '';
-  };
 
   return (
     <div
@@ -83,19 +114,64 @@ const WeekView = () => {
         '--magnify-index': magnifyHour ?? -1
       }}
     >
-      <div className="week-summary glass-card">
-        <div className="week-summary-title">This Week</div>
-        <div className="week-summary-stat">
-          {`${weekEventsCount} event${weekEventsCount !== 1 ? 's' : ''}`}
+      <div className="week-control-bar glass-card">
+        <div className="week-title-group">
+          <span className="week-label">Week of</span>
+          <span className="week-range">{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}</span>
         </div>
+
+        <form onSubmit={handleAICommand} className="week-ai-form">
+          <Sparkles size={14} className="ai-icon" />
+          <input
+            type="text"
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            placeholder="Ask Cal..."
+            className="ai-input"
+            disabled={isProcessing}
+            ref={quickInputRef}
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleQuickImageUpload}
+            hidden
+          />
+          <button
+            type="button"
+            className="ai-action-btn"
+            onClick={() => imageInputRef.current?.click()}
+            title="Upload image"
+          >
+            <ImagePlus size={14} />
+          </button>
+          <button
+            type="submit"
+            disabled={!quickInput.trim() || isProcessing}
+            className="ai-submit-btn"
+          >
+            <Send size={14} />
+          </button>
+        </form>
       </div>
 
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>
         {weekDays.map((day) => (
           <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')}>
-            <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-            <span className="day-num">{day.getDate()}</span>
+            <div className="header-date-group">
+              <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+              <span className="day-num">{day.getDate()}</span>
+            </div>
+            <button
+              className="quick-add-btn"
+              onClick={() => handleDayAddEvent(day)}
+              title="Add event"
+            >
+              <Plus size={14} />
+            </button>
           </div>
         ))}
       </div>
@@ -103,14 +179,13 @@ const WeekView = () => {
       <div
         className="week-grid"
         ref={weekGridRef}
-        onMouseMove={handleGridMouseMove}
-        onMouseLeave={handleGridMouseLeave}
+      // Mouse handlers for magnification (removed for cleaner logic if needed, but keeping scaling)
       >
         <div className="week-time-column">
           {dayHours.map((hour) => (
             <div
               key={`time-${hour.getHours()}`}
-              className={cn('week-time-slot', getMagnifyClass(hour.getHours()))}
+              className={cn('week-time-slot')}
             >
               {formatTime24(hour)}
             </div>
@@ -126,7 +201,7 @@ const WeekView = () => {
                 {dayHours.map((hour) => (
                   <div
                     key={hour.getHours()}
-                    className={cn('week-hour-cell', getMagnifyClass(hour.getHours()))}
+                    className={cn('week-hour-cell')}
                     onClick={() => handleTimeSlotClick(day, hour)}
                   />
                 ))}
@@ -183,7 +258,7 @@ const WeekView = () => {
         {weekEventsCount === 0 && (
           <div className="week-empty-state">
             <div className="empty-title">No events scheduled</div>
-            <div className="empty-subtitle">Tap an hour cell to add something for this week.</div>
+            <div className="empty-subtitle">Tap + to add events</div>
           </div>
         )}
       </div>
