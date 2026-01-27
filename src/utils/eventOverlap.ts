@@ -1,4 +1,4 @@
-import { intervalsOverlap, isWithinInterval } from 'date-fns';
+import { areIntervalsOverlapping, isWithinInterval } from 'date-fns';
 
 type CalendarEvent = {
   start: string | Date;
@@ -34,7 +34,7 @@ const eventsOverlap = (a: NormalizedEvent, b: NormalizedEvent) => {
   const intervalB = { start: b.start, end: b.end };
 
   return (
-    intervalsOverlap(intervalA, intervalB) ||
+    areIntervalsOverlapping(intervalA, intervalB) ||
     isWithinInterval(a.start, intervalB) ||
     isWithinInterval(b.start, intervalA)
   );
