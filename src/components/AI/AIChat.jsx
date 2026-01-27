@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus } from 'lucide-react';
+import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus, Mic, MicOff, Volume2 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
+import { voiceAIService } from '../../services/voiceAIService';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
 import { detectIntent } from '../../services/aiIntentService';
@@ -12,6 +13,7 @@ import { applyClarificationAnswer, getClarificationPrompt, listClarificationFiel
 import { sanitizeAIOutput } from '../../ai/OutputSanitizer';
 import { AIParseError, AIServiceError, ValidationError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
+import JarvisParticles from '../VoiceAI/JarvisParticles';
 import './AIChat.css';
 
 const AIChat = ({ isOpen, onClose }) => {
@@ -31,6 +33,9 @@ const AIChat = ({ isOpen, onClose }) => {
   const [statusMessage, setStatusMessage] = useState(null);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
   const [isLocalMode, setIsLocalMode] = useState(localBrainService.getPreferLocal());
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [showJarvis, setShowJarvis] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const MotionDiv = motion.div;
   const messagesEndRef = useRef(null);
@@ -60,6 +65,35 @@ const AIChat = ({ isOpen, onClose }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, pendingEvent, clarificationState]);
+
+  // Voice input handler
+  useEffect(() => {
+    const handleVoiceResult = (e) => {
+      if (e.detail.isFinal) {
+        const transcript = e.detail.transcript;
+        setInputValue(transcript);
+        setIsVoiceListening(false);
+        // Optional: auto-submit after voice input
+        // processInput(transcript);
+      }
+    };
+
+    const handleVoiceEnd = () => setIsVoiceListening(false);
+    const handleSpeechStart = () => setIsSpeaking(true);
+    const handleSpeechEnd = () => setIsSpeaking(false);
+
+    window.addEventListener('calai-voice-result', handleVoiceResult);
+    window.addEventListener('calai-voice-end', handleVoiceEnd);
+    window.addEventListener('calai-speech-start', handleSpeechStart);
+    window.addEventListener('calai-speech-end', handleSpeechEnd);
+
+    return () => {
+      window.removeEventListener('calai-voice-result', handleVoiceResult);
+      window.removeEventListener('calai-voice-end', handleVoiceEnd);
+      window.removeEventListener('calai-speech-start', handleSpeechStart);
+      window.removeEventListener('calai-speech-end', handleSpeechEnd);
+    };
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -497,6 +531,22 @@ const AIChat = ({ isOpen, onClose }) => {
                 <ImagePlus size={16} />
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                if (isVoiceListening) {
+                  voiceAIService.stopListening();
+                  setIsVoiceListening(false);
+                } else {
+                  voiceAIService.startListening();
+                  setIsVoiceListening(true);
+                }
+              }}
+              className={`chat-mic-btn ${isVoiceListening ? 'listening' : ''}`}
+              title={isVoiceListening ? 'Stop listening' : 'Voice input'}
+            >
+              {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
             <input
               type="text"
               value={inputValue}

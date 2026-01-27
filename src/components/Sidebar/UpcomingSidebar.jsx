@@ -101,6 +101,13 @@ const UpcomingSidebar = () => {
                         >
                             {viewMode === 'upcoming' ? <History size={16} /> : <Calendar size={16} />}
                         </button>
+                        <button
+                            onClick={() => setShowDeleteModal(!showDeleteModal)}
+                            className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
+                            title="Delete by Name"
+                        >
+                            <Trash2 size={16} />
+                        </button>
                     </div>
                 </div>
                 {!showDeleteModal && (
@@ -134,7 +141,36 @@ const UpcomingSidebar = () => {
                 </div>
             )}
 
-            {/* Bulk delete removed per user request */}
+            {/* Delete By Name Modal/Area */}
+            {showDeleteModal && (
+                <div className="delete-modal-area fade-in">
+                    <div className="delete-header">
+                        <span className="delete-title">Bulk delete by name</span>
+                        <span className="delete-subtitle">Remove every event with the exact title below.</span>
+                    </div>
+                    <div className="delete-input-wrapper">
+                        <Search size={14} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Enter exact event title"
+                            value={deleteSearch}
+                            onChange={(e) => setDeleteSearch(e.target.value)}
+                            className="delete-input"
+                        />
+                        <button onClick={() => setShowDeleteModal(false)} className="close-btn">
+                            <X size={14} />
+                        </button>
+                    </div>
+                    <button
+                        disabled={!deleteSearch.trim()}
+                        onClick={handleBulkDelete}
+                        className="delete-confirm-btn"
+                    >
+                        Delete matching events
+                    </button>
+                    <p className="delete-hint">This action removes all events with the exact title.</p>
+                </div>
+            )}
 
             <div className="upcoming-list">
                 {displayEvents.length === 0 ? (
