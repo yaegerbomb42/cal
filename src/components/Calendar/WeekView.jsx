@@ -21,7 +21,7 @@ const WeekView = () => {
   // I will dispatch the event. The "openAI" panel visibility might need a global context trigger.
   // For now I will use window dispatch and assume strict separation.
 
-  const { events, getEventsForDate } = useEvents();
+  const { events, getEventsForDate, updateEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
@@ -36,6 +36,7 @@ const WeekView = () => {
 
   const weekGridRef = useRef(null);
   const [magnifyHour, setMagnifyHour] = useState(null);
+  const [draggedEvent, setDraggedEvent] = useState(null);
   const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
@@ -72,6 +73,39 @@ const WeekView = () => {
     const endTime = new Date(startTime);
     endTime.setHours(10, 0, 0, 0);
     openEventModal({ start: startTime, end: endTime });
+  };
+
+  // Drag-to-reschedule handlers
+  const handleDragStart = (event, e) => {
+    setDraggedEvent(event);
+    e.dataTransfer.setData('text/plain', event.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropOnCell = (day, hour, e) => {
+    e.preventDefault();
+    if (!draggedEvent) return;
+
+    const originalEvent = draggedEvent;
+    const originalStart = new Date(originalEvent.start);
+    const originalEnd = new Date(originalEvent.end);
+    const duration = originalEnd - originalStart;
+
+    const newStart = new Date(day);
+    newStart.setHours(hour.getHours(), originalStart.getMinutes(), 0, 0);
+    const newEnd = new Date(newStart.getTime() + duration);
+
+    updateEvent(originalEvent.id, {
+      start: newStart.toISOString(),
+      end: newEnd.toISOString()
+    });
+
+    setDraggedEvent(null);
   };
 
   // AI Handlers
@@ -201,8 +235,10 @@ const WeekView = () => {
                 {dayHours.map((hour) => (
                   <div
                     key={hour.getHours()}
-                    className={cn('week-hour-cell')}
+                    className={cn('week-hour-cell', draggedEvent && 'drop-target')}
                     onClick={() => handleTimeSlotClick(day, hour)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDropOnCell(day, hour, e)}
                   />
                 ))}
 
@@ -223,9 +259,12 @@ const WeekView = () => {
                           gridColumnStart: column + 1,
                           gridColumnEnd: column + 2,
                           gridRow: `${rowStart} / span ${rowSpan}`,
-                          zIndex: 5 + column
+                          zIndex: 5 + column,
+                          cursor: 'grab'
                         }}
                         onClick={(e) => handleEventClick(event, e)}
+                        draggable
+                        onDragStart={(e) => handleDragStart(event, e)}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
