@@ -30,6 +30,7 @@ const AIChat = ({ isOpen, onClose }) => {
   const [clarificationState, setClarificationState] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
+  const [isLocalMode, setIsLocalMode] = useState(localBrainService.getPreferLocal());
 
   const MotionDiv = motion.div;
   const messagesEndRef = useRef(null);
@@ -485,15 +486,17 @@ const AIChat = ({ isOpen, onClose }) => {
               onChange={handleImageUpload}
               className="chat-image-input"
             />
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              className="chat-upload-btn"
-              disabled={isImageProcessing || isLoading}
-              title="Upload event images"
-            >
-              <ImagePlus size={16} />
-            </button>
+            {!isLocalMode && (
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="chat-upload-btn"
+                disabled={isImageProcessing || isLoading}
+                title="Upload event images"
+              >
+                <ImagePlus size={16} />
+              </button>
+            )}
             <input
               type="text"
               value={inputValue}

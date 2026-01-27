@@ -12,6 +12,8 @@
     "deploy:preview": "npm run build && npx vercel"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@google/generative-ai": "^0.24.1",
     "@mlc-ai/web-llm": "^0.2.80",
     "@mui/icons-material": "^5.16.7",

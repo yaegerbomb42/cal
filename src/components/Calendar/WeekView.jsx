@@ -187,7 +187,7 @@ const WeekView = () => {
               key={`time-${hour.getHours()}`}
               className={cn('week-time-slot')}
             >
-              {formatTime24(hour)}
+              {format(hour, 'h a').toLowerCase().replace(' ', '')}
             </div>
           ))}
         </div>

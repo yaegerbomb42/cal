@@ -101,13 +101,6 @@ const UpcomingSidebar = () => {
                         >
                             {viewMode === 'upcoming' ? <History size={16} /> : <Calendar size={16} />}
                         </button>
-                        <button
-                            onClick={() => setShowDeleteModal(!showDeleteModal)}
-                            className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
-                            title="Delete by Name"
-                        >
-                            <Trash2 size={16} />
-                        </button>
                     </div>
                 </div>
                 {!showDeleteModal && (
@@ -141,36 +134,7 @@ const UpcomingSidebar = () => {
                 </div>
             )}
 
-            {/* Delete By Name Modal/Area */}
-            {showDeleteModal && (
-                <div className="delete-modal-area fade-in">
-                    <div className="delete-header">
-                        <span className="delete-title">Bulk delete by name</span>
-                        <span className="delete-subtitle">Remove every event with the exact title below.</span>
-                    </div>
-                    <div className="delete-input-wrapper">
-                        <Search size={14} className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Enter exact event title"
-                            value={deleteSearch}
-                            onChange={(e) => setDeleteSearch(e.target.value)}
-                            className="delete-input"
-                        />
-                        <button onClick={() => setShowDeleteModal(false)} className="close-btn">
-                            <X size={14} />
-                        </button>
-                    </div>
-                    <button
-                        disabled={!deleteSearch.trim()}
-                        onClick={handleBulkDelete}
-                        className="delete-confirm-btn"
-                    >
-                        Delete matching events
-                    </button>
-                    <p className="delete-hint">This action removes all events with the exact title.</p>
-                </div>
-            )}
+            {/* Bulk delete removed per user request */}
 
             <div className="upcoming-list">
                 {displayEvents.length === 0 ? (
@@ -187,46 +151,46 @@ const UpcomingSidebar = () => {
                                 className={`upcoming-event-item ${isPastEvent ? 'past-event' : ''}`}
                                 style={{ '--category-color': getEventColor(event.category) }}
                             >
-                            <div className="event-date-badge">
-                                <span className="month">
-                                    {new Date(event.start).toLocaleString('default', { month: 'short' })}
-                                </span>
-                                <span className="day">
-                                    {new Date(event.start).getDate()}
-                                </span>
-                            </div>
-
-                            <div className="event-info">
-                                <div className="title-row">
-                                    <h4>{event.title}</h4>
-                                    <span className="time-til">{getTimeLabel(event.start)}</span>
+                                <div className="event-date-badge">
+                                    <span className="month">
+                                        {new Date(event.start).toLocaleString('default', { month: 'short' })}
+                                    </span>
+                                    <span className="day">
+                                        {new Date(event.start).getDate()}
+                                    </span>
                                 </div>
-                                <div className="info-meta">
-                                    <p className="time">
-                                        {new Date(event.start).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                    {event.category && (
-                                        <span className="category-tag">{event.category}</span>
-                                    )}
-                                </div>
-                            </div>
 
-                            <div className="event-actions">
-                                <button
-                                    onClick={() => openEventModal(event)}
-                                    className="action-btn edit"
-                                    title="Edit event"
-                                >
-                                    <Edit2 size={14} />
-                                </button>
-                                <button
-                                    onClick={() => handleDeleteClick(event.id)}
-                                    className="action-btn delete"
-                                    title="Delete event"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
+                                <div className="event-info">
+                                    <div className="title-row">
+                                        <h4>{event.title}</h4>
+                                        <span className="time-til">{getTimeLabel(event.start)}</span>
+                                    </div>
+                                    <div className="info-meta">
+                                        <p className="time">
+                                            {new Date(event.start).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                        {event.category && (
+                                            <span className="category-tag">{event.category}</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="event-actions">
+                                    <button
+                                        onClick={() => openEventModal(event)}
+                                        className="action-btn edit"
+                                        title="Edit event"
+                                    >
+                                        <Edit2 size={14} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteClick(event.id)}
+                                        className="action-btn delete"
+                                        title="Delete event"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
                             </div>
                         );
                     })
