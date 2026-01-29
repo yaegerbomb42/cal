@@ -554,6 +554,133 @@ Keep responses concise and actionable.
       throw new AIParseError('Failed to generate focus plan.');
     }
   }
+
+  /**
+   * AI-powered slot picker - suggests optimal time slots based on calendar context
+   * @param {Object} eventDetails - title, duration, category, preferred day
+   * @param {Array} existingEvents - current calendar events for context
+   * @returns {Array} - suggested time slots with reasoning
+   */
+  async suggestOptimalSlot(eventDetails, existingEvents = []) {
+    // Try local brain first if preferred
+    const preferLocal = localBrainService.getPreferLocal?.();
+    if (preferLocal && localBrainService.isLoaded) {
+      // Local model: use simple heuristics
+      return this._localSlotSuggestion(eventDetails, existingEvents);
+    }
+
+    if (!this.isInitialized) {
+      // Fallback to local heuristics
+      return this._localSlotSuggestion(eventDetails, existingEvents);
+    }
+
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const now = new Date();
+    const targetDate = eventDetails.preferredDate || now;
+    const duration = eventDetails.duration || 60; // minutes
+
+    const prompt = `
+You are Cal, a smart calendar AI. Suggest 3 optimal time slots for this event:
+
+Event: "${eventDetails.title || 'Untitled Event'}"
+Category: ${eventDetails.category || 'personal'}
+Duration: ${duration} minutes
+Preferred Date: ${targetDate.toDateString()}
+User Timezone: ${timeZone}
+Current Time: ${now.toISOString()}
+
+Existing events on or near this date:
+${JSON.stringify(existingEvents.slice(0, 10).map(e => ({
+      title: e.title,
+      start: e.start,
+      end: e.end,
+      category: e.category
+    })), null, 2)}
+
+Rules:
+- Avoid conflicts with existing events
+- Consider typical ${eventDetails.category === 'work' ? 'work hours (9am-6pm)' : 'waking hours (8am-10pm)'}
+- Prioritize slots that give buffer time before/after meetings
+- For focus/work tasks, prefer morning slots
+- For social/fun events, prefer afternoon/evening
+
+Return ONLY a JSON array:
+[
+  {
+    "start": "ISO_8601_UTC_STRING",
+    "end": "ISO_8601_UTC_STRING",
+    "reason": "Brief explanation why this slot is optimal"
+  }
+]
+`;
+
+    try {
+      const model = this.modelFlash || this.modelPro;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const jsonMatch = response.text().match(/\[[\s\S]*\]/);
+
+      if (!jsonMatch) {
+        return this._localSlotSuggestion(eventDetails, existingEvents);
+      }
+
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      logger.error('Error suggesting optimal slots', { error });
+      return this._localSlotSuggestion(eventDetails, existingEvents);
+    }
+  }
+
+  /**
+   * Local fallback slot suggestion using simple heuristics
+   */
+  _localSlotSuggestion(eventDetails, existingEvents) {
+    const duration = eventDetails.duration || 60;
+    const targetDate = new Date(eventDetails.preferredDate || new Date());
+    const suggestions = [];
+
+    // Generate 3 suggestions: morning, afternoon, and late afternoon
+    const timeSlots = [
+      { hour: 9, label: 'Morning focus time' },
+      { hour: 14, label: 'Post-lunch productivity' },
+      { hour: 16, label: 'Late afternoon slot' }
+    ];
+
+    for (const slot of timeSlots) {
+      const start = new Date(targetDate);
+      start.setHours(slot.hour, 0, 0, 0);
+      const end = new Date(start.getTime() + duration * 60 * 1000);
+
+      // Check for conflicts
+      const hasConflict = existingEvents.some(e => {
+        const eStart = new Date(e.start);
+        const eEnd = new Date(e.end);
+        return start < eEnd && end > eStart;
+      });
+
+      if (!hasConflict) {
+        suggestions.push({
+          start: start.toISOString(),
+          end: end.toISOString(),
+          reason: slot.label
+        });
+      }
+    }
+
+    // If all slots conflict, find first available gap
+    if (suggestions.length === 0) {
+      const start = new Date(targetDate);
+      start.setHours(10, 0, 0, 0);
+      const end = new Date(start.getTime() + duration * 60 * 1000);
+      suggestions.push({
+        start: start.toISOString(),
+        end: end.toISOString(),
+        reason: 'First available slot'
+      });
+    }
+
+    return suggestions;
+  }
 }
 
 export const geminiService = new GeminiService();

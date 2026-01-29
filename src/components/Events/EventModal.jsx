@@ -355,16 +355,46 @@ const EventModal = () => {
     }));
   };
 
-  const findNextSlot = () => {
+  const findNextSlot = async () => {
+    const duration = formData.start && formData.end
+      ? Math.round((new Date(formData.end) - new Date(formData.start)) / (60 * 1000))
+      : 60;
+
+    try {
+      // Use AI-powered slot suggestion
+      const { geminiService } = await import('../../services/geminiService');
+      const suggestions = await geminiService.suggestOptimalSlot(
+        {
+          title: formData.title,
+          category: formData.category,
+          duration: duration,
+          preferredDate: formData.start ? new Date(formData.start) : new Date()
+        },
+        events.slice(-50) // Recent events for context
+      );
+
+      if (suggestions && suggestions.length > 0) {
+        const best = suggestions[0];
+        setFormData(prev => ({
+          ...prev,
+          start: toLocalInputValue(new Date(best.start)),
+          end: toLocalInputValue(new Date(best.end))
+        }));
+        toastService.success(`✨ ${best.reason || 'Found an optimal slot!'}`);
+        return;
+      }
+    } catch {
+      // Fallback to simple heuristic
+    }
+
+    // Simple fallback: find first 1h gap in next 7 days
     const now = new Date();
     now.setMinutes(0, 0, 0);
-
-    // Find first 1h gap in next 7 days
     let checkTime = new Date(now);
     checkTime.setHours(checkTime.getHours() + 1);
 
     for (let i = 0; i < 24 * 7; i++) {
-      const slotEnd = new Date(checkTime.getTime() + 60 * 60 * 1000);
+      const slotEnd = new Date(checkTime.getTime() + duration * 60 * 1000);
       const hasConflict = events.some(e => {
         const s = new Date(e.start);
         const en = new Date(e.end);
