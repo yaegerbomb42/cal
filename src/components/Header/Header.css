@@ -41,6 +41,15 @@
   line-height: 1.1;
 }
 
+.app-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .logo-text h1 {
   font-size: 1.25rem;
   font-weight: 700;

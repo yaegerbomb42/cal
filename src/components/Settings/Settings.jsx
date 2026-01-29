@@ -188,12 +188,22 @@ const Settings = ({ isOpen, onClose }) => {
       let response = '';
       if (aiProvider === 'gemini') {
         if (!savedApiKeyRef.current && !apiKey) throw new Error("Gemini API Key missing");
-        const model = geminiService.genAI?.getGenerativeModel({ model: "gemini-pro" });
+        // FIX: Use the initialized service models instead of creating a new instance with hardcoded 'gemini-pro'
+        const model = geminiService.modelFlash || geminiService.modelPro;
+
         if (model) {
           const result = await model.generateContent(message);
           response = result.response.text();
         } else {
-          response = "Gemini service not fully initialized.";
+          // Fallback: If service isn't fully ready but we have key, try init
+          geminiService.initialize(savedApiKeyRef.current || apiKey);
+          const fallbackModel = geminiService.modelFlash;
+          if (fallbackModel) {
+            const result = await fallbackModel.generateContent(message);
+            response = result.response.text();
+          } else {
+            response = "Gemini service could not be initialized. Please check API Key.";
+          }
         }
       } else {
         if (!isLocalBrainLoaded) throw new Error("Local Brain not loaded");
@@ -319,7 +329,7 @@ const Settings = ({ isOpen, onClose }) => {
             className={cn("provider-btn", aiProvider === 'gemini' && "active")}
             onClick={() => handleProviderChange('gemini')}
           >
-            <Zap size={16} /> Gemini Pro
+            <Zap size={16} /> Gemini 3.0 Flash
           </button>
           <button
             className={cn("provider-btn", aiProvider === 'local' && "active")}
@@ -409,7 +419,7 @@ const Settings = ({ isOpen, onClose }) => {
           </button>
         </form>
       </div>
-    </div>
+    </div >
   );
 
   if (!isOpen) return null;

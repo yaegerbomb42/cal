@@ -110,8 +110,7 @@ const YearView = ({ onYearChange }) => {
     <div className="year-view">
       <div className="year-header glass-card">
         <div className="year-title-group">
-          <h3>{selectedYear}</h3>
-          <span className="year-subtitle">Contribution Graph</span>
+          <span className="year-subtitle">{selectedYear} Cal</span>
         </div>
 
         <div className="year-controls">

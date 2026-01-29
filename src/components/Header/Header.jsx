@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings } from 'lucide-react';
+import { Calendar, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
 import './Header.css';
 
 const Header = ({ onOpenSettings }) => {
-  const { view, setView, goToToday, openEventModal } = useCalendar();
+  const { view, setView, goToToday, openEventModal, navigateDate } = useCalendar();
   const MotionHeader = motion.header;
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
@@ -56,26 +56,50 @@ const Header = ({ onOpenSettings }) => {
     >
       <div className="container" style={{ maxWidth: '100%', padding: '0 16px' }}>
         <div className="header-content">
-          {/* Left: Logo, Status */}
+          {/* Left: Logo (Home Button) */}
           <div className="header-left">
-            <MotionDiv
+            <MotionButton
               whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
               className="logo-section"
+              onClick={goToToday}
+              title="Return to Today"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
               <Calendar className="logo-icon" size={20} />
               <div className="logo-text">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h1>CalAI</h1>
-                  <div className={`status-dot ${isOnline ? 'online' : 'offline'}`} title={isOnline ? "Online" : "Offline"} />
-                </div>
+                <h1>CalAI</h1>
               </div>
-            </MotionDiv>
+            </MotionButton>
+
+            {/* Status Indicator near CalAI text */}
+            <div className={`status-dot ${isOnline ? 'online' : 'offline'}`}
+              title={isOnline ? "Online" : "Offline"}
+              style={{ marginLeft: '8px' }}
+            />
           </div>
 
-          {/* Center: Navigation Controls (Arrows + Today) */}
+          {/* Center: Navigation Controls (Today | < | >) */}
+          <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              className="nav-btn today-btn"
+              onClick={goToToday}
+              title="Jump to Today"
+            >
+              Today
+            </button>
+            <div className="nav-arrows" style={{ display: 'flex', gap: '4px' }}>
+              <button className="nav-btn icon-only" onClick={() => navigateDate(-1)} title="Previous">
+                <ChevronLeft size={16} />
+              </button>
+              <button className="nav-btn icon-only" onClick={() => navigateDate(1)} title="Next">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            {/* Date Display could go here if requested, but user said remove/separate arrows */}
+          </div>
 
-
-          {/* Right: View Switcher & Actions (No AI Input here anymore) */}
+          {/* Right: View Switcher & Actions */}
           <div className="header-right">
             <div className="view-switch" role="tablist">
               {viewButtons.map(({ key, label }) => (

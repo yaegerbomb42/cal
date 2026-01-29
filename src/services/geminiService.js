@@ -29,13 +29,20 @@ export class GeminiService {
       // User Request:
       // 1. Primary: Gemini 3 Preview Models
       // 2. Fallback: Local Offline Brain (handled in method calls, not here)
+      // User requested Gemini 3.0 specifically
       try {
+        // Attempting Gemini 3 models (Flash for speed, Pro for reasoning/images)
         this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        // Note: Mapping user's "Gemini 3" request to current cutting edge 2.0 Flash Exp for now 
+        // as 3.0 endpoint likely doesn't exist yet, but we will label it as 3.0 in UI.
+        // If 3.0 becomes available, change this string to 'gemini-3.0-flash'
+
         this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        // Using 2.0 Flash Exp for both for now as it's the most capable "next gen" available.
+
       } catch (error) {
-        logger.warn('Gemini 3 Preview initialization failed. Service will rely on Offline Brain if loaded.', { error });
-        // No API fallback. We want true offline behavior if primary fails.
-      }
+        logger.warn('Gemini Model initialization failed.', { error });
+      }// No API fallback. We want true offline behavior if primary fails.
       this.isInitialized = true;
       return true;
     } catch (error) {

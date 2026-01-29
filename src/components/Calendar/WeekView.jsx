@@ -85,21 +85,37 @@ const WeekView = () => {
     e.preventDefault();
     if (!draggedEvent) return;
 
-    const originalEvent = draggedEvent;
-    const originalStart = new Date(originalEvent.start);
-    const originalEnd = new Date(originalEvent.end);
-    const duration = originalEnd - originalStart;
+    try {
+      const originalEvent = draggedEvent;
+      const originalStart = new Date(originalEvent.start);
+      const originalEnd = new Date(originalEvent.end);
 
-    const newStart = new Date(day);
-    newStart.setHours(hour.getHours(), originalStart.getMinutes(), 0, 0);
-    const newEnd = new Date(newStart.getTime() + duration);
+      // Calculate duration safely
+      const duration = originalEnd.getTime() - originalStart.getTime();
 
-    updateEvent(originalEvent.id, {
-      start: newStart.toISOString(),
-      end: newEnd.toISOString()
-    });
+      // Create new start date based on drop target
+      const newStart = new Date(day);
+      if (isNaN(newStart.getTime())) throw new Error("Invalid drop day");
 
-    setDraggedEvent(null);
+      // Preserve minutes from original time, set hours from drop target
+      newStart.setHours(hour.getHours(), originalStart.getMinutes(), 0, 0);
+
+      const newEnd = new Date(newStart.getTime() + duration);
+
+      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime())) {
+        console.error("Invalid date calculated during drop", { newStart, newEnd });
+        return;
+      }
+
+      updateEvent(originalEvent.id, {
+        start: newStart.toISOString(),
+        end: newEnd.toISOString()
+      });
+    } catch (err) {
+      console.error("Failed to drop event:", err);
+    } finally {
+      setDraggedEvent(null);
+    }
   };
 
   // AI Handlers
@@ -166,7 +182,7 @@ const WeekView = () => {
             type="text"
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}
-            placeholder="Ask Cal..."
+            placeholder="Chat with Cal..."
             className="ai-input"
             disabled={isProcessing}
             ref={quickInputRef}

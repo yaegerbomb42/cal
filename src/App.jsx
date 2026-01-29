@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { CalendarProvider } from './contexts/CalendarContext';
-import { EventsProvider } from './contexts/EventsContext';
-import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
+import { CalendarProvider } from './contexts/CalendarContext.jsx';
+import { EventsProvider } from './contexts/EventsContext.jsx';
+import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth';
 import Login from './components/Auth/Login';
 import Header from './components/Header/Header';
@@ -56,10 +56,10 @@ const MainLayout = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const MotionDiv = motion.div;
 
-  // Sidebar Resize Logic
-  const [sidebarWidth, setSidebarWidth] = useState(260); // Smaller default width
+  // Sidebar Resize Logic (Percentage Based)
+  const [sidebarPercent, setSidebarPercent] = useState(30); // Default 30% width (more room for Upcoming)
   const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef = useRef(null);
+  const containerRef = useRef(null);
 
   const startResizing = useCallback((mouseDownEvent) => {
     mouseDownEvent.preventDefault();
@@ -71,10 +71,13 @@ const MainLayout = () => {
   }, []);
 
   const resize = useCallback((mouseMoveEvent) => {
-    if (isResizing) {
-      const newWidth = mouseMoveEvent.clientX - sidebarRef.current.getBoundingClientRect().left;
-      if (newWidth > 180 && newWidth < 480) { // Limits
-        setSidebarWidth(newWidth);
+    if (isResizing && containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+      const newPercent = (mouseMoveEvent.clientX / containerWidth) * 100;
+
+      // Limits: 15% to 45%
+      if (newPercent > 15 && newPercent < 45) {
+        setSidebarPercent(newPercent);
       }
     }
   }, [isResizing]);
@@ -105,6 +108,10 @@ const MainLayout = () => {
     };
 
     initializeAI();
+
+    const handleAIOpen = () => setIsAIChatOpen(true);
+    window.addEventListener('calai-open', handleAIOpen);
+    return () => window.removeEventListener('calai-open', handleAIOpen);
   }, [user]);
 
   if (loading) {
@@ -135,10 +142,11 @@ const MainLayout = () => {
 
         <main
           className="main-content"
-          style={{ gridTemplateColumns: `${sidebarWidth}px 4px 1fr` }}
-        // Note: Modified grid columns to include divider
+          ref={containerRef}
+          style={{ gridTemplateColumns: `${sidebarPercent}% 4px 1fr` }}
+        // Note: Percentage based split
         >
-          <div className="sidebar-container" ref={sidebarRef}>
+          <div className="sidebar-container">
             <UpcomingSidebar />
           </div>
 

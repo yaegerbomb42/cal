@@ -1,29 +1,130 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
-import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle } from 'lucide-react';
+import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check } from 'lucide-react';
 import { getEventColor } from '../../utils/helpers';
 import { paginateItems } from '../../utils/pagination';
 import { isToday } from 'date-fns';
 import './UpcomingSidebar.css';
 
+import { firebaseService } from '../../services/firebaseService';
+import { useAuth } from '../../contexts/useAuth';
+
+const CustomMultiSelect = ({ options, selectedValues, onChange }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleOption = (value) => {
+        let newValues;
+        if (value === 'all') {
+            newValues = ['all'];
+        } else {
+            // If selecting a specific value, remove 'all'
+            const withoutAll = selectedValues.filter(v => v !== 'all');
+            if (withoutAll.includes(value)) {
+                newValues = withoutAll.filter(v => v !== value);
+            } else {
+                newValues = [...withoutAll, value];
+            }
+            // If nothing left, default to all
+            if (newValues.length === 0) newValues = ['all'];
+        }
+        onChange(newValues);
+    };
+
+    const getDisplayLabel = () => {
+        if (selectedValues.includes('all')) return 'All Categories';
+        if (selectedValues.length === 1) {
+            const opt = options.find(o => o.value === selectedValues[0]);
+            return opt ? opt.label : 'Select...';
+        }
+        return `${selectedValues.length} Selected`;
+    };
+
+    return (
+        <div className="custom-multiselect" ref={containerRef}>
+            <button className="multiselect-trigger" onClick={() => setIsOpen(!isOpen)}>
+                <span>{getDisplayLabel()}</span>
+                <ChevronDown size={14} className={`arrow ${isOpen ? 'open' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div className="multiselect-dropdown">
+                    {options.map(option => {
+                        const isSelected = selectedValues.includes(option.value);
+                        return (
+                            <div
+                                key={option.value}
+                                className={`multiselect-option ${isSelected ? 'selected' : ''}`}
+                                onClick={() => toggleOption(option.value)}
+                            >
+                                <div className="option-label">
+                                    {option.color && <span className="color-dot" style={{ background: option.color }} />}
+                                    {option.label}
+                                </div>
+                                {isSelected && <Check size={14} />}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const UpcomingSidebar = () => {
     const { events, deleteEvent, deleteEventsByName, updateEvent, addEvent } = useEvents();
     const { openEventModal } = useCalendar();
+    const { user } = useAuth(); // Needed for persistence
 
     // View States
-    const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' | 'archive'
+    const [viewMode, setViewMode] = useState('upcoming');
+
+    // Filter State - Default to 'all' or load from persistence handled in Effect
+    const [categoryFilters, setCategoryFilters] = useState(['all']);
+
     const [focusMode, setFocusMode] = useState(false);
 
-    // List States
+    // ... existing list states ...
     const [page, setPage] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteSearch, setDeleteSearch] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('all');
     const pageSize = 5;
 
-    // Focus Mode States
+    // Quick Add Focus
     const [quickAddText, setQuickAddText] = useState('');
+
+    // Load Filters from Persistence
+    useEffect(() => {
+        const loadFilters = async () => {
+            if (user) {
+                const userData = await firebaseService.getUserData();
+                if (userData?.categoryFilters && Array.isArray(userData.categoryFilters)) {
+                    setCategoryFilters(userData.categoryFilters);
+                }
+            }
+        };
+        loadFilters();
+    }, [user]);
+
+    const handleFilterChange = async (newFilters) => {
+        setCategoryFilters(newFilters);
+        if (user) {
+            await firebaseService.saveUserData({ categoryFilters: newFilters });
+        }
+    };
+
+    // ... helper functions ...
 
     const toggleFocusMode = () => {
         setFocusMode(!focusMode);
@@ -63,9 +164,11 @@ const UpcomingSidebar = () => {
             const inRange = viewMode === 'upcoming'
                 ? eventStart >= now
                 : eventStart < now;
-            const matchesCategory = categoryFilter === 'all'
+
+            const matchesCategory = categoryFilters.includes('all')
                 ? true
-                : (event.category || 'personal') === categoryFilter;
+                : categoryFilters.includes(event.category || 'personal');
+
             return inRange && matchesCategory;
         })
         .sort((a, b) => {
@@ -111,7 +214,7 @@ const UpcomingSidebar = () => {
     // Reset pagination when filters change
     useEffect(() => {
         setPage(1);
-    }, [viewMode, categoryFilter]);
+    }, [viewMode, categoryFilters]);
 
     const handleDeleteClick = (id) => {
         if (window.confirm('Delete this event?')) {
@@ -131,22 +234,22 @@ const UpcomingSidebar = () => {
     return (
         <div className={`upcoming-sidebar glass-card ${focusMode ? 'focus-mode-sidebar' : ''}`}>
 
-            {/* Header / Focus Toggle */}
-            <div className="productivity-header">
-                <span className="sidebar-label">{focusMode ? "Today's Plan" : "Overview"}</span>
-                <button
-                    className={`focus-toggle ${focusMode ? 'active' : ''}`}
-                    onClick={toggleFocusMode}
-                    title="Toggle Focus Mode"
-                >
-                    <Zap size={14} fill={focusMode ? "currentColor" : "none"} />
-                    {focusMode ? 'Focus' : 'Focus'}
-                </button>
-            </div>
-
             {/* --- FOCUS MODE VIEW --- */}
             {focusMode ? (
                 <div className="focus-mode-content">
+                    <div className="sidebar-header">
+                        <h3>Today's Plan</h3>
+                        <div className="header-actions">
+                            <button
+                                className={`icon-btn active`}
+                                onClick={toggleFocusMode}
+                                title="Exit Focus Mode"
+                            >
+                                <Zap size={16} fill="currentColor" />
+                            </button>
+                        </div>
+                    </div>
+
                     {/* Quick Add Bar */}
                     <form onSubmit={handleQuickAddSubmit} className="focus-quick-add">
                         <Plus size={16} className="quick-add-icon" />
@@ -202,9 +305,15 @@ const UpcomingSidebar = () => {
                 <>
                     <div className="sidebar-header">
                         <div className="header-title-row">
-                            <span className="header-spacer" />
                             <h3>{viewMode === 'upcoming' ? 'Upcoming' : 'Archive'}</h3>
                             <div className="header-actions">
+                                <button
+                                    className={`icon-btn ${focusMode ? 'active' : ''}`}
+                                    onClick={toggleFocusMode}
+                                    title="Enter Focus Mode"
+                                >
+                                    <Zap size={16} />
+                                </button>
                                 <button
                                     onClick={() => setViewMode(viewMode === 'upcoming' ? 'archive' : 'upcoming')}
                                     className={`icon-btn ${viewMode === 'archive' ? 'active' : ''}`}
@@ -215,9 +324,12 @@ const UpcomingSidebar = () => {
                                 <button
                                     onClick={() => setShowDeleteModal(!showDeleteModal)}
                                     className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
-                                    title="Delete by Name"
+                                    title="Bulk Delete"
                                 >
-                                    <Trash2 size={16} />
+                                    <div className="stacked-trash-icon">
+                                        <Trash2 size={14} className="trash-front" />
+                                        <Trash2 size={14} className="trash-back" />
+                                    </div>
                                 </button>
                             </div>
                         </div>
@@ -227,28 +339,19 @@ const UpcomingSidebar = () => {
                     </div>
 
                     {!showDeleteModal && (
-                        <div className="category-filters">
-                            {[
-                                { value: 'all', label: 'All' },
-                                { value: 'work', label: 'Work' },
-                                { value: 'personal', label: 'Personal' },
-                                { value: 'fun', label: 'Fun' },
-                                { value: 'hobby', label: 'Hobby' },
-                                { value: 'task', label: 'Task' },
-                                { value: 'todo', label: 'To-Do' },
-                                { value: 'event', label: 'Event' },
-                                { value: 'appointment', label: 'Appointment' },
-                                { value: 'holiday', label: 'Holiday' }
-                            ].map(filter => (
-                                <button
-                                    key={filter.value}
-                                    type="button"
-                                    onClick={() => setCategoryFilter(filter.value)}
-                                    className={`filter-chip ${categoryFilter === filter.value ? 'active' : ''}`}
-                                >
-                                    {filter.label}
-                                </button>
-                            ))}
+                        <div className="filter-container" style={{ padding: '0.75rem 1rem' }}>
+                            <CustomMultiSelect
+                                options={[
+                                    { value: 'all', label: 'All Categories' },
+                                    { value: 'work', label: 'Work', color: getEventColor('work') },
+                                    { value: 'personal', label: 'Personal', color: getEventColor('personal') },
+                                    { value: 'fun', label: 'Fun', color: getEventColor('fun') },
+                                    { value: 'task', label: 'Task', color: getEventColor('task') },
+                                    { value: 'event', label: 'Event', color: getEventColor('event') }
+                                ]}
+                                selectedValues={categoryFilters}
+                                onChange={handleFilterChange}
+                            />
                         </div>
                     )}
 

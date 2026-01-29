@@ -314,12 +314,97 @@ body.focus-mode-active .header:hover {
     align-self: center;
 }
 
+
+/* Custom MultiSelect */
+.custom-multiselect {
+    position: relative;
+    width: 100%;
+}
+
+.multiselect-trigger {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.multiselect-trigger:hover {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: var(--accent);
+}
+
+.multiselect-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 100;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    padding: 0.5rem;
+}
+
+.multiselect-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    transition: all 0.1s;
+}
+
+.multiselect-option:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.multiselect-option.selected {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.option-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.arrow {
+    transition: transform 0.2s;
+    color: var(--text-muted);
+}
+
+.arrow.open {
+    transform: rotate(180deg);
+}
+
 .upcoming-list {
     flex: 1;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    padding: 0 1rem;
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: thin;
 }
 
 .upcoming-event-item {
@@ -551,7 +636,44 @@ body.focus-mode-active .header:hover {
     background: transparent;
 }
 
-.upcoming-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+
+/* Stacked Trash Icon */
+.stacked-trash-icon {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trash-front {
+    position: absolute;
+    z-index: 2;
+    transform: translate(-1px, 1px);
+    color: inherit;
+}
+
+.trash-back {
+    position: absolute;
+    z-index: 1;
+    transform: translate(2px, -2px) scale(0.9);
+    opacity: 0.5;
+    color: inherit;
+}
+
+.header-actions .icon-btn.active-red .trash-front,
+.header-actions .icon-btn.active-red .trash-back {
+    color: #ef4444;
+}
+
+/* Ensure focus-mode-content is styled */
+.focus-mode-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.focus-mode-content .sidebar-header {
+    margin-bottom: 1rem;
 }

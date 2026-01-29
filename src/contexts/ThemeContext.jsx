@@ -9,12 +9,12 @@ export const ThemeProvider = ({ children }) => {
 
   const themeTokens = useMemo(() => ({
     dark: {
-      '--bg-color': '#0b1120',
-      '--surface-color': '#0f172a',
-      '--card-bg': 'rgba(15, 23, 42, 0.8)',
+      '--bg-color': 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)',
+      '--surface-color': 'rgba(30, 41, 59, 0.7)',
+      '--card-bg': 'rgba(15, 23, 42, 0.6)',
       '--text-color': '#f8fafc',
       '--muted-text': '#94a3b8',
-      '--border-color': 'rgba(148, 163, 184, 0.2)',
+      '--border-color': 'rgba(148, 163, 184, 0.1)',
       '--accent-color': '#6366f1'
     },
     light: {
