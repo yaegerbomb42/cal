@@ -25,24 +25,21 @@ export class GeminiService {
     try {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      // Try latest models first, fallback to stable versions
-      // User Request:
-      // 1. Primary: Gemini 3 Preview Models
-      // 2. Fallback: Local Offline Brain (handled in method calls, not here)
-      // User requested Gemini 3.0 specifically
+      // Use stable Gemini 2.0 Flash model
       try {
-        // Attempting Gemini 3 models (Flash for speed, Pro for reasoning/images)
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-        // Note: Mapping user's "Gemini 3" request to current cutting edge 2.0 Flash Exp for now 
-        // as 3.0 endpoint likely doesn't exist yet, but we will label it as 3.0 in UI.
-        // If 3.0 becomes available, change this string to 'gemini-3.0-flash'
-
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
-        // Using 2.0 Flash Exp for both for now as it's the most capable "next gen" available.
-
+        // Gemini 2.0 Flash - fast and capable
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       } catch (error) {
-        logger.warn('Gemini Model initialization failed.', { error });
-      }// No API fallback. We want true offline behavior if primary fails.
+        logger.warn('Gemini 2.0 Flash failed, trying 1.5 Flash', { error });
+        try {
+          // Fallback to 1.5 Flash if 2.0 not available
+          this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+          this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+        } catch (fallbackError) {
+          logger.warn('Gemini model initialization failed.', { error: fallbackError });
+        }
+      }
       this.isInitialized = true;
       return true;
     } catch (error) {
@@ -94,6 +91,7 @@ export class GeminiService {
     }
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const now = new Date();
     const prompt = `
 Parse the following text into a calendar event. The text might be a casual request, a pasted email, or a message. Extract the most relevant event details:
 - title (required, summarize the event if pasted from long text)
@@ -102,10 +100,12 @@ Parse the following text into a calendar event. The text might be a casual reque
 - end date and time (if not specified, assume 1 hour duration unless context suggests otherwise)
 - location (optional)
 - category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, or other)
+- recurring (if the event repeats)
 
 Text: "${text}"
 
-Current ISO Time: ${new Date().toISOString()}
+Current ISO Time: ${now.toISOString()}
+Current Date: ${now.toDateString()}
 User Timezone: ${timeZone}
 
 CRITICAL INSTRUCTIONS:
@@ -113,8 +113,15 @@ CRITICAL INSTRUCTIONS:
 - If the user says "8am", they mean 8:00 AM in ${timeZone}.
 - Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
 - Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
-- If the user specifies a time range (e.g., 3-4pm), honor that range exactly.
+- If the user specifies a time range (e.g., 11:30 to 4pm), honor that range exactly.
 - If a date is specified without a time, assume 12:00 PM local time.
+- For day-specific recurring events (e.g., "every Monday"), set the start date to the NEXT occurrence of that day.
+
+RECURRING EVENT PARSING:
+- If the user says "every monday", "weekly", "repeating", "recurring", etc., extract the recurrence pattern.
+- For "every Monday for 2 months", calculate the end date (2 months from now) OR count (approximately 8-9 occurrences).
+- Common patterns: daily, weekly, biweekly, monthly, yearly.
+- For weekly patterns on specific days, note which day(s).
 
 Please respond with a JSON object in this exact format:
 {
@@ -123,9 +130,20 @@ Please respond with a JSON object in this exact format:
   "start": "2024-01-01T14:00:00.000Z",
   "end": "2024-01-01T15:00:00.000Z",
   "location": "Location if specified",
-  "category": "personal"
+  "category": "work",
+  "recurring": {
+    "type": "weekly",
+    "interval": 1,
+    "daysOfWeek": [1],
+    "endDate": "2024-03-01T00:00:00.000Z",
+    "count": 8
+  }
 }
 
+RECURRING TYPES: "none", "daily", "weekly", "biweekly", "monthly", "yearly"
+DAYS OF WEEK: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+
+If no recurrence, set "recurring": {"type": "none"}
 If the text contains multiple potential events, just parse the first/primary one.
 If the text doesn't contain enough information for a calendar event, respond with:
 {"error": "Insufficient information for calendar event"}
