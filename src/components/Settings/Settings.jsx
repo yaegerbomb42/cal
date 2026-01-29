@@ -93,7 +93,7 @@ const Settings = ({ isOpen, onClose }) => {
           if (userData?.priorityPrefs) {
             setPriorityPrefs(prev => ({ ...prev, ...userData.priorityPrefs }));
           }
-        } catch (e) { /* silent */ }
+        } catch { /* silent */ }
       }
     };
     if (isOpen) loadPriorityPrefs();
@@ -106,7 +106,7 @@ const Settings = ({ isOpen, onClose }) => {
     if (user) {
       try {
         await firebaseService.saveUserData({ priorityPrefs: newPrefs });
-      } catch (e) { /* silent */ }
+      } catch { /* silent */ }
     }
   };
 
