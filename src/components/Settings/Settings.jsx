@@ -115,11 +115,6 @@ const Settings = ({ isOpen, onClose }) => {
     savePriorityPrefs(newPrefs);
   };
 
-  const updateCategoryRanking = (category, rank) => {
-    const newRanking = { ...priorityPrefs.categoryRanking, [category]: rank };
-    savePriorityPrefs({ ...priorityPrefs, categoryRanking: newRanking });
-  };
-
   useEffect(() => {
     if (isOpen) {
       fetch('/version.json')
@@ -716,293 +711,124 @@ const Settings = ({ isOpen, onClose }) => {
                   {activeTab === 'priority' && (
                     <div className="content-section priority-section">
 
-                      {/* Core Priority Weights */}
+                      {/* Section 1: Core AI Tuning - Minimal & Impactful */}
                       <div className="glass-card padding-lg">
-                        <div className="section-header">
-                          <h3>Priority Intelligence</h3>
+                        <div className="section-header mb-4">
+                          <h3>Focus Intelligence</h3>
                           <span className="status-badge active">AI-Powered</span>
                         </div>
-                        <p className="text-muted">Configure how Gemini weighs and schedules your tasks.</p>
 
-                        <div className="priority-weights-grid mt-4">
-                          <div className="weight-card">
-                            <div className="weight-header">
-                              <span className="weight-icon">⚡</span>
-                              <label>Urgency</label>
+                        <div className="priority-slider-group mb-4">
+                          <div className="flex-row justify-between mb-2">
+                            <label className="font-medium">Structure vs. Flexibility</label>
+                            <span className="text-muted small">
+                              {priorityPrefs.conflictResolution === 'priority' ? 'Strict Schedule' : 'Adaptive Flow'}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={priorityPrefs.urgencyWeight} // Reusing urgency as main 'strictness' proxy for now
+                            onChange={(e) => updatePriorityPref('urgencyWeight', parseInt(e.target.value))}
+                            className="priority-slider"
+                          />
+                        </div>
+
+                        <div className="flex-row gap-lg mt-4">
+                          {/* Peak Energy Selection */}
+                          <div className="flex-1">
+                            <label className="block mb-3 font-medium text-sm">Peak Energy</label>
+                            <div className="energy-blocks compact">
+                              {['morning', 'afternoon', 'evening'].map(time => (
+                                <button
+                                  key={time}
+                                  className={`energy-block mini ${priorityPrefs.peakEnergyTime === time ? 'peak' : ''}`}
+                                  onClick={() => updatePriorityPref('peakEnergyTime', time)}
+                                  title={`I work best in the ${time}`}
+                                >
+                                  <span className="text-lg">
+                                    {time === 'morning' && '☀️'}
+                                    {time === 'afternoon' && '🌤️'}
+                                    {time === 'evening' && '🌙'}
+                                  </span>
+                                  <span className="energy-label capitalize">{time}</span>
+                                </button>
+                              ))}
                             </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={priorityPrefs.urgencyWeight}
-                              onChange={(e) => updatePriorityPref('urgencyWeight', parseInt(e.target.value))}
-                              className="priority-slider"
-                            />
-                            <span className="weight-value">{priorityPrefs.urgencyWeight}%</span>
                           </div>
 
-                          <div className="weight-card">
-                            <div className="weight-header">
-                              <span className="weight-icon">🎯</span>
-                              <label>Importance</label>
+                          {/* Work Context Switch */}
+                          <div className="flex-1">
+                            <label className="block mb-3 font-medium text-sm">Focus Duration</label>
+                            <div className="focus-toggle-group">
+                              <button
+                                className={`toggle-btn ${priorityPrefs.deepWorkDuration <= 45 ? 'selected' : ''}`}
+                                onClick={() => updatePriorityPref('deepWorkDuration', 45)}
+                              >
+                                Sprints (45m)
+                              </button>
+                              <button
+                                className={`toggle-btn ${priorityPrefs.deepWorkDuration > 45 ? 'selected' : ''}`}
+                                onClick={() => updatePriorityPref('deepWorkDuration', 90)}
+                              >
+                                Deep (90m)
+                              </button>
                             </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={priorityPrefs.importanceWeight}
-                              onChange={(e) => updatePriorityPref('importanceWeight', parseInt(e.target.value))}
-                              className="priority-slider"
-                            />
-                            <span className="weight-value">{priorityPrefs.importanceWeight}%</span>
-                          </div>
-
-                          <div className="weight-card">
-                            <div className="weight-header">
-                              <span className="weight-icon">💪</span>
-                              <label>Effort Match</label>
-                            </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={priorityPrefs.effortWeight}
-                              onChange={(e) => updatePriorityPref('effortWeight', parseInt(e.target.value))}
-                              className="priority-slider"
-                            />
-                            <span className="weight-value">{priorityPrefs.effortWeight}%</span>
-                          </div>
-
-                          <div className="weight-card">
-                            <div className="weight-header">
-                              <span className="weight-icon">🔋</span>
-                              <label>Energy Sync</label>
-                            </div>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={priorityPrefs.energyMatchWeight}
-                              onChange={(e) => updatePriorityPref('energyMatchWeight', parseInt(e.target.value))}
-                              className="priority-slider"
-                            />
-                            <span className="weight-value">{priorityPrefs.energyMatchWeight}%</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Energy Pattern */}
-                      <div className="glass-card padding-lg mt-4">
-                        <h4>Energy Profile</h4>
-                        <p className="text-muted">When are you at your best?</p>
-
-                        <div className="energy-blocks mt-3">
-                          {['morning', 'midday', 'evening', 'night'].map(time => (
-                            <button
-                              key={time}
-                              className={`energy-block ${priorityPrefs.peakEnergyTime === time ? 'peak' : ''}`}
-                              onClick={() => updatePriorityPref('peakEnergyTime', time)}
-                            >
-                              <span className="energy-icon">
-                                {time === 'morning' && '🌅'}
-                                {time === 'midday' && '☀️'}
-                                {time === 'evening' && '🌆'}
-                                {time === 'night' && '🌙'}
-                              </span>
-                              <span className="energy-label">{time.charAt(0).toUpperCase() + time.slice(1)}</span>
-                              {priorityPrefs.peakEnergyTime === time && <span className="peak-badge">Peak</span>}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Time Block Strategy */}
-                      <div className="glass-card padding-lg mt-4">
-                        <h4>Time Block Strategy</h4>
-                        <p className="text-muted">How should AI fill each part of your day?</p>
-
-                        <div className="time-block-grid mt-3">
-                          <div className="time-block-row">
-                            <span className="time-label">☀️ Morning</span>
-                            <select
-                              value={priorityPrefs.morningFocus}
-                              onChange={(e) => updatePriorityPref('morningFocus', e.target.value)}
-                              className="time-block-select"
-                            >
-                              <option value="deep_work">Deep Work</option>
-                              <option value="meetings">Meetings</option>
-                              <option value="light_tasks">Light Tasks</option>
-                              <option value="flexible">Flexible</option>
-                            </select>
-                          </div>
-
-                          <div className="time-block-row">
-                            <span className="time-label">🌤️ Afternoon</span>
-                            <select
-                              value={priorityPrefs.afternoonFocus}
-                              onChange={(e) => updatePriorityPref('afternoonFocus', e.target.value)}
-                              className="time-block-select"
-                            >
-                              <option value="deep_work">Deep Work</option>
-                              <option value="meetings">Meetings</option>
-                              <option value="light_tasks">Light Tasks</option>
-                              <option value="flexible">Flexible</option>
-                            </select>
-                          </div>
-
-                          <div className="time-block-row">
-                            <span className="time-label">🌆 Evening</span>
-                            <select
-                              value={priorityPrefs.eveningFocus}
-                              onChange={(e) => updatePriorityPref('eveningFocus', e.target.value)}
-                              className="time-block-select"
-                            >
-                              <option value="deep_work">Deep Work</option>
-                              <option value="meetings">Meetings</option>
-                              <option value="light_tasks">Light Tasks</option>
-                              <option value="flexible">Flexible</option>
-                            </select>
+                      {/* Section 2: AI Autonomy - Consolidated */}
+                      <div className="glass-card padding-lg mt-3">
+                        <div className="flex-row justify-between align-center mb-1">
+                          <h4>AI Autonomy</h4>
+                          <div className="flex-row gap-sm text-muted">
+                            <Zap size={14} />
+                            <span className="text-xs">Auto-Optimizing</span>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Category Rankings */}
-                      <div className="glass-card padding-lg mt-4">
-                        <h4>Life Domain Priorities</h4>
-                        <p className="text-muted">Rank importance of each category (1-5)</p>
-
-                        <div className="category-ranking-grid mt-3">
-                          {Object.entries(priorityPrefs.categoryRanking).map(([category, rank]) => (
-                            <div key={category} className="category-rank-row">
-                              <span className="category-name">{category.charAt(0).toUpperCase() + category.slice(1)}</span>
-                              <div className="rank-dots">
-                                {[1, 2, 3, 4, 5].map(r => (
-                                  <button
-                                    key={r}
-                                    className={`rank-dot ${rank >= r ? 'active' : ''}`}
-                                    onClick={() => updateCategoryRanking(category, r)}
-                                  />
-                                ))}
-                              </div>
-                              <span className="rank-label">{rank === 5 ? 'Critical' : rank === 4 ? 'High' : rank === 3 ? 'Medium' : rank === 2 ? 'Low' : 'Minimal'}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Focus Preferences */}
-                      <div className="glass-card padding-lg mt-4">
-                        <h4>Focus Configuration</h4>
-
-                        <div className="focus-prefs-grid mt-3">
-                          <div className="focus-pref-item">
-                            <label>Deep Work Duration</label>
-                            <div className="pref-control">
-                              <input
-                                type="number"
-                                min="30"
-                                max="180"
-                                step="15"
-                                value={priorityPrefs.deepWorkDuration}
-                                onChange={(e) => updatePriorityPref('deepWorkDuration', parseInt(e.target.value))}
-                                className="pref-input"
-                              />
-                              <span className="pref-unit">min</span>
-                            </div>
-                          </div>
-
-                          <div className="focus-pref-item">
-                            <label>Break Frequency</label>
-                            <div className="pref-control">
-                              <input
-                                type="number"
-                                min="15"
-                                max="60"
-                                step="5"
-                                value={priorityPrefs.breakFrequency}
-                                onChange={(e) => updatePriorityPref('breakFrequency', parseInt(e.target.value))}
-                                className="pref-input"
-                              />
-                              <span className="pref-unit">min</span>
-                            </div>
-                          </div>
-
-                          <div className="focus-pref-item toggle-item">
-                            <label>Prefer Uninterrupted Blocks</label>
-                            <label className="toggle-switch">
-                              <input
-                                type="checkbox"
-                                checked={priorityPrefs.preferUninterrupted}
-                                onChange={(e) => updatePriorityPref('preferUninterrupted', e.target.checked)}
-                              />
-                              <span className="toggle-slider" />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* AI Behavior */}
-                      <div className="glass-card padding-lg mt-4">
-                        <h4>AI Behavior</h4>
-
-                        <div className="ai-behavior-grid mt-3">
-                          <div className="ai-behavior-item">
-                            <div>
-                              <label>Auto-Reschedule</label>
-                              <p className="text-muted small">AI moves tasks when conflicts arise</p>
-                            </div>
-                            <label className="toggle-switch">
+                        <div className="ai-behavior-grid compact mt-3">
+                          <label className="ai-behavior-row">
+                            <span className="flex-1">
+                              <span className="block font-medium">Smart Reschedule</span>
+                              <span className="text-muted text-xs">Move flexible tasks when higher priorities arise</span>
+                            </span>
+                            <div className="toggle-switch-wrapper">
                               <input
                                 type="checkbox"
                                 checked={priorityPrefs.autoReschedule}
                                 onChange={(e) => updatePriorityPref('autoReschedule', e.target.checked)}
                               />
-                              <span className="toggle-slider" />
-                            </label>
-                          </div>
-
-                          <div className="ai-behavior-item">
-                            <div>
-                              <label>Smart Reminders</label>
-                              <p className="text-muted small">Context-aware notification timing</p>
+                              <span className="track">
+                                <span className="thumb" />
+                              </span>
                             </div>
-                            <label className="toggle-switch">
+                          </label>
+
+                          <label className="ai-behavior-row">
+                            <span className="flex-1">
+                              <span className="block font-medium">Protect Deep Work</span>
+                              <span className="text-muted text-xs">Automatically group meetings to save focus time</span>
+                            </span>
+                            <div className="toggle-switch-wrapper">
                               <input
                                 type="checkbox"
-                                checked={priorityPrefs.smartReminders}
-                                onChange={(e) => updatePriorityPref('smartReminders', e.target.checked)}
+                                checked={priorityPrefs.preferUninterrupted}
+                                onChange={(e) => updatePriorityPref('preferUninterrupted', e.target.checked)}
                               />
-                              <span className="toggle-slider" />
-                            </label>
-                          </div>
-
-                          <div className="ai-behavior-item">
-                            <div>
-                              <label>Conflict Resolution</label>
-                              <p className="text-muted small">How to handle overlapping events</p>
+                              <span className="track">
+                                <span className="thumb" />
+                              </span>
                             </div>
-                            <select
-                              value={priorityPrefs.conflictResolution}
-                              onChange={(e) => updatePriorityPref('conflictResolution', e.target.value)}
-                              className="conflict-select"
-                            >
-                              <option value="priority">By Priority</option>
-                              <option value="chronological">First Come</option>
-                              <option value="ask">Ask Me</option>
-                            </select>
-                          </div>
+                          </label>
                         </div>
-                      </div>
-
-                      <div className="info-box mt-4 success">
-                        <Zap size={16} />
-                        <p>Your preferences are auto-saved and sync across devices.</p>
                       </div>
 
                     </div>
                   )}
-
-                  {activeTab === 'sync' && (
+                  {/* End Priority Section */}                {activeTab === 'sync' && (
                     <div className="content-section">
                       <div className="glass-card padding-lg row-between">
                         <div className="flex-row gap-md">
@@ -1079,7 +905,7 @@ const Settings = ({ isOpen, onClose }) => {
           </main>
         </MotionDiv>
       </MotionDiv>
-    </AnimatePresence>
+    </AnimatePresence >
   );
 };
 

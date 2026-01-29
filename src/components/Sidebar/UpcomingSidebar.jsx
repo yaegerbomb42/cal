@@ -279,6 +279,12 @@ const UpcomingSidebar = () => {
                             placeholder="Add task for today..."
                             value={quickAddText}
                             onChange={(e) => setQuickAddText(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSmartFocusSubmit(e);
+                                }
+                            }}
                             className="quick-add-input"
                         />
                     </form>

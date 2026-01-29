@@ -94,8 +94,8 @@ export class GeminiService {
     const now = new Date();
     const prompt = `
 Parse the following text into a calendar event. The text might be a casual request, a pasted email, or a message. Extract the most relevant event details:
-- title (required, summarize the event if pasted from long text)
-- description (optional, include key details)
+- title: Concise event summary (e.g. "Meeting with John"). DO NOT include the full description or date details in the title.
+- description: Full details, context, and original text if complex.
 - start date and time
 - end date and time (if not specified, assume 1 hour duration unless context suggests otherwise)
 - location (optional)
@@ -112,10 +112,13 @@ CRITICAL INSTRUCTIONS:
 - The user is in ${timeZone}.
 - If the user says "8am", they mean 8:00 AM in ${timeZone}.
 - Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
+- TITLE SHOULD BE BRIEF. Move details to 'description'.
+- If the user explicitly provides a description (e.g. "Description: ..."), use it.
+- If the text is "Recurring task every monday Feb 2, 2026, 11:00 AM", the title is "Recurring task", NOT the whole string.
 - Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
 - If the user specifies a time range (e.g., 11:30 to 4pm), honor that range exactly.
 - If a date is specified without a time, assume 12:00 PM local time.
-- For day-specific recurring events (e.g., "every Monday"), set the start date to the NEXT occurrence of that day.
+- For day-specific recurring events (e.g., "every Monday"), set the start date to the EXT occurrence of that day on or after the mentioned start date.
 
 RECURRING EVENT PARSING:
 - If the user says "every monday", "weekly", "repeating", "recurring", etc., extract the recurrence pattern.
