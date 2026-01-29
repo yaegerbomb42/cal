@@ -221,6 +221,9 @@ const Settings = ({ isOpen, onClose }) => {
 
   // --- Other Handlers ---
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isGCalConnected, setIsGCalConnected] = useState(false);
+  const [pendingGCalEvents, setPendingGCalEvents] = useState([]);
+  const [selectedGCalEvents, setSelectedGCalEvents] = useState(new Set());
   const [generalEventPacks, setGeneralEventPacks] = useState({});
 
   useEffect(() => {
@@ -270,31 +273,71 @@ const Settings = ({ isOpen, onClose }) => {
     toastService.info('General events removed from your calendar.');
   };
 
+  // Check Google Calendar connection on mount
+  useEffect(() => {
+    const checkGCalConnection = () => {
+      const token = localStorage.getItem('gcal_access_token');
+      setIsGCalConnected(!!token && googleCalendarService.isAuthorized);
+    };
+    checkGCalConnection();
+  }, [isOpen]);
+
   const handleGoogleCalendarSync = async () => {
     setIsSyncing(true);
     try {
       await googleCalendarService.handleAuthClick();
+      setIsGCalConnected(true);
+
+      // Fetch events and show import selection
       setTimeout(async () => {
         try {
           const gEvents = await googleCalendarService.listUpcomingEvents();
           if (gEvents && gEvents.length > 0) {
-            gEvents.forEach(evt => {
-              const exists = events.some(e => e.gcalId === evt.gcalId || (e.title === evt.title && e.start === evt.start));
-              if (!exists) addEvent(evt);
-            });
-            toastService.success(`Synced ${gEvents.length} events!`);
+            // Filter out already existing events
+            const newEvents = gEvents.filter(evt =>
+              !events.some(e => e.gcalId === evt.gcalId || (e.title === evt.title && e.start === evt.start))
+            );
+
+            if (newEvents.length > 0) {
+              setPendingGCalEvents(newEvents);
+              setSelectedGCalEvents(new Set(newEvents.map((_, i) => i))); // Select all by default
+              toastService.info(`Found ${newEvents.length} events to import`);
+            } else {
+              toastService.success('Calendar synced - no new events');
+            }
+          } else {
+            toastService.info('No events found in Google Calendar');
           }
         } catch (error) {
-          logger.error('Failed to sync Google Calendar events', { error });
+          logger.error('Failed to fetch Google Calendar events', { error });
+          toastService.error('Failed to fetch events');
         } finally {
           setIsSyncing(false);
         }
-      }, 2000);
+      }, 1500);
     } catch (error) {
       logger.error('Google Calendar sync failed', { error });
       toastService.error('Sync failed');
       setIsSyncing(false);
     }
+  };
+
+  const handleImportSelectedEvents = () => {
+    const eventsToImport = pendingGCalEvents.filter((_, i) => selectedGCalEvents.has(i));
+    eventsToImport.forEach(evt => addEvent(evt));
+    toastService.success(`Imported ${eventsToImport.length} events!`);
+    setPendingGCalEvents([]);
+    setSelectedGCalEvents(new Set());
+  };
+
+  const toggleEventSelection = (index) => {
+    const newSelected = new Set(selectedGCalEvents);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedGCalEvents(newSelected);
   };
 
   const handleExportData = () => {
@@ -622,17 +665,67 @@ const Settings = ({ isOpen, onClose }) => {
                           <div className="icon-box google"><CalendarIcon /></div>
                           <div>
                             <h4>Google Calendar</h4>
-                            <p className="text-muted">Two-way sync</p>
+                            <p className="text-muted">
+                              {isGCalConnected ? '✓ Connected' : 'Two-way sync'}
+                            </p>
                           </div>
                         </div>
                         <button
                           onClick={handleGoogleCalendarSync}
                           disabled={isSyncing}
-                          className="btn-connect"
+                          className={`btn-connect ${isGCalConnected ? 'connected' : ''}`}
                         >
-                          {isSyncing ? 'Syncing...' : 'Connect'}
+                          {isSyncing ? 'Syncing...' : isGCalConnected ? 'Sync Now' : 'Connect'}
                         </button>
                       </div>
+
+                      {/* Import Events Modal */}
+                      {pendingGCalEvents.length > 0 && (
+                        <div className="glass-card padding-lg mt-4">
+                          <h4>Import Events from Google Calendar</h4>
+                          <p className="text-muted mb-3">Select events to add to your calendar:</p>
+
+                          <div className="gcal-import-list">
+                            {pendingGCalEvents.map((evt, index) => (
+                              <label
+                                key={index}
+                                className={`gcal-event-item ${selectedGCalEvents.has(index) ? 'selected' : ''}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedGCalEvents.has(index)}
+                                  onChange={() => toggleEventSelection(index)}
+                                />
+                                <div className="event-info">
+                                  <span className="event-title">{evt.title}</span>
+                                  <span className="event-time">
+                                    {new Date(evt.start).toLocaleDateString()} • {new Date(evt.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+
+                          <div className="actions-row mt-4">
+                            <button
+                              className="feature-btn"
+                              onClick={() => {
+                                setPendingGCalEvents([]);
+                                setSelectedGCalEvents(new Set());
+                              }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              className="btn-connect"
+                              onClick={handleImportSelectedEvents}
+                              disabled={selectedGCalEvents.size === 0}
+                            >
+                              Import {selectedGCalEvents.size} Event{selectedGCalEvents.size !== 1 ? 's' : ''}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

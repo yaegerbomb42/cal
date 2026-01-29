@@ -86,32 +86,55 @@ body {
   }
 }
 
-/* Resize Handle */
+/* Resize Handle - Classic Pane Divider */
 .resize-handle {
-  width: 16px;
+  width: 12px;
   cursor: col-resize;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 50;
-  margin: 0 -8px;
-  /* Center over the gap */
+  margin: 0 -4px;
   position: relative;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.resize-handle:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.resize-handle:active {
+  background: rgba(99, 102, 241, 0.15);
 }
 
 .resize-handle:hover .resize-line,
 .resize-handle:active .resize-line {
   height: 100%;
-  background: #6366f1;
+  background: linear-gradient(180deg, transparent 0%, #6366f1 20%, #6366f1 80%, transparent 100%);
   opacity: 1;
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
 }
 
 .resize-line {
+  width: 4px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Grip dots pattern */
+.resize-line::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 2px;
-  height: 40px;
-  /* Subtle indicator */
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 20px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.4) 1px, transparent 1px);
+  background-size: 2px 6px;
 }

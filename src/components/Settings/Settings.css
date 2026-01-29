@@ -615,3 +615,82 @@ button {
 .glass-card:hover::before {
   opacity: 1;
 }
+
+/* Google Calendar Import List */
+.gcal-import-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+.gcal-event-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--settings-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gcal-event-item:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.gcal-event-item.selected {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.gcal-event-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--settings-accent);
+  cursor: pointer;
+}
+
+.gcal-event-item .event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gcal-event-item .event-title {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.gcal-event-item .event-time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.btn-connect.connected {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+  border-color: rgba(16, 185, 129, 0.4);
+  color: rgb(16, 185, 129);
+}
+
+.btn-connect.connected:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.2));
+}
+
+.actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
