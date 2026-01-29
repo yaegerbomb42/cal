@@ -21,7 +21,7 @@ const AIChat = ({ isOpen, onClose }) => {
     {
       id: 1,
       type: 'ai',
-      content: "Hey! I’m Cal — short for calendar. Tell me what you need scheduled, and I’ll draft it for you."
+      content: "Hey, I'm Cal! Ready to help. What would you like me to schedule?"
     }
   ]);
   const [inputValue, setInputValue] = useState('');
