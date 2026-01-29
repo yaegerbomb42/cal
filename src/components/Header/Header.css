@@ -126,6 +126,25 @@
   background: rgba(99, 102, 241, 0.1);
 }
 
+.nav-today-btn-header {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.nav-today-btn-header:hover {
+  background: var(--bg-secondary);
+  border-color: var(--text-muted);
+}
+
 .header-right {
   flex: 0 0 auto;
   display: flex;
