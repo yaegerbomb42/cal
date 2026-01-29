@@ -508,6 +508,52 @@ Keep responses concise and actionable.
     if (timeMatch) return timeMatch[0];
     return null;
   }
+  async parseFocusPlan(text, currentEvents = []) {
+    if (!this.isInitialized) {
+      throw new AIServiceError('AI service not initialized.');
+    }
+
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const now = new Date();
+
+    const prompt = `
+    You are an expert productivity planner. The user wants to focus on the following tasks: "${text}"
+    
+    Current Time: ${now.toLocaleTimeString()}
+    Existing Events: ${JSON.stringify(currentEvents.map(e => ({ start: e.start, end: e.end, title: e.title })))}
+    
+    1. Break down the request into a list of specific, distinct tasks.
+    2. Assign a Priority to each: "high" (urgent/critical), "medium" (standard), "low" (nice to have).
+    3. Estimate duration in minutes (default 30 if unsure).
+    4. Suggest a specific start time for each task today, finding gaps in the Existing Events. PROHIBIT overlapping with existing events.
+    
+    Return ONLY a JSON array:
+    [
+      {
+        "title": "Task Name",
+        "description": "Brief rationale",
+        "priority": "high",
+        "estimatedMinutes": 30,
+        "suggestedStart": "ISO_8601_STRING",
+        "suggestedEnd": "ISO_8601_STRING"
+      }
+    ]
+    `;
+
+    try {
+      const model = this.modelFlash || this.modelPro;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const jsonMatch = response.text().match(/\[[\s\S]*\]/);
+
+      if (!jsonMatch) throw new AIParseError('No JSON plan found');
+
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      logger.error('Error parsing focus plan', { error });
+      throw new AIParseError('Failed to generate focus plan.');
+    }
+  }
 }
 
 export const geminiService = new GeminiService();

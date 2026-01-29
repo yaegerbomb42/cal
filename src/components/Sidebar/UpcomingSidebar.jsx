@@ -8,6 +8,7 @@ import { isToday } from 'date-fns';
 import './UpcomingSidebar.css';
 
 import { firebaseService } from '../../services/firebaseService';
+import { geminiService } from '../../services/geminiService';
 import { useAuth } from '../../contexts/useAuth';
 
 const CustomMultiSelect = ({ options, selectedValues, onChange }) => {
@@ -193,22 +194,42 @@ const UpcomingSidebar = () => {
         updateEvent(event.id, { completed: !event.completed });
     };
 
-    const handleQuickAddSubmit = (e) => {
+    const handleSmartFocusSubmit = async (e) => {
         e.preventDefault();
         if (!quickAddText.trim()) return;
 
-        // Default: Starts now, 1 hour long
-        const start = new Date();
-        const end = new Date(start.getTime() + 60 * 60 * 1000);
+        try {
+            // Optimistic UI update or loading state could go here
+            const plan = await geminiService.parseFocusPlan(quickAddText, todayEvents);
 
-        addEvent({
-            title: quickAddText,
-            start: start.toISOString(),
-            end: end.toISOString(),
-            category: 'task',
-            description: 'Quickly added via Focus Mode'
-        });
-        setQuickAddText('');
+            plan.forEach(task => {
+                addEvent({
+                    title: task.title,
+                    start: task.suggestedStart,
+                    end: task.suggestedEnd,
+                    category: 'task',
+                    priority: task.priority, // New field
+                    description: task.description || 'Focus Mode Task',
+                    completed: false
+                });
+            });
+
+            setQuickAddText('');
+            // Maybe show a toast/confetti for "Plan Created!"
+        } catch (error) {
+            console.error("Focus Plan Error:", error);
+            // Fallback to simple add
+            const start = new Date();
+            const end = new Date(start.getTime() + 60 * 60 * 1000);
+            addEvent({
+                title: quickAddText,
+                start: start.toISOString(),
+                end: end.toISOString(),
+                category: 'task',
+                priority: 'medium'
+            });
+            setQuickAddText('');
+        }
     };
 
     // Reset pagination when filters change
@@ -251,7 +272,7 @@ const UpcomingSidebar = () => {
                     </div>
 
                     {/* Quick Add Bar */}
-                    <form onSubmit={handleQuickAddSubmit} className="focus-quick-add">
+                    <form onSubmit={handleSmartFocusSubmit} className="focus-quick-add">
                         <Plus size={16} className="quick-add-icon" />
                         <input
                             type="text"
@@ -284,9 +305,16 @@ const UpcomingSidebar = () => {
                                     </button>
 
                                     <div className="focus-item-content">
-                                        <span className={`focus-title ${event.completed ? 'strikethrough' : ''}`}>
-                                            {event.title}
-                                        </span>
+                                        <div className="focus-item-top">
+                                            <span className={`focus-title ${event.completed ? 'strikethrough' : ''}`}>
+                                                {event.title}
+                                            </span>
+                                            {event.priority && (
+                                                <span className={`priority-indicator ${event.priority}`}>
+                                                    {event.priority === 'high' ? '!!!' : event.priority === 'medium' ? '!!' : '!'}
+                                                </span>
+                                            )}
+                                        </div>
                                         <span className="focus-time">
                                             {new Date(event.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                                         </span>

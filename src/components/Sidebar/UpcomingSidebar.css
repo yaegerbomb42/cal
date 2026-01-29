@@ -677,3 +677,35 @@ body.focus-mode-active .header:hover {
 .focus-mode-content .sidebar-header {
     margin-bottom: 1rem;
 }
+
+/* Priority Indicators */
+.focus-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.focus-item-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.priority-indicator {
+    font-weight: 800;
+    font-size: 0.75rem;
+    letter-spacing: -1px;
+}
+
+.priority-indicator.high {
+    color: #ef4444;
+}
+
+.priority-indicator.medium {
+    color: #f97316;
+}
+
+.priority-indicator.low {
+    color: #3b82f6;
+}

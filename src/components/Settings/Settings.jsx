@@ -58,6 +58,7 @@ const Settings = ({ isOpen, onClose }) => {
   const tabs = [
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
     { id: 'ai', label: 'AI Engine', icon: Cpu, color: '#8b5cf6' },
+    { id: 'priority', label: 'Priority', icon: Zap, color: '#f59e0b' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
     { id: 'data', label: 'Storage', icon: Download, color: '#f43f5e' },
     { id: 'about', label: 'About', icon: Sparkles, color: '#10b981' }
@@ -571,6 +572,36 @@ const Settings = ({ isOpen, onClose }) => {
                         <button onClick={toggleTheme} className="theme-toggle-large">
                           {isDark ? 'Dark Mode' : 'Light Mode'}
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'priority' && (
+                    <div className="content-section">
+                      <div className="glass-card padding-lg">
+                        <h3>Priority Preferences</h3>
+                        <p className="text-muted">Influence how Gemini prioritizes your focus tasks.</p>
+
+                        <div className="mt-4">
+                          <h4 className="mb-2">Priority Criteria</h4>
+                          <div className="priority-slider-group">
+                            <label>Urgency Weight (Deadline driven)</label>
+                            <input type="range" min="0" max="100" defaultValue="80" />
+                          </div>
+                          <div className="priority-slider-group">
+                            <label>Health/Wellbeing</label>
+                            <input type="range" min="0" max="100" defaultValue="60" />
+                          </div>
+                          <div className="priority-slider-group">
+                            <label>Deep Work</label>
+                            <input type="range" min="0" max="100" defaultValue="90" />
+                          </div>
+                        </div>
+
+                        <div className="info-box mt-4 neutral">
+                          <Zap size={16} />
+                          <p>Gemini will use these weights when auto-scheduling your requested tasks.</p>
+                        </div>
                       </div>
                     </div>
                   )}

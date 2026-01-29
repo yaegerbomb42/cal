@@ -415,7 +415,8 @@
 .week-current-time .current-time-line {
   height: 2px;
   background: linear-gradient(90deg, #fb7185, #f97316);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 16px rgba(239, 68, 68, 0.4);
+  animation: pulse-neon 2s infinite ease-in-out;
 }
 
 .week-current-time .current-time-circle {
@@ -426,6 +427,42 @@
   position: absolute;
   left: -5px;
   top: -4px;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-neon {
+  0% {
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 16px rgba(239, 68, 68, 0.4);
+    opacity: 0.8;
+  }
+
+  50% {
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.9), 0 0 24px rgba(239, 68, 68, 0.6);
+    opacity: 1;
+  }
+
+  100% {
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 16px rgba(239, 68, 68, 0.4);
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-dot {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+  }
+
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 1);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+  }
 }
 
 .week-current-time .current-time-label {
