@@ -197,7 +197,7 @@ If the text doesn't contain enough information for a calendar event, respond wit
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
-You are Cal, an expert calendar parser. Extract all event details from the provided images.
+You are Cal, an expert calendar parser. Extract all event details from the provided images, including handwritten notes.
 The images may include multiple events per image.
 
 Return a JSON array. Each item must include:
