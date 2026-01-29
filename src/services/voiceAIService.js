@@ -5,14 +5,18 @@
  * - Speech-to-text input (Web Speech API)
  * - Text-to-speech output with HAL personality
  * - Voice settings and preferences
+ * - Wake word detection ("Hey Cal")
  */
 
 class VoiceAIService {
     constructor() {
         this.synthesis = window.speechSynthesis;
         this.recognition = null;
+        this.wakeWordRecognition = null;
         this.isListening = false;
+        this.isWakeWordListening = false;
         this.isEnabled = this.loadPreference('voice-enabled', false);
+        this.isWakeWordEnabled = this.loadPreference('wake-word-enabled', false);
         this.voiceSpeed = this.loadPreference('voice-speed', 0.85);
         this.voicePitch = this.loadPreference('voice-pitch', 0.7);
         this.halPhrases = [
@@ -27,6 +31,7 @@ class VoiceAIService {
         ];
 
         this.initRecognition();
+        this.initWakeWord();
     }
 
     loadPreference(key, defaultValue) {
@@ -62,6 +67,9 @@ class VoiceAIService {
         this.recognition.onend = () => {
             this.isListening = false;
             window.dispatchEvent(new CustomEvent('calai-voice-end'));
+            if (this.isWakeWordEnabled) {
+                setTimeout(() => this.startWakeWord(), 500);
+            }
         };
 
         this.recognition.onerror = (event) => {
@@ -84,8 +92,38 @@ class VoiceAIService {
         };
     }
 
+    initWakeWord() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        this.wakeWordRecognition = new SpeechRecognition();
+        this.wakeWordRecognition.continuous = true;
+        this.wakeWordRecognition.interimResults = true;
+        this.wakeWordRecognition.lang = 'en-US';
+
+        this.wakeWordRecognition.onresult = (event) => {
+            const results = Array.from(event.results);
+            const transcript = results[results.length - 1][0].transcript.toLowerCase();
+
+            if (transcript.includes('hey cal') || transcript.includes('okay cal')) {
+                window.dispatchEvent(new CustomEvent('calai-wake-word-detected'));
+                this.wakeWordRecognition.stop(); // Stop wake word to start main listening
+                this.startListening();
+            }
+        };
+
+        this.wakeWordRecognition.onend = () => {
+            if (this.isWakeWordEnabled && !this.isListening) {
+                try { this.wakeWordRecognition.start(); } catch (e) { }
+            }
+        };
+    }
+
     startListening() {
         if (!this.recognition || this.isListening) return false;
+        if (this.wakeWordRecognition) {
+            try { this.wakeWordRecognition.stop(); } catch (e) { }
+        }
 
         try {
             this.recognition.start();
@@ -101,12 +139,25 @@ class VoiceAIService {
         this.recognition.stop();
     }
 
-    /**
-     * Speak text with HAL 9000 voice characteristics
-     * @param {string} text - Text to speak
-     * @param {Object} options - Speech options
-     * @returns {Promise<void>}
-     */
+    startWakeWord() {
+        if (!this.wakeWordRecognition || this.isWakeWordListening || this.isListening) return;
+        this.isWakeWordEnabled = true;
+        this.savePreference('wake-word-enabled', true);
+        try {
+            this.wakeWordRecognition.start();
+            this.isWakeWordListening = true;
+        } catch (e) { }
+    }
+
+    stopWakeWord() {
+        this.isWakeWordEnabled = false;
+        this.savePreference('wake-word-enabled', false);
+        try {
+            this.wakeWordRecognition.stop();
+            this.isWakeWordListening = false;
+        } catch (e) { }
+    }
+
     speak(text, options = {}) {
         return new Promise((resolve, reject) => {
             if (!this.synthesis) {
@@ -114,17 +165,12 @@ class VoiceAIService {
                 return;
             }
 
-            // Cancel any ongoing speech
             this.synthesis.cancel();
-
             const utterance = new SpeechSynthesisUtterance(text);
-
-            // HAL 9000 voice characteristics
             utterance.rate = options.rate ?? this.voiceSpeed;
             utterance.pitch = options.pitch ?? this.voicePitch;
             utterance.volume = options.volume ?? 1.0;
 
-            // Try to find a suitable voice (deep, robotic)
             const voices = this.synthesis.getVoices();
             const preferredVoices = ['Google UK English Male', 'Alex', 'Daniel', 'Microsoft David'];
             const selectedVoice = voices.find(v => preferredVoices.some(pv => v.name.includes(pv))) || voices[0];
@@ -133,13 +179,11 @@ class VoiceAIService {
                 utterance.voice = selectedVoice;
             }
 
-            // Dispatch events for particle animation sync
             utterance.onstart = () => {
                 window.dispatchEvent(new CustomEvent('calai-speech-start', { detail: { text } }));
             };
 
             utterance.onboundary = (event) => {
-                // Word boundary events for particle animation
                 window.dispatchEvent(new CustomEvent('calai-speech-word', {
                     detail: {
                         word: text.substring(event.charIndex, event.charIndex + event.charLength),
@@ -163,16 +207,6 @@ class VoiceAIService {
         });
     }
 
-    /**
-     * Get a random HAL personality phrase
-     */
-    getHalPhrase() {
-        return this.halPhrases[Math.floor(Math.random() * this.halPhrases.length)];
-    }
-
-    /**
-     * Speak with HAL personality for specific scenarios
-     */
     speakAsHal(scenario) {
         const responses = {
             greeting: "Hello, Dave. I'm ready to help you manage your calendar.",

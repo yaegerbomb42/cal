@@ -5,7 +5,6 @@ import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor, formatDuration } from '../../utils/helpers';
 import {
-  countRemainingEvents,
   formatFullDate,
   formatTime,
   getDayHours,
@@ -15,7 +14,7 @@ import {
   isToday,
   getCurrentTimePosition
 } from '../../utils/dateUtils';
-import { Clock, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, Sparkles, Send, Plus } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import './DayView.css';
@@ -36,15 +35,25 @@ const buildEventSnippet = (event) => {
 };
 
 const DayView = () => {
-  const { currentDate, openEventModal } = useCalendar();
+  const { currentDate, openEventModal, navigateDate, goToToday } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const [quickInput, setQuickInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleAICommand = async (e) => {
+    e.preventDefault();
+    if (!quickInput.trim()) return;
+    setIsProcessing(true);
+    window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: quickInput } }));
+    setQuickInput('');
+    setIsProcessing(false);
+  };
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
   const dayGridRef = useRef(null);
 
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
-  const remainingCount = countRemainingEvents(dayEvents, now);
   const dayHours = getDayHours();
   const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
   const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
@@ -75,23 +84,36 @@ const DayView = () => {
       className="day-view"
     >
       <div className={cn('day-header', 'glass-card')}>
+        <div className="day-nav-group">
+          <button className="nav-icon-btn" onClick={() => navigateDate(-1)} title="Previous Day">
+            <ChevronLeft size={16} />
+          </button>
+          <button className="nav-today-btn" onClick={goToToday} title="Jump to today">
+            Today
+          </button>
+          <button className="nav-icon-btn" onClick={() => navigateDate(1)} title="Next Day">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
         <div className="day-info">
           <div className="day-name">{getRelativeDayLabel(currentDate)}</div>
           <div className="day-date">{formatFullDate(currentDate)}</div>
         </div>
+
+        <form onSubmit={handleAICommand} className="day-ai-form">
+          <Sparkles size={14} className="ai-icon" />
+          <input
+            type="text"
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            placeholder="Ask Cal..."
+            className="ai-input"
+            disabled={isProcessing}
+          />
+        </form>
+
         <div className="day-stats">
-          <div className="stat">
-            <span className="stat-number">
-              {`${remainingCount} event${remainingCount !== 1 ? 's' : ''}`}
-            </span>
-            <span className="stat-label">remaining</span>
-          </div>
-          <div className="stat">
-            <span className="stat-number">
-              {`${dayEvents.length} event${dayEvents.length !== 1 ? 's' : ''}`}
-            </span>
-            <span className="stat-label">total</span>
-          </div>
           <button className="btn btn-primary day-add-btn" onClick={handleAddEvent}>
             <Plus size={16} /> Add Event
           </button>

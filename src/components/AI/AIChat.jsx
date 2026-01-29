@@ -135,9 +135,26 @@ const AIChat = ({ isOpen, onClose }) => {
 
     const finalized = finalizeDraft(updatedDraft);
     const conflicts = await geminiService.checkConflicts(finalized, events);
+
+    // Auto Problematicness Detection
+    await checkProblematicness(finalized, conflicts);
+
     setPendingEvent({ ...finalized, conflicts, originalText: text });
     setClarificationState(null);
     addMessage('ai', "I've got everything I need. Does this event look right?");
+  };
+
+  const checkProblematicness = async (event, conflicts) => {
+    if (conflicts && conflicts.length > 0) {
+      addMessage('ai', `⚠️ Heads up: This conflicts with ${conflicts.length} existing event(s). Shall I continue?`);
+      voiceAIService.speakAsHal('conflict');
+    }
+
+    const start = new Date(event.start);
+    const hours = start.getHours();
+    if (hours >= 22 || hours <= 5) {
+      addMessage('ai', "🌙 This is a bit late/early, Dave. Are you sure you want this on your schedule?");
+    }
   };
 
   const processInput = async (text) => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Send, ImagePlus, Plus } from 'lucide-react';
+import { Sparkles, Send, ImagePlus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
@@ -11,22 +11,17 @@ import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal, onOpenAI } = useCalendar(); // Ensure onOpenAI is available from context if needed, or pass it down? 
-  // Wait, useCalendar might not expose onOpenAI. Header received it as prop.
-  // I need to check useCalendar. If not there, I might need to dispatch event or rely on prop.
-  // The header used `onOpenAI`. I'll assume for now I can dispatch the custom event and maybe the main layout listeners handle the UI opening?
-  // Actually line 95 in Header: `onOpenAI(); window.dispatchEvent(...)`.
-  // I will check if I can get standard openAI trigger. If not, I will just dispatch event and assume App.jsx listens.
-  // Checking previous Header.jsx: it took `onOpenAI` as prop. WeekView is likely rendered by Calendar.jsx.
+  const { currentDate, openEventModal, navigateDate, goToToday } = useCalendar();
   // I will dispatch the event. The "openAI" panel visibility might need a global context trigger.
   // For now I will use window dispatch and assume strict separation.
 
-  const { events, getEventsForDate, updateEvent } = useEvents();
+  const { events, updateEvent, getEventsForDate } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
   const weekStart = startOfDay(weekDays[0]);
   const weekEnd = endOfDay(weekDays[weekDays.length - 1]);
+
   const weekEvents = events.filter((event) => {
     const eventStart = new Date(event.start);
     const eventEnd = new Date(event.end);
@@ -35,9 +30,8 @@ const WeekView = () => {
   const weekEventsCount = weekEvents.length;
 
   const weekGridRef = useRef(null);
-  const [magnifyHour, setMagnifyHour] = useState(null);
   const [draggedEvent, setDraggedEvent] = useState(null);
-  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
+  const { pixelsPerHour, magnifyHour } = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
 
@@ -149,6 +143,18 @@ const WeekView = () => {
       }}
     >
       <div className="week-control-bar glass-card">
+        <div className="week-nav-group">
+          <button className="nav-icon-btn" onClick={() => navigateDate(-1)} title="Previous week">
+            <ChevronLeft size={16} />
+          </button>
+          <button className="nav-today-btn" onClick={goToToday} title="Jump to today">
+            Today
+          </button>
+          <button className="nav-icon-btn" onClick={() => navigateDate(1)} title="Next week">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+
         <div className="week-title-group">
           <span className="week-label">Week of</span>
           <span className="week-range">{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}</span>
@@ -250,12 +256,17 @@ const WeekView = () => {
                     const rowStart = Math.max(1, Math.floor(top) + 1);
                     const rowSpan = Math.max(18, Math.ceil(height));
                     const showLocation = height > 42;
+                    const durationMinutes = (new Date(event.end) - new Date(event.start)) / (1000 * 60);
+                    const isLongEvent = durationMinutes > 60;
+                    const eventColor = event.color || getEventColor(event.category);
+
                     return (
                       <MotionDiv
                         key={event.id}
-                        className={cn('week-event', isPastEvent && 'past')}
+                        className={cn('week-event', isPastEvent && 'past', isLongEvent && 'long-event')}
                         style={{
-                          backgroundColor: event.color || getEventColor(event.category),
+                          backgroundColor: isLongEvent ? 'transparent' : eventColor,
+                          '--event-color': eventColor,
                           gridColumnStart: column + 1,
                           gridColumnEnd: column + 2,
                           gridRow: `${rowStart} / span ${rowSpan}`,

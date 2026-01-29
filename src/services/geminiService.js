@@ -30,8 +30,8 @@ export class GeminiService {
       // 1. Primary: Gemini 3 Preview Models
       // 2. Fallback: Local Offline Brain (handled in method calls, not here)
       try {
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-3-pro-preview' });
+        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
       } catch (error) {
         logger.warn('Gemini 3 Preview initialization failed. Service will rely on Offline Brain if loaded.', { error });
         // No API fallback. We want true offline behavior if primary fails.

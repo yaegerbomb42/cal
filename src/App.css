@@ -1,3 +1,12 @@
+html,
+body {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 .app {
   min-height: 100vh;
   width: 100%;
@@ -5,7 +14,8 @@
 }
 
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
+  /* Enforce full height */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -13,16 +23,13 @@
 
 .main-content {
   flex: 1;
-  padding: 0 1rem 1rem 1rem;
-  /* Reduced padding */
+  padding: 0;
+  /* Remove padding entirely for full resize feel */
   max-width: 100%;
-  /* Full width */
-  margin: 0 auto;
+  margin: 0;
   width: 100%;
   display: grid;
-  /* grid-template-columns handled by inline style for resizing */
   gap: 0;
-  /* Gap handled by resize handle or inline */
   min-height: 0;
   overflow: hidden;
 }
@@ -30,24 +37,28 @@
 .sidebar-container {
   flex-shrink: 0;
   height: 100%;
+  overflow-y: auto;
+  /* Internal scroll */
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .calendar-container {
   flex: 1;
   height: 100%;
   min-width: 0;
-  /* Prevent flex item from overflowing */
+  overflow: hidden;
+  /* Prevent spill */
+  position: relative;
 }
 
 /* Mobile adjustments */
 @media (max-width: 1024px) {
   .main-content {
     grid-template-columns: 1fr !important;
-    /* Force single column on mobile */
     height: auto;
     overflow: visible;
-    padding: 1rem;
-    gap: 1.5rem;
+    padding: 0;
+    gap: 0;
   }
 
   .sidebar-container {
@@ -58,43 +69,34 @@
   .resize-handle {
     display: none;
   }
-
-  .sidebar-container .upcoming-sidebar {
-    width: 100%;
-    height: auto;
-    max-height: 400px;
-  }
-
-  .calendar-container {
-    height: auto;
-    width: 100%;
-  }
 }
 
 /* Resize Handle */
 .resize-handle {
-  width: 12px;
+  width: 16px;
   cursor: col-resize;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: background 0.2s;
-  z-index: 10;
-  margin: 0 -4px;
-  /* Slight overlap for easier grabbing */
+  z-index: 50;
+  margin: 0 -8px;
+  /* Center over the gap */
+  position: relative;
 }
 
 .resize-handle:hover .resize-line,
 .resize-handle:active .resize-line {
-  background: var(--accent);
+  height: 100%;
+  background: #6366f1;
   opacity: 1;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
 }
 
 .resize-line {
   width: 2px;
-  height: 100%;
-  background: var(--glass-border);
-  border-radius: 1px;
-  opacity: 0.5;
-  transition: all 0.2s;
+  height: 40px;
+  /* Subtle indicator */
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

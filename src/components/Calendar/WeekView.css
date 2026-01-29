@@ -8,15 +8,54 @@
 }
 
 .week-control-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1.25rem;
+  gap: 1.5rem;
+  padding: 0.5rem 1.25rem;
   margin-bottom: 0.75rem;
   border-radius: 16px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  gap: 1rem;
+}
+
+.week-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-icon-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.nav-icon-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.nav-today-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-today-btn:hover {
+  filter: brightness(1.1);
 }
 
 .week-title-group {
@@ -276,6 +315,62 @@
   line-height: 1.1;
   display: flex;
   flex-direction: column;
+}
+
+.week-event.long-event {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  padding: 0;
+  overflow: visible;
+}
+
+.week-event.long-event::before {
+  content: '';
+  position: absolute;
+  top: 26px;
+  /* Below title/time header */
+  bottom: 8px;
+  /* Above base */
+  left: 4px;
+  width: 4px;
+  /* Pencil width */
+  background: var(--event-color);
+  z-index: 0;
+  opacity: 0.8;
+}
+
+.week-event.long-event::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  /* Anvil Base */
+  background: var(--event-color);
+  border-radius: 2px;
+  z-index: 0;
+  opacity: 0.9;
+}
+
+.week-event.long-event .week-event-title,
+.week-event.long-event .week-event-time {
+  background: var(--event-color);
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.week-event.long-event .week-event-time {
+  margin-top: 1px;
+  border-radius: 0 0 4px 4px;
 }
 
 .week-event.past {

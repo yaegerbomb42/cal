@@ -1,17 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar, Settings } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
-import { formatViewLabel } from '../../utils/dateUtils';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
-import SearchBar from '../Search/SearchBar';
 import './Header.css';
 
-const Header = ({ onOpenSettings, onOpenAI }) => {
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const { currentDate, view, setView, navigateDate, goToToday, openEventModal } = useCalendar();
+const Header = ({ onOpenSettings }) => {
+  const { view, setView, goToToday, openEventModal } = useCalendar();
   const MotionHeader = motion.header;
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
@@ -22,11 +18,6 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     { key: CALENDAR_VIEWS.MONTH, label: 'Month' },
     { key: CALENDAR_VIEWS.YEAR, label: 'Year' }
   ];
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
-    return () => clearInterval(timer);
-  }, []);
 
   useEffect(() => {
     const unregisterN = registerShortcut('n', () => {
@@ -43,15 +34,19 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
     };
   }, [openEventModal, goToToday]);
 
-  const handleCalAIButtonClick = () => {
-    // User requested: "clicking the cal ai button shouldnt change from month week day or between it should maintain the current view"
-    // Previously: setView(CALENDAR_VIEWS.DAY); goToToday();
-    // Now: Just open AI
-    onOpenAI();
-    window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view, date: currentDate.toISOString() } }));
-  };
 
-  const activeViewLabel = viewButtons.find((item) => item.key === view)?.label || 'Day';
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleStatusChange = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleStatusChange);
+    window.addEventListener('offline', handleStatusChange);
+    return () => {
+      window.removeEventListener('online', handleStatusChange);
+      window.removeEventListener('offline', handleStatusChange);
+    };
+  }, []);
 
   return (
     <MotionHeader
@@ -59,59 +54,26 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
       animate={{ y: 0, opacity: 1 }}
       className="header glass"
     >
-      <div className="container">
+      <div className="container" style={{ maxWidth: '100%', padding: '0 16px' }}>
         <div className="header-content">
-          {/* Left: Logo, Time, Date */}
+          {/* Left: Logo, Status */}
           <div className="header-left">
             <MotionDiv
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02 }}
               className="logo-section"
             >
-              <Calendar className="logo-icon" size={24} />
+              <Calendar className="logo-icon" size={20} />
               <div className="logo-text">
-                <h1>CalAI</h1>
-                <div className="header-datetime">
-                  <span className="current-time">{format(currentTime, 'h:mm a')}</span>
-                  <span className="current-date">{format(currentTime, 'EEE, MMM d')}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h1>CalAI</h1>
+                  <div className={`status-dot ${isOnline ? 'online' : 'offline'}`} title={isOnline ? "Online" : "Offline"} />
                 </div>
               </div>
             </MotionDiv>
           </div>
 
           {/* Center: Navigation Controls (Arrows + Today) */}
-          <div className="header-center">
-            <div className="nav-controls">
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigateDate(-1)}
-                className="btn nav-btn"
-                aria-label="Previous date"
-              >
-                <ChevronLeft size={18} />
-              </MotionButton>
 
-              <MotionButton
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={goToToday}
-                className="btn today-cta"
-                title="Jump to today"
-              >
-                Today
-              </MotionButton>
-
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigateDate(1)}
-                className="btn nav-btn"
-                aria-label="Next date"
-              >
-                <ChevronRight size={18} />
-              </MotionButton>
-            </div>
-          </div>
 
           {/* Right: View Switcher & Actions (No AI Input here anymore) */}
           <div className="header-right">
@@ -131,18 +93,6 @@ const Header = ({ onOpenSettings, onOpenAI }) => {
             </div>
 
             <div className="action-buttons">
-              <SearchBar />
-
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCalAIButtonClick}
-                className="btn ai-btn logo-btn"
-                title="AI Assistant"
-              >
-                <span className="ai-label">Cal AI</span>
-              </MotionButton>
-
               <MotionButton
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

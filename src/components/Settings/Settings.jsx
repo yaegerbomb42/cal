@@ -530,18 +530,11 @@ const Settings = ({ isOpen, onClose }) => {
 
                   {activeTab === 'about' && (
                     <div className="content-section center-content">
-                      <div className="about-hero">
-                        <div className="logo-large">
-                          <CalendarIcon size={64} className="icon-pulse" />
-                        </div>
-                        <h1>CalAI</h1>
-                        <p className="version-badge">{appVersion}</p>
-                        <p className="about-desc">
-                          The intelligent calendar for modern professionals.
-                        </p>
-                      </div>
-                      <div className="about-footer">
-                        Made with <span className="heart">♥</span> by the CalAI Team
+                      <div className="about-minimal">
+                        <CalendarIcon size={48} color="#6366f1" />
+                        <h2>CalAI</h2>
+                        <span className="version-tag">{appVersion}</span>
+                        <p className="tagline">Intelligent Scheduling.</p>
                       </div>
                     </div>
                   )}

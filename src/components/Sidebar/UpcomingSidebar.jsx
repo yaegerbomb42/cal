@@ -1,22 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
-import { Calendar, Trash2, Archive, History, X, Search, Edit2 } from 'lucide-react';
+import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle } from 'lucide-react';
 import { getEventColor } from '../../utils/helpers';
 import { paginateItems } from '../../utils/pagination';
+import { isToday } from 'date-fns';
 import './UpcomingSidebar.css';
 
 const UpcomingSidebar = () => {
-    const { events, deleteEvent, deleteEventsByName } = useEvents();
+    const { events, deleteEvent, deleteEventsByName, updateEvent, addEvent } = useEvents();
     const { openEventModal } = useCalendar();
+
+    // View States
     const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming' | 'archive'
+    const [focusMode, setFocusMode] = useState(false);
+
+    // List States
     const [page, setPage] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteSearch, setDeleteSearch] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('all');
     const pageSize = 5;
 
-    // Sort events logic
+    // Focus Mode States
+    const [quickAddText, setQuickAddText] = useState('');
+
+    const toggleFocusMode = () => {
+        setFocusMode(!focusMode);
+        document.body.classList.toggle('focus-mode-active');
+    };
+
+    // --- Helpers ---
     const now = new Date();
 
     const getTimeLabel = (date) => {
@@ -42,6 +56,7 @@ const UpcomingSidebar = () => {
         }
     };
 
+    // --- Standard List Logic ---
     const displayEvents = events
         .filter(event => {
             const eventStart = new Date(event.start);
@@ -56,11 +71,7 @@ const UpcomingSidebar = () => {
         .sort((a, b) => {
             const dateA = new Date(a.start);
             const dateB = new Date(b.start);
-            // Upcoming: Ascending (soonest first)
-            // Archive: Descending (most recent first)
-            return viewMode === 'upcoming'
-                ? dateA - dateB
-                : dateB - dateA;
+            return viewMode === 'upcoming' ? dateA - dateB : dateB - dateA;
         });
 
     const pagination = paginateItems(displayEvents, page, pageSize);
@@ -68,6 +79,36 @@ const UpcomingSidebar = () => {
     const currentPage = pagination.page;
     const paginatedEvents = pagination.items;
 
+    // --- Focus Mode Logic ---
+    // Filter for TODAY only
+    const todayEvents = events
+        .filter(event => isToday(new Date(event.start)))
+        .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+    const handleToggleComplete = (event) => {
+        // Toggle completed status. If it doesn't exist, it starts as true.
+        updateEvent(event.id, { completed: !event.completed });
+    };
+
+    const handleQuickAddSubmit = (e) => {
+        e.preventDefault();
+        if (!quickAddText.trim()) return;
+
+        // Default: Starts now, 1 hour long
+        const start = new Date();
+        const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+        addEvent({
+            title: quickAddText,
+            start: start.toISOString(),
+            end: end.toISOString(),
+            category: 'task',
+            description: 'Quickly added via Focus Mode'
+        });
+        setQuickAddText('');
+    };
+
+    // Reset pagination when filters change
     useEffect(() => {
         setPage(1);
     }, [viewMode, categoryFilter]);
@@ -88,173 +129,245 @@ const UpcomingSidebar = () => {
     };
 
     return (
-        <div className="upcoming-sidebar glass-card">
-            <div className="sidebar-header">
-                <div className="header-title-row">
-                    <span className="header-spacer" />
-                    <h3>{viewMode === 'upcoming' ? 'Upcoming' : 'Archive'}</h3>
-                    <div className="header-actions">
-                        <button
-                            onClick={() => setViewMode(viewMode === 'upcoming' ? 'archive' : 'upcoming')}
-                            className={`icon-btn ${viewMode === 'archive' ? 'active' : ''}`}
-                            title={viewMode === 'upcoming' ? "View Past Events" : "View Upcoming"}
-                        >
-                            {viewMode === 'upcoming' ? <History size={16} /> : <Calendar size={16} />}
-                        </button>
-                        <button
-                            onClick={() => setShowDeleteModal(!showDeleteModal)}
-                            className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
-                            title="Delete by Name"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                </div>
-                {!showDeleteModal && (
-                    <span className="event-count">{displayEvents.length} events</span>
-                )}
+        <div className={`upcoming-sidebar glass-card ${focusMode ? 'focus-mode-sidebar' : ''}`}>
+
+            {/* Header / Focus Toggle */}
+            <div className="productivity-header">
+                <span className="sidebar-label">{focusMode ? "Today's Plan" : "Overview"}</span>
+                <button
+                    className={`focus-toggle ${focusMode ? 'active' : ''}`}
+                    onClick={toggleFocusMode}
+                    title="Toggle Focus Mode"
+                >
+                    <Zap size={14} fill={focusMode ? "currentColor" : "none"} />
+                    {focusMode ? 'Focus' : 'Focus'}
+                </button>
             </div>
 
-            {!showDeleteModal && (
-                <div className="category-filters">
-                    {[
-                        { value: 'all', label: 'All' },
-                        { value: 'work', label: 'Work' },
-                        { value: 'personal', label: 'Personal' },
-                        { value: 'fun', label: 'Fun' },
-                        { value: 'hobby', label: 'Hobby' },
-                        { value: 'task', label: 'Task' },
-                        { value: 'todo', label: 'To-Do' },
-                        { value: 'event', label: 'Event' },
-                        { value: 'appointment', label: 'Appointment' },
-                        { value: 'holiday', label: 'Holiday' }
-                    ].map(filter => (
-                        <button
-                            key={filter.value}
-                            type="button"
-                            onClick={() => setCategoryFilter(filter.value)}
-                            className={`filter-chip ${categoryFilter === filter.value ? 'active' : ''}`}
-                        >
-                            {filter.label}
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* Delete By Name Modal/Area */}
-            {showDeleteModal && (
-                <div className="delete-modal-area fade-in">
-                    <div className="delete-header">
-                        <span className="delete-title">Bulk delete by name</span>
-                        <span className="delete-subtitle">Remove every event with the exact title below.</span>
-                    </div>
-                    <div className="delete-input-wrapper">
-                        <Search size={14} className="search-icon" />
+            {/* --- FOCUS MODE VIEW --- */}
+            {focusMode ? (
+                <div className="focus-mode-content">
+                    {/* Quick Add Bar */}
+                    <form onSubmit={handleQuickAddSubmit} className="focus-quick-add">
+                        <Plus size={16} className="quick-add-icon" />
                         <input
                             type="text"
-                            placeholder="Enter exact event title"
-                            value={deleteSearch}
-                            onChange={(e) => setDeleteSearch(e.target.value)}
-                            className="delete-input"
+                            placeholder="Add task for today..."
+                            value={quickAddText}
+                            onChange={(e) => setQuickAddText(e.target.value)}
+                            className="quick-add-input"
                         />
-                        <button onClick={() => setShowDeleteModal(false)} className="close-btn">
-                            <X size={14} />
-                        </button>
-                    </div>
-                    <button
-                        disabled={!deleteSearch.trim()}
-                        onClick={handleBulkDelete}
-                        className="delete-confirm-btn"
-                    >
-                        Delete matching events
-                    </button>
-                    <p className="delete-hint">This action removes all events with the exact title.</p>
-                </div>
-            )}
+                    </form>
 
-            <div className="upcoming-list">
-                {displayEvents.length === 0 ? (
-                    <div className="no-events">
-                        {viewMode === 'upcoming' ? <Calendar size={32} /> : <Archive size={32} />}
-                        <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
-                    </div>
-                ) : (
-                    paginatedEvents.map(event => {
-                        const isPastEvent = new Date(event.end || event.start) < now;
-                        return (
-                            <div
-                                key={event.id}
-                                className={`upcoming-event-item ${isPastEvent ? 'past-event' : ''}`}
-                                style={{ '--category-color': getEventColor(event.category) }}
-                            >
-                                <div className="event-date-badge">
-                                    <span className="month">
-                                        {new Date(event.start).toLocaleString('default', { month: 'short' })}
-                                    </span>
-                                    <span className="day">
-                                        {new Date(event.start).getDate()}
-                                    </span>
-                                </div>
-
-                                <div className="event-info">
-                                    <div className="title-row">
-                                        <h4>{event.title}</h4>
-                                        <span className="time-til">{getTimeLabel(event.start)}</span>
-                                    </div>
-                                    <div className="info-meta">
-                                        <p className="time">
-                                            {new Date(event.start).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                        {event.category && (
-                                            <span className="category-tag">{event.category}</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="event-actions">
+                    {/* Today's Checklist */}
+                    <div className="focus-list">
+                        {todayEvents.length === 0 ? (
+                            <div className="focus-empty">
+                                <CheckCircle size={32} className="text-muted" />
+                                <p>No events for today!</p>
+                            </div>
+                        ) : (
+                            todayEvents.map(event => (
+                                <div key={event.id} className={`focus-item ${event.completed ? 'completed' : ''}`}>
                                     <button
-                                        onClick={() => openEventModal(event)}
-                                        className="action-btn edit"
-                                        title="Edit event"
+                                        className="check-btn"
+                                        onClick={() => handleToggleComplete(event)}
+                                        title={event.completed ? "Mark as pending" : "Mark as done"}
                                     >
+                                        {event.completed ?
+                                            <CheckCircle size={20} className="checked-icon" /> :
+                                            <Circle size={20} className="unchecked-icon" />
+                                        }
+                                    </button>
+
+                                    <div className="focus-item-content">
+                                        <span className={`focus-title ${event.completed ? 'strikethrough' : ''}`}>
+                                            {event.title}
+                                        </span>
+                                        <span className="focus-time">
+                                            {new Date(event.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+
+                                    <button onClick={() => openEventModal(event)} className="focus-edit-btn">
                                         <Edit2 size={14} />
                                     </button>
-                                    <button
-                                        onClick={() => handleDeleteClick(event.id)}
-                                        className="action-btn delete"
-                                        title="Delete event"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
                                 </div>
-                            </div>
-                        );
-                    })
-                )}
-            </div>
-
-            {displayEvents.length > pageSize && !showDeleteModal && (
-                <div className="pagination-controls" role="navigation" aria-label="Upcoming events pagination">
-                    <button
-                        type="button"
-                        className="pagination-btn"
-                        onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                    >
-                        Prev
-                    </button>
-                    <span className="pagination-status">
-                        Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                        type="button"
-                        className="pagination-btn"
-                        onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                    </button>
+                            ))
+                        )}
+                    </div>
                 </div>
+            ) : (
+                /* --- STANDARD VIEW --- */
+                <>
+                    <div className="sidebar-header">
+                        <div className="header-title-row">
+                            <span className="header-spacer" />
+                            <h3>{viewMode === 'upcoming' ? 'Upcoming' : 'Archive'}</h3>
+                            <div className="header-actions">
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'upcoming' ? 'archive' : 'upcoming')}
+                                    className={`icon-btn ${viewMode === 'archive' ? 'active' : ''}`}
+                                    title={viewMode === 'upcoming' ? "View Past Events" : "View Upcoming"}
+                                >
+                                    {viewMode === 'upcoming' ? <History size={16} /> : <Calendar size={16} />}
+                                </button>
+                                <button
+                                    onClick={() => setShowDeleteModal(!showDeleteModal)}
+                                    className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
+                                    title="Delete by Name"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        </div>
+                        {!showDeleteModal && (
+                            <span className="event-count">{displayEvents.length} events</span>
+                        )}
+                    </div>
+
+                    {!showDeleteModal && (
+                        <div className="category-filters">
+                            {[
+                                { value: 'all', label: 'All' },
+                                { value: 'work', label: 'Work' },
+                                { value: 'personal', label: 'Personal' },
+                                { value: 'fun', label: 'Fun' },
+                                { value: 'hobby', label: 'Hobby' },
+                                { value: 'task', label: 'Task' },
+                                { value: 'todo', label: 'To-Do' },
+                                { value: 'event', label: 'Event' },
+                                { value: 'appointment', label: 'Appointment' },
+                                { value: 'holiday', label: 'Holiday' }
+                            ].map(filter => (
+                                <button
+                                    key={filter.value}
+                                    type="button"
+                                    onClick={() => setCategoryFilter(filter.value)}
+                                    className={`filter-chip ${categoryFilter === filter.value ? 'active' : ''}`}
+                                >
+                                    {filter.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Delete By Name Modal/Area */}
+                    {showDeleteModal && (
+                        <div className="delete-modal-area fade-in">
+                            <div className="delete-header">
+                                <span className="delete-title">Bulk delete by name</span>
+                                <span className="delete-subtitle">Remove every event with the exact title below.</span>
+                            </div>
+                            <div className="delete-input-wrapper">
+                                <Search size={14} className="search-icon" />
+                                <input
+                                    type="text"
+                                    placeholder="Enter exact event title"
+                                    value={deleteSearch}
+                                    onChange={(e) => setDeleteSearch(e.target.value)}
+                                    className="delete-input"
+                                />
+                                <button onClick={() => setShowDeleteModal(false)} className="close-btn">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            <button
+                                disabled={!deleteSearch.trim()}
+                                onClick={handleBulkDelete}
+                                className="delete-confirm-btn"
+                            >
+                                Delete matching events
+                            </button>
+                            <p className="delete-hint">This action removes all events with the exact title.</p>
+                        </div>
+                    )}
+
+                    <div className="upcoming-list">
+                        {displayEvents.length === 0 ? (
+                            <div className="no-events">
+                                {viewMode === 'upcoming' ? <Calendar size={32} /> : <Archive size={32} />}
+                                <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
+                            </div>
+                        ) : (
+                            paginatedEvents.map(event => {
+                                const isPastEvent = new Date(event.end || event.start) < now;
+                                return (
+                                    <div
+                                        key={event.id}
+                                        className={`upcoming-event-item ${isPastEvent ? 'past-event' : ''}`}
+                                        style={{ '--category-color': getEventColor(event.category) }}
+                                    >
+                                        <div className="event-date-badge">
+                                            <span className="month">
+                                                {new Date(event.start).toLocaleString('default', { month: 'short' })}
+                                            </span>
+                                            <span className="day">
+                                                {new Date(event.start).getDate()}
+                                            </span>
+                                        </div>
+
+                                        <div className="event-info">
+                                            <div className="title-row">
+                                                <h4 className={event.completed ? 'strikethrough' : ''}>{event.title}</h4>
+                                                <span className="time-til">{getTimeLabel(event.start)}</span>
+                                            </div>
+                                            <div className="info-meta">
+                                                <p className="time">
+                                                    {new Date(event.start).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                                {event.category && (
+                                                    <span className="category-tag">{event.category}</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="event-actions">
+                                            <button
+                                                onClick={() => openEventModal(event)}
+                                                className="action-btn edit"
+                                                title="Edit event"
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(event.id)}
+                                                className="action-btn delete"
+                                                title="Delete event"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {displayEvents.length > pageSize && !showDeleteModal && (
+                        <div className="pagination-controls" role="navigation" aria-label="Upcoming events pagination">
+                            <button
+                                type="button"
+                                className="pagination-btn"
+                                onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Prev
+                            </button>
+                            <span className="pagination-status">
+                                Page {currentPage} of {totalPages}
+                            </span>
+                            <button
+                                type="button"
+                                className="pagination-btn"
+                                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
