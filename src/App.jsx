@@ -114,6 +114,34 @@ const MainLayout = () => {
     return () => window.removeEventListener('calai-open', handleAIOpen);
   }, [user]);
 
+  // Global keyboard capture - typing anywhere focuses Cal input
+  useEffect(() => {
+    const handleGlobalKeydown = (e) => {
+      // Ignore if already in an input, textarea, or contenteditable
+      const target = e.target;
+      const tagName = target.tagName?.toLowerCase();
+      const isInput = tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
+
+      // Ignore modifier keys, special keys, and if in modal/input
+      const isTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+
+      if (isInput || !isTypingKey) return;
+
+      // Check if any modal is open (settings, event modal)
+      const hasOpenModal = document.querySelector('.modal-overlay, .settings-overlay');
+      if (hasOpenModal) return;
+
+      // Open AI chat and dispatch focus event with the typed character
+      setIsAIChatOpen(true);
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('calai-focus', { detail: { key: e.key } }));
+      }, 100);
+    };
+
+    window.addEventListener('keydown', handleGlobalKeydown);
+    return () => window.removeEventListener('keydown', handleGlobalKeydown);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">

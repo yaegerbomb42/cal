@@ -95,6 +95,22 @@ const AIChat = ({ isOpen, onClose }) => {
     };
   }, []);
 
+  // Global keyboard capture - focus input and prepend typed character
+  const inputRef = useRef(null);
+  useEffect(() => {
+    const handleFocus = (e) => {
+      const key = e.detail?.key;
+      if (inputRef.current) {
+        inputRef.current.focus();
+        if (key && key.length === 1) {
+          setInputValue(prev => key + prev);
+        }
+      }
+    };
+    window.addEventListener('calai-focus', handleFocus);
+    return () => window.removeEventListener('calai-focus', handleFocus);
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -565,6 +581,7 @@ const AIChat = ({ isOpen, onClose }) => {
               {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
