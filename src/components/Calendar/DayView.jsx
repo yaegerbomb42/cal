@@ -35,7 +35,7 @@ const buildEventSnippet = (event) => {
 };
 
 const DayView = () => {
-  const { currentDate, openEventModal, navigateDate, goToToday } = useCalendar();
+  const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
   const [quickInput, setQuickInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -84,18 +84,6 @@ const DayView = () => {
       className="day-view"
     >
       <div className={cn('day-header', 'glass-card')}>
-        <div className="day-nav-group">
-          <button className="nav-icon-btn" onClick={() => navigateDate(-1)} title="Previous Day">
-            <ChevronLeft size={16} />
-          </button>
-          <button className="nav-today-btn" onClick={goToToday} title="Jump to today">
-            Today
-          </button>
-          <button className="nav-icon-btn" onClick={() => navigateDate(1)} title="Next Day">
-            <ChevronRight size={16} />
-          </button>
-        </div>
-
         <div className="day-info">
           <div className="day-name">{getRelativeDayLabel(currentDate)}</div>
           <div className="day-date">{formatFullDate(currentDate)}</div>

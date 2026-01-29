@@ -788,8 +788,9 @@ button {
   height: 6px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
-  outline: none;
   -webkit-appearance: none;
+  appearance: none;
+  outline: none;
 }
 
 .priority-slider::-webkit-slider-thumb {

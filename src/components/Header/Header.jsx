@@ -61,9 +61,9 @@ const Header = ({ onOpenSettings }) => {
           </div>
 
           {/* Center: Navigation Controls (Today | < | >) */}
-          <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button
-              className="nav-btn today-btn"
+              className="nav-today-btn-header"
               onClick={goToToday}
               title="Jump to Today"
             >
