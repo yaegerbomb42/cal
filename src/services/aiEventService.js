@@ -5,6 +5,7 @@ import { getEventColor } from '../utils/helpers.js';
 import { AIParseError, AIServiceError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 import { geminiService } from './geminiService.js';
+import { locationService } from './locationService.js';
 
 const DEFAULT_DURATION_MINUTES = 60;
 
@@ -94,6 +95,27 @@ export const parseEventDraft = async (text) => {
   }
 
   draft = sanitizeDraft(draft);
+
+  // Resolve location to full address with Google Maps link
+  if (draft.location && draft.location.trim().length > 2) {
+    try {
+      const resolved = await locationService.resolveLocation(
+        draft.location,
+        draft.title || text
+      );
+      if (resolved) {
+        draft.locationResolved = resolved.address;
+        draft.mapsUrl = resolved.mapsUrl;
+        draft.locationConfidence = resolved.confidence;
+        // Update location if we got a higher confidence result
+        if (resolved.confidence !== 'low' && resolved.address !== draft.location) {
+          draft.location = resolved.address;
+        }
+      }
+    } catch (error) {
+      logger.warn('Location resolution failed', { error: error.message });
+    }
+  }
 
   const missingFields = listMissingFields(draft);
 
