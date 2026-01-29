@@ -439,14 +439,12 @@ const UpcomingSidebar = () => {
                                         </div>
 
                                         <div className="event-info">
-                                            <div className="title-row">
-                                                <h4 className={event.completed ? 'strikethrough' : ''}>{event.title}</h4>
+                                            <h4 className={`event-title ${event.completed ? 'strikethrough' : ''}`}>{event.title}</h4>
+                                            <div className="event-meta-row">
                                                 <span className="time-til">{getTimeLabel(event.start)}</span>
-                                            </div>
-                                            <div className="info-meta">
-                                                <p className="time">
-                                                    {new Date(event.start).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
+                                                <span className="event-time">
+                                                    {new Date(event.start).toLocaleString([], { hour: 'numeric', minute: '2-digit' })}
+                                                </span>
                                                 {event.category && (
                                                     <span className="category-tag">{event.category}</span>
                                                 )}

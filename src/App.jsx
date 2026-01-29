@@ -171,8 +171,8 @@ const MainLayout = () => {
         <main
           className="main-content"
           ref={containerRef}
-          style={{ gridTemplateColumns: `${sidebarPercent}% 4px 1fr` }}
-        // Note: Percentage based split
+          style={{ gridTemplateColumns: `${sidebarPercent}% 12px calc(${100 - sidebarPercent}% - 12px)` }}
+        // Note: Percentage based split with explicit calendar width
         >
           <div className="sidebar-container">
             <UpcomingSidebar />

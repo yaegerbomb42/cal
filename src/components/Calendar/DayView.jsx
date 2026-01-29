@@ -136,9 +136,22 @@ const DayView = () => {
         </div>
 
         <div className="day-grid-body">
-          {dayHours.map((hour) => (
-            <div key={`hour-${hour.getHours()}`} className="day-hour-cell" />
-          ))}
+          {dayHours.map((hour) => {
+            const handleSlotClick = () => {
+              const startTime = new Date(currentDate);
+              startTime.setHours(hour.getHours(), 0, 0, 0);
+              const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
+              openEventModal({ start: startTime, end: endTime });
+            };
+            return (
+              <div
+                key={`hour-${hour.getHours()}`}
+                className="day-hour-cell"
+                onClick={handleSlotClick}
+                title={`Add event at ${format(hour, 'h a')}`}
+              />
+            );
+          })}
 
           <div className="day-events-layer" style={{ '--overlap-count': maxOverlap }}>
             {dayLayout.map(({ event, column }, index) => {

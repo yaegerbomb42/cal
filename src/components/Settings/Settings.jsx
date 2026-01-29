@@ -59,9 +59,10 @@ const Settings = ({ isOpen, onClose }) => {
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
     { id: 'ai', label: 'AI Engine', icon: Cpu, color: '#8b5cf6' },
     { id: 'priority', label: 'Priority', icon: Zap, color: '#f59e0b' },
+    { id: 'packs', label: 'Cal Packs', icon: CalendarIcon, color: '#10b981' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
     { id: 'data', label: 'Storage', icon: Download, color: '#f43f5e' },
-    { id: 'about', label: 'About', icon: Sparkles, color: '#10b981' }
+    { id: 'about', label: 'About', icon: Sparkles, color: '#ec4899' }
   ];
 
   // --- Initialization & Effects ---
@@ -553,40 +554,54 @@ const Settings = ({ isOpen, onClose }) => {
                           </button>
                         </div>
                       </div>
+                    </div>
+                  )}
 
-                      <div className="info-box" style={{ marginTop: '16px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                        <div>
-                          <h4>General Event Packs</h4>
-                          <p>Auto-add curated event collections like holidays.</p>
-                        </div>
+                  {activeTab === 'packs' && (
+                    <div className="content-section">
+                      <div className="glass-card padding-lg">
+                        <h3>Calendar Packs</h3>
+                        <p className="text-muted">Add curated event collections to your calendar automatically.</p>
                       </div>
 
-                      <div className="general-event-list">
+                      <div className="packs-grid mt-4">
                         {GENERAL_EVENT_PACKS.map(pack => (
-                          <div key={pack.id} className="general-event-item">
-                            <div className="pack-icon-wrapper">
-                              {/* Custom stacked cards icon for holiday pack */}
-                              <svg viewBox="0 0 24 24" width="32" height="32" className="holiday-pack-icon">
-                                <rect x="2" y="6" width="14" height="12" rx="2" fill="rgba(56, 189, 248, 0.3)" stroke="rgba(56, 189, 248, 0.6)" strokeWidth="1" />
-                                <rect x="5" y="4" width="14" height="12" rx="2" fill="rgba(99, 102, 241, 0.3)" stroke="rgba(99, 102, 241, 0.6)" strokeWidth="1" />
-                                <rect x="8" y="2" width="14" height="12" rx="2" fill="rgba(244, 63, 94, 0.3)" stroke="rgba(244, 63, 94, 0.6)" strokeWidth="1" />
-                                <text x="15" y="10" fontSize="6" fill="white" textAnchor="middle" fontWeight="bold">★</text>
-                              </svg>
+                          <div key={pack.id} className="pack-card glass-card">
+                            <div className="pack-header">
+                              <div className="pack-icon-wrapper">
+                                <svg viewBox="0 0 24 24" width="36" height="36" className="holiday-pack-icon">
+                                  <rect x="2" y="6" width="14" height="12" rx="2" fill="rgba(16, 185, 129, 0.3)" stroke="rgba(16, 185, 129, 0.6)" strokeWidth="1" />
+                                  <rect x="5" y="4" width="14" height="12" rx="2" fill="rgba(99, 102, 241, 0.3)" stroke="rgba(99, 102, 241, 0.6)" strokeWidth="1" />
+                                  <rect x="8" y="2" width="14" height="12" rx="2" fill="rgba(244, 63, 94, 0.3)" stroke="rgba(244, 63, 94, 0.6)" strokeWidth="1" />
+                                  <text x="15" y="10" fontSize="6" fill="white" textAnchor="middle" fontWeight="bold">★</text>
+                                </svg>
+                              </div>
+                              <label className="toggle-switch">
+                                <input
+                                  type="checkbox"
+                                  checked={!!generalEventPacks[pack.id]}
+                                  onChange={(e) => handleToggleGeneralPack(pack.id, e.target.checked)}
+                                />
+                                <span className="toggle-slider" />
+                              </label>
                             </div>
-                            <div className="pack-info">
-                              <h6>{pack.label}</h6>
+                            <div className="pack-body">
+                              <h4>{pack.label}</h4>
                               <p>{pack.description}</p>
                             </div>
-                            <label className="toggle-switch">
-                              <input
-                                type="checkbox"
-                                checked={!!generalEventPacks[pack.id]}
-                                onChange={(e) => handleToggleGeneralPack(pack.id, e.target.checked)}
-                              />
-                              <span className="toggle-slider" />
-                            </label>
+                            <div className="pack-status">
+                              {generalEventPacks[pack.id]
+                                ? <span className="status-active">✓ Active</span>
+                                : <span className="status-inactive">Not added</span>
+                              }
+                            </div>
                           </div>
                         ))}
+                      </div>
+
+                      <div className="info-box mt-4 neutral">
+                        <CalendarIcon size={16} />
+                        <p>Toggle packs on to add events to your calendar. Toggle off to remove them.</p>
                       </div>
                     </div>
                   )}
