@@ -1,11 +1,11 @@
-import { 
-  format, 
-  startOfWeek, 
-  endOfWeek, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  isSameDay, 
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
   isSameMonth,
   addDays,
   subDays,
@@ -42,7 +42,7 @@ export const formatTime = (date) => {
 };
 
 export const formatTime24 = (date) => {
-  return format(date, 'HH:mm');
+  return format(date, 'h:mm a');
 };
 
 export const getWeekDays = (date) => {
@@ -56,7 +56,7 @@ export const getMonthDays = (date) => {
   const monthEnd = endOfMonth(date);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
-  
+
   return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 };
 
@@ -77,7 +77,7 @@ export const getDayHoursWithHalf = () => {
     const hour = new Date();
     hour.setHours(i, 0, 0, 0);
     slots.push({ time: hour, isHalfHour: false });
-    
+
     // Half hour
     const halfHour = new Date();
     halfHour.setHours(i, 30, 0, 0);
@@ -104,14 +104,14 @@ export const isDateInRange = (date, start, end) => {
 export const getEventPosition = (event, dayStart, pixelsPerHour = 36) => {
   const eventStart = new Date(event.start);
   const eventEnd = new Date(event.end);
-  
+
   const minutesFromDayStart = (eventStart.getHours() * 60) + eventStart.getMinutes();
   const duration = (eventEnd - eventStart) / (1000 * 60); // duration in minutes
-  
+
   const top = (minutesFromDayStart / 60) * pixelsPerHour;
   const minHeight = Math.max(pixelsPerHour * 0.45, 12);
   const height = Math.max((duration / 60) * pixelsPerHour, minHeight);
-  
+
   return { top, height };
 };
 
@@ -152,19 +152,19 @@ export const parseNaturalLanguageDate = (text) => {
   const now = new Date();
   const lowerText = text.toLowerCase();
   const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  
+
   if (lowerText.includes('today')) {
     return new Date();
   }
-  
+
   if (lowerText.includes('tomorrow')) {
     return addDays(now, 1);
   }
-  
+
   if (lowerText.includes('yesterday')) {
     return subDays(now, 1);
   }
-  
+
   if (lowerText.includes('next week')) {
     return addDays(now, 7);
   }
@@ -184,14 +184,14 @@ export const parseNaturalLanguageDate = (text) => {
     const delta = (7 - currentIndex + targetIndex) % 7;
     return addDays(now, delta);
   }
-  
+
   // Try to parse standard date formats
   const dateMatch = text.match(/(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?/);
   if (dateMatch) {
     const [, month, day, year] = dateMatch;
     return new Date(year || now.getFullYear(), month - 1, day);
   }
-  
+
   return now;
 };
 
@@ -201,7 +201,7 @@ export const parseNaturalLanguageTime = (text) => {
     let [, hours, minutes = '0', period] = timeMatch;
     hours = parseInt(hours);
     minutes = parseInt(minutes);
-    
+
     if (period) {
       if (period.toLowerCase() === 'pm' && hours !== 12) {
         hours += 12;
@@ -209,20 +209,20 @@ export const parseNaturalLanguageTime = (text) => {
         hours = 0;
       }
     }
-    
+
     return { hours, minutes };
   }
-  
+
   return { hours: 9, minutes: 0 }; // default to 9 AM
 };
 
-export { 
-  isSameDay, 
-  isSameMonth, 
-  isToday, 
-  startOfDay, 
+export {
+  isSameDay,
+  isSameMonth,
+  isToday,
+  startOfDay,
   endOfDay,
   addDays,
   subDays,
-  getWeek 
+  getWeek
 };

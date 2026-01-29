@@ -400,3 +400,41 @@ h6 {
 [data-theme="dark"] .bg-slate-900 {
   background-color: #0f172a;
 }
+
+/* === SOFT LIGHT MODE === */
+[data-theme="light"] {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #ffffff;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-glow: rgba(99, 102, 241, 0.25);
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-strong: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(148, 163, 184, 0.25);
+  --glass-divider: rgba(148, 163, 184, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --backdrop-blur: blur(16px);
+  --border: rgba(148, 163, 184, 0.3);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] body {
+  background: linear-gradient(135deg, #f5f5f5 0%, #ebebeb 100%);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .glass,
+[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .glass-card:hover {
+  background: rgba(255, 255, 255, 0.85);
+}

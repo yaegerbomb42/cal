@@ -116,7 +116,7 @@ const YearView = ({ onYearChange }) => {
         <div className="year-controls">
           <div className="year-stat">
             <span className="count">{yearEventsCount}</span>
-            <span className="label">contributions</span>
+            <span className="label">Total Events</span>
           </div>
 
           <select

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
@@ -34,20 +34,6 @@ const Header = ({ onOpenSettings }) => {
     };
   }, [openEventModal, goToToday]);
 
-
-
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleStatusChange = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleStatusChange);
-    window.addEventListener('offline', handleStatusChange);
-    return () => {
-      window.removeEventListener('online', handleStatusChange);
-      window.removeEventListener('offline', handleStatusChange);
-    };
-  }, []);
-
   return (
     <MotionHeader
       initial={{ y: -20, opacity: 0 }}
@@ -72,11 +58,6 @@ const Header = ({ onOpenSettings }) => {
               </div>
             </MotionButton>
 
-            {/* Status Indicator near CalAI text */}
-            <div className={`status-dot ${isOnline ? 'online' : 'offline'}`}
-              title={isOnline ? "Online" : "Offline"}
-              style={{ marginLeft: '8px' }}
-            />
           </div>
 
           {/* Center: Navigation Controls (Today | < | >) */}

@@ -59,8 +59,8 @@
 }
 
 .status-dot.offline {
-  background: #f97316;
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+  background: #ef4444;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
 }
 
 .chat-status {

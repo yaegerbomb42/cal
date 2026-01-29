@@ -16,9 +16,9 @@
 
 .event-modal {
   width: 100%;
-  max-width: 960px;
-  height: fit-content;
-  max-height: 92vh;
+  max-width: 560px;
+  height: auto;
+  max-height: 95vh;
   overflow: hidden;
   border-radius: 20px;
   padding: 0;
@@ -82,35 +82,33 @@
 }
 
 .modal-form {
-  padding: 0.75rem 1.5rem 1.25rem 1.5rem;
+  padding: 0.75rem 1.5rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow-y: auto;
-  /* Enable scrolling */
+  overflow-y: hidden;
   overflow-x: hidden;
 }
 
 .modal-panels {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr 0.9fr;
-  /* 3 Column Layout */
-  gap: 1rem;
-  height: 100%;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: auto;
+  overflow: visible;
 }
 
-/* Make sections scrollable individually if needed, but aim for fit */
+/* Make sections compact */
 .modal-section {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  overflow-y: auto;
-  background: rgba(15, 23, 42, 0.4);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 16px;
-  padding: 1rem;
-  max-height: 100%;
+  gap: 0.5rem;
+  overflow: visible;
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  max-height: none;
 }
 
 .panel-title {
@@ -586,7 +584,6 @@
 .btn {
   width: 100%;
   justify-content: center;
-}
 }
 
 /* Custom Select Styles */
