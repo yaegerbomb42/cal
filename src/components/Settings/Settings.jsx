@@ -521,6 +521,15 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="general-event-list">
                         {GENERAL_EVENT_PACKS.map(pack => (
                           <div key={pack.id} className="general-event-item">
+                            <div className="pack-icon-wrapper">
+                              {/* Custom stacked cards icon for holiday pack */}
+                              <svg viewBox="0 0 24 24" width="32" height="32" className="holiday-pack-icon">
+                                <rect x="2" y="6" width="14" height="12" rx="2" fill="rgba(56, 189, 248, 0.3)" stroke="rgba(56, 189, 248, 0.6)" strokeWidth="1" />
+                                <rect x="5" y="4" width="14" height="12" rx="2" fill="rgba(99, 102, 241, 0.3)" stroke="rgba(99, 102, 241, 0.6)" strokeWidth="1" />
+                                <rect x="8" y="2" width="14" height="12" rx="2" fill="rgba(244, 63, 94, 0.3)" stroke="rgba(244, 63, 94, 0.6)" strokeWidth="1" />
+                                <text x="15" y="10" fontSize="6" fill="white" textAnchor="middle" fontWeight="bold">★</text>
+                              </svg>
+                            </div>
                             <div className="pack-info">
                               <h6>{pack.label}</h6>
                               <p>{pack.description}</p>
