@@ -59,6 +59,7 @@ const Settings = ({ isOpen, onClose }) => {
     deepWorkDuration: 90, // minutes
     breakFrequency: 25, // minutes (pomodoro-style)
     preferUninterrupted: true,
+    defaultReminder: 15, // minutes (new setting)
 
     // Category Priorities (1-5 ranking)
     categoryRanking: {
@@ -821,6 +822,24 @@ const Settings = ({ isOpen, onClose }) => {
                               <span className="track">
                                 <span className="thumb" />
                               </span>
+                            </div>
+                          </label>
+                          <label className="ai-behavior-row">
+                            <span className="flex-1">
+                              <span className="block font-medium">Default Reminder</span>
+                              <span className="text-muted text-xs">Minutes before event</span>
+                            </span>
+                            <div className="flex-row align-center gap-sm">
+                              <input
+                                type="number"
+                                min="0"
+                                step="5"
+                                value={priorityPrefs.defaultReminder || 15}
+                                onChange={(e) => updatePriorityPref('defaultReminder', parseInt(e.target.value))}
+                                className="pref-input compact"
+                                style={{ width: '50px', padding: '4px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--settings-border)', borderRadius: '6px', color: 'var(--text-primary)' }}
+                              />
+                              <span className="text-xs text-muted">min</span>
                             </div>
                           </label>
                         </div>

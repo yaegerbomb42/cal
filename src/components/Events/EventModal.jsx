@@ -546,7 +546,7 @@ const EventModal = () => {
           <div className="modal-header">
             <div>
               <h3>{isEditing ? 'Edit Event' : 'Create Event'}</h3>
-              <p className="modal-subtitle">Plan it in seconds — everything is visible at once.</p>
+              {/* Removed subtitle as requested */}
             </div>
             <button
               onClick={closeEventModal}
@@ -559,228 +559,162 @@ const EventModal = () => {
 
           <form onSubmit={handleSubmit} className="modal-form">
             <div className="modal-panels">
+              {/* SECTION 1: MAIN DETAILS (Left/Top) */}
               <div className="modal-section" aria-label="Event details">
-                <h4 className="panel-title"><Tag size={14} /> Main details</h4>
                 <div className="form-group">
-                  <div className="template-chips-label">
-                    <Repeat size={14} /> Repeat Previous
-                  </div>
-                  <div className="template-chips">
-                    {recentTemplates.length > 0 ? (
-                      recentTemplates.map(title => (
-                        <button
-                          key={title}
-                          type="button"
-                          className="chip"
-                          onClick={() => applyTemplate(title)}
-                        >
-                          {title}
-                        </button>
-                      ))
-                    ) : (
-                      <span className="text-muted text-xs">No recent events yet</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="title">
-                    <Tag size={16} />
-                    Title *
-                  </label>
                   <input
                     id="title"
                     type="text"
                     value={formData.title}
                     onChange={(e) => handleChange('title', e.target.value)}
                     className="input"
-                    placeholder="Event title"
+                    placeholder="Event Title"
+                    style={{ fontSize: '1.2rem', fontWeight: 700, background: 'transparent', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', borderRadius: 0, paddingLeft: 0 }}
                     required
+                    autoFocus
                   />
                 </div>
 
+                {/* AI Fit Schedule Button */}
                 <button
                   type="button"
                   onClick={findNextSlot}
-                  className="smart-schedule-btn"
+                  className="ai-fit-schedule-btn"
                 >
-                  <Sparkles size={14} /> Find Best Available Slot
+                  <div className="ai-fit-label">
+                    <Sparkles size={16} className="text-accent" />
+                    <span>Fit into schedule with AI</span>
+                  </div>
+                  <div className="mini-schedule-vis">
+                    <div className="vis-slot" />
+                    <div className="vis-slot busy" />
+                    <div className="vis-slot" />
+                    <div className="vis-slot suggestion" />
+                    <div className="vis-slot busy" />
+                    <div className="vis-slot" />
+                  </div>
                 </button>
 
+                {/* Date & Time Row - Compact */}
+                <div className="time-inputs-row">
+                  <div className="time-input-group">
+                    <label>Start</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.start}
+                      onChange={(e) => handleDateChange('start', e.target.value)}
+                      className="clean-time-input"
+                    />
+                  </div>
+                  <div className="time-input-group">
+                    <label>End</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.end}
+                      onChange={(e) => handleDateChange('end', e.target.value)}
+                      className="clean-time-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="quick-durations">
+                  {[15, 30, 45, 60, 90, 120].map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => handleDurationChange(m)}
+                      className="duration-chip"
+                    >
+                      +{m}m
+                    </button>
+                  ))}
+                </div>
+
+                {/* Recurrence Custom UI */}
+                <div className="form-group mt-2">
+                  <label><Repeat size={14} /> Recurrence</label>
+                  <select
+                    value={formData.recurring?.type || RECURRENCE_TYPES.NONE}
+                    onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })}
+                    className="select"
+                  >
+                    {Object.values(RECURRENCE_TYPES).map(type => (
+                      <option key={type} value={type}>
+                        {formatRecurrenceText({ type })}
+                      </option>
+                    ))}
+                    <option value="custom">Custom Days</option>
+                  </select>
+
+                  {/* Custom Days Selector if Weekly/Custom */}
+                  {(formData.recurring?.type === 'weekly' || formData.recurring?.type === 'custom') && (
+                    <div className="recurrence-days-grid">
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          className={`day-toggle ${formData.recurring?.days?.includes(idx) ? 'selected' : ''}`}
+                          onClick={() => {
+                            const currentDays = formData.recurring?.days || [];
+                            const newDays = currentDays.includes(idx)
+                              ? currentDays.filter(d => d !== idx)
+                              : [...currentDays, idx];
+                            handleChange('recurring', { ...formData.recurring, type: 'weekly', days: newDays.sort() });
+                          }}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+              {/* SECTION 2: CONTEXT (Bottom) */}
+              <div className="modal-section" aria-label="Context">
                 <div className="form-group">
-                  <label htmlFor="description">Description</label>
-                  <textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleChange('description', e.target.value)}
-                    className="input textarea"
-                    placeholder="Event description"
-                    rows={3}
+                  <label><Tag size={14} /> Category (Auto-colors)</label>
+                  <CustomSelect
+                    options={categories}
+                    value={formData.category}
+                    onChange={(val) => {
+                      const category = val;
+                      const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
+                      handleChange('category', category);
+                      handleChange('color', color);
+                    }}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="location">
+                  <label>
                     <div className="flex-row gap-2 center-align">
-                      <MapPin size={16} />
-                      Location
+                      <MapPin size={14} /> Location
                     </div>
                     {formData.location && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`, '_blank')}
-                        className="map-link-btn"
-                        title="Open in Google Maps"
-                      >
-                        <ExternalLink size={12} /> Map
-                      </button>
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`} target="_blank" rel="noopener noreferrer" className="location-link-header">
+                        <ExternalLink size={10} /> Open Map
+                      </a>
                     )}
                   </label>
                   <input
-                    id="location"
-                    type="text"
                     value={formData.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     className="input"
-                    placeholder="Event location"
-                  />
-                </div>
-              </div>
-
-              <div className="modal-section" aria-label="Schedule details">
-                <h4 className="panel-title"><Clock size={14} /> Schedule time</h4>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="start-date">
-                      <Clock size={16} />
-                      Start Date
-                    </label>
-                    <input
-                      id="start-date"
-                      type="date"
-                      value={formData.start ? toLocalDateInput(new Date(formData.start)) : ''}
-                      onChange={(e) => handleDateChange('start', e.target.value)}
-                      className="input"
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="end-date">End Date</label>
-                    <input
-                      id="end-date"
-                      type="date"
-                      value={formData.end ? toLocalDateInput(new Date(formData.end)) : ''}
-                      onChange={(e) => handleDateChange('end', e.target.value)}
-                      className="input"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="time-picker-grid">
-                  <ClockTimePicker
-                    label="Start Time"
-                    value={formData.start}
-                    onChange={(time) => handleTimeChange('start', time)}
-                  />
-                  <ClockTimePicker
-                    label="End Time"
-                    value={formData.end}
-                    onChange={(time) => handleTimeChange('end', time)}
+                    placeholder="Add location..."
                   />
                 </div>
 
-                <div className="form-group quick-duration">
-                  <label>Quick Duration</label>
-                  <div className="duration-buttons">
-                    {[15, 30, 60, 120].map(minutes => (
-                      <button
-                        key={minutes}
-                        type="button"
-                        onClick={() => handleDurationChange(minutes)}
-                        className="duration-btn"
-                      >
-                        {minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section" aria-label="Event type">
-                <h4 className="panel-title"><Palette size={14} /> Type & preferences</h4>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Category</label>
-                    <CustomSelect
-                      options={categories}
-                      value={formData.category}
-                      onChange={(val) => {
-                        const category = val;
-                        const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
-                        handleChange('category', category);
-                        handleChange('color', color);
-                      }}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <Palette size={16} />
-                      Color
-                    </label>
-                    <div className="color-picker">
-                      {colorOptions.map(color => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => handleChange('color', color)}
-                          className={`color-option ${formData.color === color ? 'selected' : ''}`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>
-                      <Repeat size={16} />
-                      Recurrence
-                    </label>
-                    <select
-                      value={formData.recurring?.type || RECURRENCE_TYPES.NONE}
-                      onChange={(e) => handleChange('recurring', { type: e.target.value })}
-                      className="input"
-                    >
-                      {Object.values(RECURRENCE_TYPES).map(type => (
-                        <option key={type} value={type}>
-                          {formatRecurrenceText({ type })}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>
-                      <Bell size={16} />
-                      Reminder
-                    </label>
-                    <select
-                      value={formData.reminder || ''}
-                      onChange={(e) => handleChange('reminder', e.target.value || null)}
-                      className="input"
-                    >
-                      <option value="">No reminder</option>
-                      <option value="5">5 minutes before</option>
-                      <option value="15">15 minutes before</option>
-                      <option value="30">30 minutes before</option>
-                      <option value="60">1 hour before</option>
-                      <option value="1440">1 day before</option>
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label><MessageSquare size={14} /> Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    className="textarea"
+                    placeholder="Add details..."
+                    rows={2}
+                  />
                 </div>
               </div>
             </div>
@@ -793,34 +727,32 @@ const EventModal = () => {
               </div>
             )}
 
-            <div className="modal-actions">
+            <div className="modal-actions" style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               {isEditing && (
                 <button
                   type="button"
                   onClick={handleDelete}
                   className="btn btn-danger"
+                  style={{ marginRight: 'auto' }}
                 >
-                  <Trash2 size={16} />
-                  Delete
+                  <Trash2 size={16} /> Delete
                 </button>
               )}
 
-              <div className="action-buttons">
-                <button
-                  type="button"
-                  onClick={closeEventModal}
-                  className="btn"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  <Save size={16} />
-                  {isEditing ? 'Update' : 'Create'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={closeEventModal}
+                className="btn"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+              >
+                <Save size={16} />
+                {isEditing ? 'Save Changes' : 'Create Event'}
+              </button>
             </div>
           </form>
         </MotionDiv>
