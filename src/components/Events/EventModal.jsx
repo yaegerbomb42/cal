@@ -17,9 +17,11 @@ const toLocalInputValue = (date) => {
   return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
 };
 
-const toLocalDateInput = (date) => {
-  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}`;
-};
+// Unused utils & constants removed for cleanliness
+// const toLocalDateInput ...
+// const recentTemplates ...
+// const applyTemplate ...
+// const colorOptions ...
 
 const roundToNearestFiveMinutes = (date) => {
   const rounded = new Date(date);
@@ -333,27 +335,7 @@ const EventModal = () => {
     setValidationErrors([]);
   }, [selectedEvent, isEventModalOpen]);
 
-  // Compute frequent event titles as templates
-  const recentTemplates = [...new Set(events.slice(-50).map(e => e.title))]
-    .filter(title => title && title.length > 2)
-    .reverse()
-    .slice(0, 8);
 
-  const applyTemplate = (title) => {
-    const templateEvent = events.findLast(e => e.title === title);
-    if (!templateEvent) {
-      setFormData(prev => ({ ...prev, title }));
-      return;
-    }
-    setFormData(prev => ({
-      ...prev,
-      title: templateEvent.title,
-      description: templateEvent.description || '',
-      category: templateEvent.category || 'personal',
-      location: templateEvent.location || '',
-      color: templateEvent.color || getEventColor(templateEvent.category)
-    }));
-  };
 
   const findNextSlot = async () => {
     const duration = formData.start && formData.end
@@ -495,11 +477,7 @@ const EventModal = () => {
     handleChange(field, toLocalInputValue(ensureValidStartTime(current)));
   };
 
-  const handleTimeChange = (field, { hours, minutes }) => {
-    const current = formData[field] ? new Date(formData[field]) : new Date();
-    current.setHours(hours, minutes, 0, 0);
-    handleChange(field, toLocalInputValue(ensureValidStartTime(current)));
-  };
+
 
   const categories = [
     { value: 'work', label: 'Work', color: getEventColor('work') },
@@ -513,17 +491,7 @@ const EventModal = () => {
     { value: 'holiday', label: 'Holiday', color: getEventColor('holiday') }
   ];
 
-  const colorOptions = [
-    getEventColor('work'),
-    getEventColor('personal'),
-    getEventColor('fun'),
-    getEventColor('hobby'),
-    getEventColor('task'),
-    getEventColor('todo'),
-    getEventColor('event'),
-    getEventColor('appointment'),
-    getEventColor('holiday')
-  ];
+
 
   if (!isEventModalOpen) return null;
 
