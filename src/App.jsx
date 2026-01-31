@@ -75,8 +75,8 @@ const MainLayout = () => {
       const containerWidth = containerRef.current.clientWidth;
       const newPercent = (mouseMoveEvent.clientX / containerWidth) * 100;
 
-      // Limits: 15% to 45%
-      if (newPercent > 15 && newPercent < 45) {
+      // Limits: 10% to 60%
+      if (newPercent > 10 && newPercent < 60) {
         setSidebarPercent(newPercent);
       }
     }
