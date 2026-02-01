@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink, ChevronRight, Sparkles } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink, ChevronRight, Sparkles, MessageSquare } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { getEventColor } from '../../utils/helpers';
 import { validateEvent } from '../../utils/eventValidator';
 import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEvents';
 import { toastService } from '../../utils/toast';
-import { formatTime24, isToday } from '../../utils/dateUtils';
+import { isToday } from '../../utils/dateUtils';
 import { ValidationError } from '../../utils/errors';
 import './EventModal.css';
+
+import SmartDateInput from '../Common/SmartDateInput';
 
 const padTime = (value) => String(value).padStart(2, '0');
 
@@ -17,13 +19,103 @@ const toLocalInputValue = (date) => {
   return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
 };
 
-// Unused utils & constants removed for cleanliness
-// const toLocalDateInput ...
-// const recentTemplates ...
-// const applyTemplate ...
-// const colorOptions ...
+// ... (rest of imports/constants)
 
-const roundToNearestFiveMinutes = (date) => {
+const EventModal = () => {
+  // ... (hooks)
+
+  // Helper to update independent date or time parts
+  const updateDateTime = (field, type, newValue) => {
+    // field: 'start' | 'end'
+    // type: 'date' (Date obj) | 'time' (string "HH:MM")
+    const currentIso = formData[field];
+    const current = currentIso ? new Date(currentIso) : new Date();
+
+    if (type === 'date' && newValue instanceof Date) {
+      current.setFullYear(newValue.getFullYear());
+      current.setMonth(newValue.getMonth());
+      current.setDate(newValue.getDate());
+    } else if (type === 'time') {
+      const [hours, minutes] = newValue.split(':').map(Number);
+      current.setHours(hours);
+      current.setMinutes(minutes);
+    }
+
+    // Ensure valid start/end relationship logic
+    if (field === 'start') {
+      // If start changed, ensure end is at least start + X? 
+      // For now, raw update, but we might want to shift end if start > end?
+      // Let's keep it simple: just update the field.
+      // Validation handles invalid ranges on submit.
+      // Or we can auto-shift end if start passes it.
+      const newDate = ensureValidStartTime(current);
+      handleChange(field, toLocalInputValue(newDate));
+
+      // Auto-shift end if it becomes before start
+      const currentEnd = new Date(formData.end);
+      if (currentEnd < newDate) {
+        const diff = 60 * 60 * 1000; // 1 hour default
+        const newEnd = new Date(newDate.getTime() + diff);
+        handleChange('end', toLocalInputValue(newEnd));
+      }
+
+    } else {
+      handleChange(field, toLocalInputValue(current));
+    }
+  };
+
+  // Extract time string "HH:MM" from ISO
+  const getTimeString = (isoString) => {
+    if (!isoString) return '09:00';
+    const d = new Date(isoString);
+    return `${padTime(d.getHours())}:${padTime(d.getMinutes())}`;
+  };
+
+  // ... (rest of render) ...
+
+  {/* Date & Time Row - Smart Input Split */ }
+  <div className="time-inputs-row">
+    <div className="time-input-group" style={{ flex: 1.5 }}>
+      <label>Start</label>
+      <div className="flex-row gap-2">
+        <div style={{ flex: 2 }}>
+          <SmartDateInput
+            value={formData.start ? new Date(formData.start) : new Date()}
+            onChange={(date) => updateDateTime('start', 'date', date)}
+            autoFocus={!isEditing}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <input
+            type="time"
+            value={getTimeString(formData.start)}
+            onChange={(e) => updateDateTime('start', 'time', e.target.value)}
+            className="clean-time-input"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div className="time-input-group" style={{ flex: 1.5 }}>
+      <label>End</label>
+      <div className="flex-row gap-2">
+        <div style={{ flex: 2 }}>
+          <SmartDateInput
+            value={formData.end ? new Date(formData.end) : new Date()}
+            onChange={(date) => updateDateTime('end', 'date', date)}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <input
+            type="time"
+            value={getTimeString(formData.end)}
+            onChange={(e) => updateDateTime('end', 'time', e.target.value)}
+            className="clean-time-input"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
   const rounded = new Date(date);
   const minutes = Math.round(rounded.getMinutes() / 5) * 5;
   rounded.setMinutes(minutes === 60 ? 0 : minutes, 0, 0);
@@ -154,6 +246,54 @@ const EventModal = () => {
     });
     setValidationErrors([]);
   }, [selectedEvent, isEventModalOpen]);
+
+  // Helper to update independent date or time parts
+  const updateDateTime = (field, type, newValue) => {
+    // field: 'start' | 'end'
+    // type: 'date' (Date obj) | 'time' (string "HH:MM")
+    const currentIso = formData[field];
+    const current = currentIso ? new Date(currentIso) : new Date();
+
+    if (type === 'date' && newValue instanceof Date) {
+      current.setFullYear(newValue.getFullYear());
+      current.setMonth(newValue.getMonth());
+      current.setDate(newValue.getDate());
+    } else if (type === 'time') {
+      const [hours, minutes] = newValue.split(':').map(Number);
+      current.setHours(hours);
+      current.setMinutes(minutes);
+    }
+
+    // Ensure valid start/end relationship logic
+    if (field === 'start') {
+      const newDate = ensureValidStartTime(current);
+      const isoVal = toLocalInputValue(newDate);
+
+      // Manually update state to avoid race conditions or dependency loops
+      setFormData(prev => {
+        const newData = { ...prev, [field]: isoVal };
+
+        // Auto-shift end if it becomes before start
+        const currentEnd = new Date(prev.end);
+        if (currentEnd < newDate) {
+          const diff = 60 * 60 * 1000; // 1 hour default
+          const newEnd = new Date(newDate.getTime() + diff);
+          newData.end = toLocalInputValue(newEnd);
+        }
+        return newData;
+      });
+
+    } else {
+      handleChange(field, toLocalInputValue(current));
+    }
+  };
+
+  // Extract time string "HH:MM" from ISO
+  const getTimeString = (isoString) => {
+    if (!isoString) return '09:00';
+    const d = new Date(isoString);
+    return `${padTime(d.getHours())}:${padTime(d.getMinutes())}`;
+  };
 
 
 
@@ -383,27 +523,7 @@ const EventModal = () => {
                   </div>
                 </button>
 
-                {/* Date & Time Row - Compact */}
-                <div className="time-inputs-row">
-                  <div className="time-input-group">
-                    <label>Start</label>
-                    <input
-                      type="datetime-local"
-                      value={formData.start}
-                      onChange={(e) => handleDateChange('start', e.target.value)}
-                      className="clean-time-input"
-                    />
-                  </div>
-                  <div className="time-input-group">
-                    <label>End</label>
-                    <input
-                      type="datetime-local"
-                      value={formData.end}
-                      onChange={(e) => handleDateChange('end', e.target.value)}
-                      className="clean-time-input"
-                    />
-                  </div>
-                </div>
+
 
                 <div className="quick-durations">
                   {[15, 30, 45, 60, 90, 120].map(m => (
@@ -492,6 +612,50 @@ const EventModal = () => {
                     className="input"
                     placeholder="Add location..."
                   />
+                </div>
+
+                {/* Date & Time Row - Smart Input Split */}
+                <div className="time-inputs-row">
+                  <div className="time-input-group" style={{ flex: 1.5 }}>
+                    <label>Start</label>
+                    <div className="flex-row gap-2">
+                      <div style={{ flex: 2 }}>
+                        <SmartDateInput
+                          value={formData.start ? new Date(formData.start) : new Date()}
+                          onChange={(date) => updateDateTime('start', 'date', date)}
+                          autoFocus={!isEditing}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="time"
+                          value={getTimeString(formData.start)}
+                          onChange={(e) => updateDateTime('start', 'time', e.target.value)}
+                          className="clean-time-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="time-input-group" style={{ flex: 1.5 }}>
+                    <label>End</label>
+                    <div className="flex-row gap-2">
+                      <div style={{ flex: 2 }}>
+                        <SmartDateInput
+                          value={formData.end ? new Date(formData.end) : new Date()}
+                          onChange={(date) => updateDateTime('end', 'date', date)}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="time"
+                          value={getTimeString(formData.end)}
+                          onChange={(e) => updateDateTime('end', 'time', e.target.value)}
+                          className="clean-time-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="form-group">
