@@ -3,11 +3,14 @@ import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import {
   getAuth,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  deleteUser
 } from "firebase/auth";
 import { logger } from '../utils/logger';
 
@@ -58,11 +61,33 @@ class FirebaseService {
   async loginWithGoogle() {
     if (!this.isInitialized && !this.initialize()) throw new Error('Firebase not initialized');
     const provider = new GoogleAuthProvider();
+
+    // First check for redirect result (in case we're returning from a redirect)
     try {
+      const redirectResult = await getRedirectResult(this.auth);
+      if (redirectResult?.user) {
+        this.userId = redirectResult.user.uid;
+        return redirectResult.user;
+      }
+    } catch (redirectError) {
+      logger.warn('No redirect result', { error: redirectError });
+    }
+
+    try {
+      // Try popup first
       const result = await signInWithPopup(this.auth, provider);
       this.userId = result.user.uid;
       return result.user;
     } catch (error) {
+      // If popup fails (blocked, closed, etc.), use redirect
+      if (error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/popup-closed-by-user' ||
+        error.code === 'auth/cancelled-popup-request') {
+        logger.info('Popup blocked, using redirect');
+        await signInWithRedirect(this.auth, provider);
+        // Page will redirect, so this won't return
+        return null;
+      }
       logger.error('Google login error', { error });
       throw error;
     }
@@ -99,6 +124,22 @@ class FirebaseService {
       this.userId = null;
     } catch (error) {
       logger.error('Logout error', { error });
+      throw error;
+    }
+  }
+
+  async deleteAccount() {
+    if (!this.isInitialized || !this.userId) throw new Error('Not authenticated');
+    try {
+      const user = this.auth.currentUser;
+      if (user) {
+        await deleteUser(user);
+        this.userId = null;
+        return true;
+      }
+      return false;
+    } catch (error) {
+      logger.error('Delete account error', { error });
       throw error;
     }
   }

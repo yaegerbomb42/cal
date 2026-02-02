@@ -25,25 +25,14 @@ export class GeminiService {
     try {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      // Use stable Gemini 2.0 Flash model
-      try {
-        // Gemini 2.0 Flash - fast and capable
-        this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-        this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      } catch (error) {
-        logger.warn('Gemini 2.0 Flash failed, trying 1.5 Flash', { error });
-        try {
-          // Fallback to 1.5 Flash if 2.0 not available
-          this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-          this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-        } catch (fallbackError) {
-          logger.warn('Gemini model initialization failed.', { error: fallbackError });
-        }
-      }
+      // Enforce Gemini 2.0 Flash (user requested "3 Flash", which maps to latest 2.0 Flash)
+      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
       this.isInitialized = true;
       return true;
     } catch (error) {
-      logger.error('Failed to initialize Gemini', { error });
+      logger.error('Failed to initialize Gemini 2.0 Flash', { error });
       this.isInitialized = false;
       return false;
     }
@@ -185,7 +174,15 @@ If the text doesn't contain enough information for a calendar event, respond wit
 
       // FALLBACK: Local Brain
       if (localBrainService.isLoaded) {
-        logger.info('Falling back to Offline Brain...');
+        logger.info('Cloud AI failed, auto-falling back to Offline Brain...');
+        // Notify user about the automatic switch
+        window.dispatchEvent(new CustomEvent('toast', {
+          detail: {
+            message: "Cloud AI failed. Switched to Offline Brain.",
+            type: "info"
+          }
+        }));
+
         try {
           const localResult = await localBrainService.parseEvent(text);
           return this.normalizeParsedEvent(localResult, text);
@@ -534,7 +531,7 @@ Keep responses concise and actionable.
       throw new AIServiceError('AI service not initialized.');
     }
 
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    // const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const now = new Date();
 
     const prompt = `

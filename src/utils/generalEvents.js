@@ -44,9 +44,49 @@ const buildHolidayEventsForYear = (year, packId) => ([
 export const GENERAL_EVENT_PACKS = [
   {
     id: 'us-holidays',
-    label: 'US Federal Holidays',
-    description: 'Auto-add major public holidays for this year and next.',
+    label: 'US Holidays',
+    description: 'Federal holidays for this year and next',
     buildEvents: (year) => buildHolidayEventsForYear(year, 'us-holidays')
+  },
+  {
+    id: 'nfl-season',
+    label: 'NFL Season',
+    description: 'Key NFL dates: kickoff, playoffs, Super Bowl',
+    buildEvents: (year) => [
+      buildAllDayEvent('NFL Season Kickoff', new Date(year, 8, 5), 'nfl-season'),
+      buildAllDayEvent('NFL Wild Card Weekend', new Date(year + 1, 0, 11), 'nfl-season'),
+      buildAllDayEvent('Super Bowl Sunday', new Date(year + 1, 1, 9), 'nfl-season')
+    ]
+  },
+  {
+    id: 'nba-season',
+    label: 'NBA Season',
+    description: 'Key NBA dates: tip-off, All-Star, Finals',
+    buildEvents: (year) => [
+      buildAllDayEvent('NBA Season Tip-Off', new Date(year, 9, 22), 'nba-season'),
+      buildAllDayEvent('NBA All-Star Weekend', new Date(year + 1, 1, 14), 'nba-season'),
+      buildAllDayEvent('NBA Finals Start', new Date(year + 1, 5, 1), 'nba-season')
+    ]
+  },
+  {
+    id: 'moon-phases',
+    label: 'Moon Phases',
+    description: 'Full moons and new moons throughout the year',
+    buildEvents: (year) => {
+      // Approximate moon phases (simplified)
+      const phases = [];
+      const baseFullMoon = new Date(year, 0, 13); // Approximate first full moon of year
+      for (let i = 0; i < 12; i++) {
+        const fullMoon = new Date(baseFullMoon);
+        fullMoon.setDate(fullMoon.getDate() + (i * 29));
+        phases.push(buildAllDayEvent('🌕 Full Moon', fullMoon, 'moon-phases'));
+
+        const newMoon = new Date(fullMoon);
+        newMoon.setDate(newMoon.getDate() + 14);
+        phases.push(buildAllDayEvent('🌑 New Moon', newMoon, 'moon-phases'));
+      }
+      return phases;
+    }
   }
 ];
 

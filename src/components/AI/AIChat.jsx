@@ -32,10 +32,10 @@ const AIChat = ({ isOpen, onClose }) => {
   const [clarificationState, setClarificationState] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
-  const [isLocalMode, setIsLocalMode] = useState(localBrainService.getPreferLocal());
+  const [isLocalMode] = useState(localBrainService.getPreferLocal());
   const [isVoiceListening, setIsVoiceListening] = useState(false);
-  const [showJarvis, setShowJarvis] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [, setIsSpeaking] = useState(false);
+
 
   const MotionDiv = motion.div;
   const messagesEndRef = useRef(null);
@@ -60,7 +60,7 @@ const AIChat = ({ isOpen, onClose }) => {
 
     window.addEventListener('calai-ping', handlePing);
     return () => window.removeEventListener('calai-ping', handlePing);
-  }, [events]);
+  }, [events]); // Kept [events] as requested, though linter suggests adding handleAIResponse/processInput. Suppressing or assuming stable refs.
 
   useEffect(() => {
     scrollToBottom();

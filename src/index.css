@@ -401,30 +401,30 @@ h6 {
   background-color: #0f172a;
 }
 
-/* === PREMIUM LIGHT MODE === */
+/* === CALM PASTEL LIGHT MODE === */
 [data-theme="light"] {
-  --bg-primary: #faf9f7;
-  --bg-secondary: #f5f4f2;
-  --bg-tertiary: #ffffff;
-  --accent: #6366f1;
-  --accent-hover: #4f46e5;
-  --accent-glow: rgba(99, 102, 241, 0.2);
-  --text-primary: #1a1a1a;
-  --text-secondary: #4a4a4a;
-  --text-muted: #7a7a7a;
-  --text-disabled: #a0a0a0;
-  --glass-bg: rgba(255, 255, 255, 0.85);
+  --bg-primary: #f8f6f3;
+  --bg-secondary: #f2efeb;
+  --bg-tertiary: #fcfbf9;
+  --accent: #8b9dc3;
+  --accent-hover: #7889b0;
+  --accent-glow: rgba(139, 157, 195, 0.15);
+  --text-primary: #3d4852;
+  --text-secondary: #606f7b;
+  --text-muted: #8795a1;
+  --text-disabled: #b8c2cc;
+  --glass-bg: rgba(252, 251, 249, 0.9);
   --glass-strong: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-divider: rgba(0, 0, 0, 0.06);
-  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --glass-border: rgba(139, 157, 195, 0.12);
+  --glass-divider: rgba(0, 0, 0, 0.04);
+  --glass-shadow: 0 4px 24px rgba(139, 157, 195, 0.08);
   --backdrop-blur: blur(20px);
-  --border: rgba(0, 0, 0, 0.1);
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --border: rgba(139, 157, 195, 0.15);
+  --shadow: 0 4px 16px rgba(139, 157, 195, 0.06);
 }
 
 [data-theme="light"] body {
-  background: linear-gradient(145deg, #faf9f7 0%, #f0eeeb 50%, #e8e6e3 100%);
+  background: linear-gradient(145deg, #f8f6f3 0%, #f0ece6 50%, #e8e4de 100%);
   color: var(--text-primary);
 }
 

@@ -28,11 +28,11 @@ body {
 .main-content {
   flex: 1;
   padding: 0;
-  /* Remove padding entirely for full resize feel */
   max-width: 100%;
   margin: 0;
   width: 100%;
-  display: grid;
+  display: flex;
+  flex-direction: row;
   gap: 0;
   min-height: 0;
   overflow: hidden;

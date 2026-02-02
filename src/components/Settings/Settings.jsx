@@ -41,7 +41,8 @@ const Settings = ({ isOpen, onClose }) => {
   const [testChatHistory, setTestChatHistory] = useState([]);
   const [isChatProcessing, setIsChatProcessing] = useState(false);
   const chatScrollRef = useRef(null);
-  const [appVersion, setAppVersion] = useState('v1.2.4-beta');
+  // eslint-disable-next-line no-undef
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev';
 
   // Priority Preferences State
   const [priorityPrefs, setPriorityPrefs] = useState({
@@ -116,21 +117,12 @@ const Settings = ({ isOpen, onClose }) => {
     savePriorityPrefs(newPrefs);
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      fetch('/version.json')
-        .then(res => res.json())
-        .then(data => setAppVersion(`v${data.version} (${data.commit})`))
-        .catch(() => { });
-    }
-  }, [isOpen]);
-
   const { events, addEvent, deleteEventsByFilter } = useEvents();
 
   const tabs = [
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
     { id: 'ai', label: 'AI Engine', icon: Cpu, color: '#8b5cf6' },
-    { id: 'priority', label: 'Priority', icon: Zap, color: '#f59e0b' },
+    { id: 'preferences', label: 'Preferences', icon: Zap, color: '#f59e0b' },
     { id: 'packs', label: 'Cal Packs', icon: CalendarIcon, color: '#10b981' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
     { id: 'data', label: 'Storage', icon: Download, color: '#f43f5e' },
@@ -430,6 +422,20 @@ const Settings = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you absolutely sure? This will permanently delete your account and all calendar data. This action cannot be undone.')) {
+      try {
+        await firebaseService.deleteAccount();
+        toastService.success('Account deleted successfully');
+        onClose();
+        window.location.reload(); // Refresh to clear state
+      } catch (error) {
+        logger.error('Failed to delete account', { error });
+        toastService.error('Failed to delete account: ' + (error.message || 'Unknown error'));
+      }
+    }
+  };
+
   // --- Render Helpers ---
 
   const renderAITab = () => (
@@ -632,7 +638,7 @@ const Settings = ({ isOpen, onClose }) => {
 
                       <div className="packs-grid mt-4">
                         {GENERAL_EVENT_PACKS.map(pack => (
-                          <div key={pack.id} className="pack-card glass-card">
+                          <div key={pack.id} className={`pack-card glass-card ${generalEventPacks[pack.id] ? 'active' : ''}`}>
                             <div className="pack-header">
                               <div className="pack-icon-wrapper">
                                 <svg viewBox="0 0 24 24" width="36" height="36" className="holiday-pack-icon">
@@ -642,24 +648,16 @@ const Settings = ({ isOpen, onClose }) => {
                                   <text x="15" y="10" fontSize="6" fill="white" textAnchor="middle" fontWeight="bold">★</text>
                                 </svg>
                               </div>
-                              <label className="toggle-switch">
-                                <input
-                                  type="checkbox"
-                                  checked={!!generalEventPacks[pack.id]}
-                                  onChange={(e) => handleToggleGeneralPack(pack.id, e.target.checked)}
-                                />
-                                <span className="toggle-slider" />
-                              </label>
+                              <button
+                                className={`pack-add-btn ${generalEventPacks[pack.id] ? 'added' : ''}`}
+                                onClick={() => handleToggleGeneralPack(pack.id, !generalEventPacks[pack.id])}
+                              >
+                                {generalEventPacks[pack.id] ? '✓ Added' : '+ Add'}
+                              </button>
                             </div>
                             <div className="pack-body">
                               <h4>{pack.label}</h4>
                               <p>{pack.description}</p>
-                            </div>
-                            <div className="pack-status">
-                              {generalEventPacks[pack.id]
-                                ? <span className="status-active">✓ Active</span>
-                                : <span className="status-inactive">Not added</span>
-                              }
                             </div>
                           </div>
                         ))}
@@ -667,7 +665,7 @@ const Settings = ({ isOpen, onClose }) => {
 
                       <div className="info-box mt-4 neutral">
                         <CalendarIcon size={16} />
-                        <p>Toggle packs on to add events to your calendar. Toggle off to remove them.</p>
+                        <p>Adds events directly to your calendar when toggled on.</p>
                       </div>
                     </div>
                   )}
@@ -697,105 +695,167 @@ const Settings = ({ isOpen, onClose }) => {
                         </div>
                       </div>
 
-                      <div className="glass-card padding-lg row-between">
-                        <div>
-                          <h4>Appearance</h4>
-                          <p className="text-muted">Switch between light and dark themes.</p>
+                      {/* User Stats Section */}
+                      <div className="glass-card padding-lg">
+                        <h4 className="mb-4">Your Stats</h4>
+                        <div className="user-stats-grid">
+                          <div className="stat-item">
+                            <span className="stat-value">{events.length}</span>
+                            <span className="stat-label">Lifetime Events</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-value">{user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</span>
+                            <span className="stat-label">Member Since</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-value">{Math.round((Date.now() - (user?.metadata?.creationTime ? new Date(user.metadata.creationTime).getTime() : Date.now())) / (1000 * 60 * 60 * 24))}d</span>
+                            <span className="stat-label">Days Active</span>
+                          </div>
                         </div>
-                        <button onClick={toggleTheme} className="theme-toggle-large">
-                          {isDark ? 'Dark Mode' : 'Light Mode'}
-                        </button>
+                      </div>
+
+                      {/* Account Actions */}
+                      <div className="glass-card padding-lg">
+                        <h4 className="mb-2">Account</h4>
+                        <p className="text-muted text-sm mb-3">Manage your account settings and data.</p>
+                        <div className="account-actions">
+                          <button
+                            className="btn btn-outline"
+                            onClick={handleExportData}
+                          >
+                            Export My Data
+                          </button>
+                          <button
+                            className="btn btn-danger-outline"
+                            onClick={handleDeleteAccount}
+                          >
+                            Delete Account
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {activeTab === 'priority' && (
-                    <div className="content-section priority-section">
+                  {activeTab === 'preferences' && (
+                    <div className="content-section preferences-section">
 
-                      {/* Section 1: Core AI Tuning - Minimal & Impactful */}
+                      {/* Section 1: Scheduling Style - Intuitive Presets */}
                       <div className="glass-card padding-lg">
                         <div className="section-header mb-4">
-                          <h3>Focus Intelligence</h3>
-                          <span className="status-badge active">AI-Powered</span>
+                          <h3>How I Schedule</h3>
+                          <span className="text-muted text-xs">Choose what fits your style</span>
                         </div>
 
-                        <div className="priority-slider-group mb-4">
-                          <div className="flex-row justify-between mb-2">
-                            <label className="font-medium">Structure vs. Flexibility</label>
-                            <span className="text-muted small">
-                              {priorityPrefs.conflictResolution === 'priority' ? 'Strict Schedule' : 'Adaptive Flow'}
-                            </span>
-                          </div>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={priorityPrefs.urgencyWeight} // Reusing urgency as main 'strictness' proxy for now
-                            onChange={(e) => updatePriorityPref('urgencyWeight', parseInt(e.target.value))}
-                            className="priority-slider"
-                          />
+                        <div className="scheduling-presets">
+                          <button
+                            className={`preset-card ${priorityPrefs.urgencyWeight >= 70 ? 'selected' : ''}`}
+                            onClick={() => {
+                              updatePriorityPref('urgencyWeight', 85);
+                              updatePriorityPref('conflictResolution', 'priority');
+                              updatePriorityPref('preferUninterrupted', true);
+                            }}
+                          >
+                            <div className="preset-icon">📋</div>
+                            <div className="preset-content">
+                              <span className="preset-title">Structured</span>
+                              <span className="preset-desc">I stick to my schedule. Don't move things around.</span>
+                            </div>
+                            {priorityPrefs.urgencyWeight >= 70 && <Check size={16} className="preset-check" />}
+                          </button>
+
+                          <button
+                            className={`preset-card ${priorityPrefs.urgencyWeight >= 40 && priorityPrefs.urgencyWeight < 70 ? 'selected' : ''}`}
+                            onClick={() => {
+                              updatePriorityPref('urgencyWeight', 55);
+                              updatePriorityPref('conflictResolution', 'ask');
+                              updatePriorityPref('preferUninterrupted', true);
+                            }}
+                          >
+                            <div className="preset-icon">⚖️</div>
+                            <div className="preset-content">
+                              <span className="preset-title">Balanced</span>
+                              <span className="preset-desc">Suggest changes, but ask me first.</span>
+                            </div>
+                            {priorityPrefs.urgencyWeight >= 40 && priorityPrefs.urgencyWeight < 70 && <Check size={16} className="preset-check" />}
+                          </button>
+
+                          <button
+                            className={`preset-card ${priorityPrefs.urgencyWeight < 40 ? 'selected' : ''}`}
+                            onClick={() => {
+                              updatePriorityPref('urgencyWeight', 25);
+                              updatePriorityPref('conflictResolution', 'chronological');
+                              updatePriorityPref('autoReschedule', true);
+                            }}
+                          >
+                            <div className="preset-icon">🌊</div>
+                            <div className="preset-content">
+                              <span className="preset-title">Flexible</span>
+                              <span className="preset-desc">Optimize my time automatically. I'm easy-going.</span>
+                            </div>
+                            {priorityPrefs.urgencyWeight < 40 && <Check size={16} className="preset-check" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Work Rhythm */}
+                      <div className="glass-card padding-lg mt-3">
+                        <div className="section-header mb-4">
+                          <h3>My Work Rhythm</h3>
                         </div>
 
-                        <div className="flex-row gap-lg mt-4">
-                          {/* Peak Energy Selection */}
-                          <div className="flex-1">
-                            <label className="block mb-3 font-medium text-sm">Peak Energy</label>
-                            <div className="energy-blocks compact">
-                              {['morning', 'afternoon', 'evening'].map(time => (
+                        <div className="rhythm-grid">
+                          {/* Peak Energy */}
+                          <div className="rhythm-item">
+                            <label className="rhythm-label">When I'm most productive</label>
+                            <div className="energy-blocks">
+                              {[
+                                { id: 'morning', icon: '☀️', label: 'Morning', time: '6am-12pm' },
+                                { id: 'afternoon', icon: '🌤️', label: 'Afternoon', time: '12pm-6pm' },
+                                { id: 'evening', icon: '🌙', label: 'Evening', time: '6pm-12am' }
+                              ].map(time => (
                                 <button
-                                  key={time}
-                                  className={`energy-block mini ${priorityPrefs.peakEnergyTime === time ? 'peak' : ''}`}
-                                  onClick={() => updatePriorityPref('peakEnergyTime', time)}
-                                  title={`I work best in the ${time}`}
+                                  key={time.id}
+                                  className={`energy-block ${priorityPrefs.peakEnergyTime === time.id ? 'selected' : ''}`}
+                                  onClick={() => updatePriorityPref('peakEnergyTime', time.id)}
                                 >
-                                  <span className="text-lg">
-                                    {time === 'morning' && '☀️'}
-                                    {time === 'afternoon' && '🌤️'}
-                                    {time === 'evening' && '🌙'}
-                                  </span>
-                                  <span className="energy-label capitalize">{time}</span>
+                                  <span className="energy-icon">{time.icon}</span>
+                                  <span className="energy-name">{time.label}</span>
                                 </button>
                               ))}
                             </div>
                           </div>
 
-                          {/* Work Context Switch */}
-                          <div className="flex-1">
-                            <label className="block mb-3 font-medium text-sm">Focus Duration</label>
-                            <div className="focus-toggle-group">
-                              <button
-                                className={`toggle-btn ${priorityPrefs.deepWorkDuration <= 45 ? 'selected' : ''}`}
-                                onClick={() => updatePriorityPref('deepWorkDuration', 45)}
-                              >
-                                Sprints (45m)
-                              </button>
-                              <button
-                                className={`toggle-btn ${priorityPrefs.deepWorkDuration > 45 ? 'selected' : ''}`}
-                                onClick={() => updatePriorityPref('deepWorkDuration', 90)}
-                              >
-                                Deep (90m)
-                              </button>
+                          {/* Focus Duration */}
+                          <div className="rhythm-item">
+                            <label className="rhythm-label">How long I can focus</label>
+                            <div className="focus-options">
+                              {[
+                                { value: 25, label: 'Short bursts', desc: '25 min' },
+                                { value: 45, label: 'Medium blocks', desc: '45 min' },
+                                { value: 90, label: 'Deep sessions', desc: '90 min' }
+                              ].map(opt => (
+                                <button
+                                  key={opt.value}
+                                  className={`focus-option ${priorityPrefs.deepWorkDuration === opt.value ? 'selected' : ''}`}
+                                  onClick={() => updatePriorityPref('deepWorkDuration', opt.value)}
+                                >
+                                  <span className="focus-label">{opt.label}</span>
+                                  <span className="focus-time">{opt.desc}</span>
+                                </button>
+                              ))}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Section 2: AI Autonomy - Consolidated */}
+                      {/* Section 3: Quick Settings */}
                       <div className="glass-card padding-lg mt-3">
-                        <div className="flex-row justify-between align-center mb-1">
-                          <h4>AI Autonomy</h4>
-                          <div className="flex-row gap-sm text-muted">
-                            <Zap size={14} />
-                            <span className="text-xs">Auto-Optimizing</span>
-                          </div>
-                        </div>
-
-                        <div className="ai-behavior-grid compact mt-3">
-                          <label className="ai-behavior-row">
-                            <span className="flex-1">
-                              <span className="block font-medium">Smart Reschedule</span>
-                              <span className="text-muted text-xs">Move flexible tasks when higher priorities arise</span>
-                            </span>
+                        <div className="quick-settings-grid">
+                          <label className="quick-setting-row">
+                            <div className="setting-info">
+                              <span className="setting-name">Smart reschedule</span>
+                              <span className="setting-desc">Move events when conflicts happen</span>
+                            </div>
                             <div className="toggle-switch-wrapper">
                               <input
                                 type="checkbox"
@@ -808,11 +868,11 @@ const Settings = ({ isOpen, onClose }) => {
                             </div>
                           </label>
 
-                          <label className="ai-behavior-row">
-                            <span className="flex-1">
-                              <span className="block font-medium">Protect Deep Work</span>
-                              <span className="text-muted text-xs">Automatically group meetings to save focus time</span>
-                            </span>
+                          <label className="quick-setting-row">
+                            <div className="setting-info">
+                              <span className="setting-name">Protect focus blocks</span>
+                              <span className="setting-desc">Cluster meetings, keep work time clear</span>
+                            </div>
                             <div className="toggle-switch-wrapper">
                               <input
                                 type="checkbox"
@@ -824,24 +884,37 @@ const Settings = ({ isOpen, onClose }) => {
                               </span>
                             </div>
                           </label>
-                          <label className="ai-behavior-row">
-                            <span className="flex-1">
-                              <span className="block font-medium">Default Reminder</span>
-                              <span className="text-muted text-xs">Minutes before event</span>
-                            </span>
-                            <div className="flex-row align-center gap-sm">
-                              <input
-                                type="number"
-                                min="0"
-                                step="5"
-                                value={priorityPrefs.defaultReminder || 15}
-                                onChange={(e) => updatePriorityPref('defaultReminder', parseInt(e.target.value))}
-                                className="pref-input compact"
-                                style={{ width: '50px', padding: '4px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--settings-border)', borderRadius: '6px', color: 'var(--text-primary)' }}
-                              />
-                              <span className="text-xs text-muted">min</span>
+
+                          <div className="quick-setting-row">
+                            <div className="setting-info">
+                              <span className="setting-name">Default reminder</span>
+                              <span className="setting-desc">Notify me before events</span>
                             </div>
-                          </label>
+                            <div className="reminder-pills">
+                              {[5, 15, 30, 60].map(min => (
+                                <button
+                                  key={min}
+                                  className={`reminder-pill ${priorityPrefs.defaultReminder === min ? 'selected' : ''}`}
+                                  onClick={() => updatePriorityPref('defaultReminder', min)}
+                                >
+                                  {min}m
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Appearance Toggle - moved here from Account */}
+                      <div className="glass-card padding-lg mt-3">
+                        <div className="quick-setting-row">
+                          <div className="setting-info">
+                            <span className="setting-name">Appearance</span>
+                            <span className="setting-desc">{isDark ? 'Dark mode enabled' : 'Light mode enabled'}</span>
+                          </div>
+                          <button onClick={toggleTheme} className="theme-toggle-btn">
+                            {isDark ? '🌙 Dark' : '☀️ Light'}
+                          </button>
                         </div>
                       </div>
 
@@ -861,10 +934,10 @@ const Settings = ({ isOpen, onClose }) => {
                         </div>
                         <button
                           onClick={handleGoogleCalendarSync}
-                          disabled={isSyncing}
+                          disabled={isSyncing || isGCalConnected}
                           className={`btn-connect ${isGCalConnected ? 'connected' : ''}`}
                         >
-                          {isSyncing ? 'Syncing...' : isGCalConnected ? 'Sync Now' : 'Connect'}
+                          {isSyncing ? 'Syncing...' : isGCalConnected ? '✓ Synced' : 'Connect'}
                         </button>
                       </div>
 

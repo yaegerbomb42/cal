@@ -35,7 +35,39 @@
 .year-controls {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
+}
+
+.year-ai-form {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(var(--accent-rgb), 0.05);
+  border: 1px solid rgba(var(--accent-rgb), 0.1);
+  border-radius: 99px;
+  padding: 0.35rem 0.85rem;
+  max-width: 300px;
+  flex: 1;
+}
+
+.year-ai-form .ai-icon {
+  color: var(--accent);
+}
+
+.year-ai-form .ai-input {
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  width: 100%;
+  outline: none;
+}
+
+.year-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
 }
 
 .year-stat {
@@ -83,24 +115,12 @@
 }
 
 .day-labels {
-  display: grid;
-  grid-template-rows: repeat(7, 14px);
-  gap: 4px;
-  padding-top: 1px;
-  /* Align with cells */
+  display: none;
+  /* Removed as requested */
 }
 
 .day-labels span {
-  font-size: 0.65rem;
-  line-height: 14px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-}
-
-/* Hide some labels for cleaner look like github? usually 1,3,5 */
-.day-labels span:nth-child(2n) {
-  visibility: hidden;
+  display: none;
 }
 
 .github-grid {
@@ -111,16 +131,29 @@
 }
 
 .year-day {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
   transition: transform 0.1s;
-  /* Reset button styles */
   padding: 0;
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.year-day .day-num {
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.year-day:hover .day-num {
+  opacity: 1;
 }
 
 .year-day:hover {
@@ -130,6 +163,11 @@
 
 .year-day.has-events {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.year-day.has-events .day-num {
+  color: var(--text-primary);
+  opacity: 0.8;
 }
 
 .year-day.spacer {

@@ -41,7 +41,8 @@ const WeekView = () => {
 
   const handleDuplicateEvent = (event) => {
     // Basic duplication logic
-    const newEvent = { ...event, id: crypto.randomUUID(), title: `${event.title} (Copy)` };
+    // Basic duplication logic
+    // const newEvent = { ...event, id: crypto.randomUUID(), title: `${event.title} (Copy)` };
     // Assuming context has addEvent, but if not we might need to use updateEvent logic or window dispatch
     // Actually useEvents hook usually exposes addEvent. I'll rely on it or similar.
     // Wait, useEvents usually exposes addEvent. I will assume `addEvent` exists in the context now.
@@ -347,6 +348,17 @@ const WeekView = () => {
                     );
                   })}
                 </div>
+
+                {/* Live time indicator for today */}
+                {isToday(day) && (
+                  <div
+                    className="week-time-indicator"
+                    style={{ top: `${getCurrentTimePosition(pixelsPerHour)}px` }}
+                  >
+                    <div className="week-time-indicator-dot" />
+                    <div className="week-time-indicator-line" />
+                  </div>
+                )}
               </div>
             );
           })}

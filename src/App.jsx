@@ -72,11 +72,14 @@ const MainLayout = () => {
 
   const resize = useCallback((mouseMoveEvent) => {
     if (isResizing && containerRef.current) {
-      const containerWidth = containerRef.current.clientWidth;
-      const newPercent = (mouseMoveEvent.clientX / containerWidth) * 100;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      // Calculate from the RIGHT edge (sidebar width)
+      const newWidth = containerRect.right - mouseMoveEvent.clientX;
+      const containerWidth = containerRect.width;
+      const newPercent = (newWidth / containerWidth) * 100;
 
-      // Limits: 10% to 60%
-      if (newPercent > 10 && newPercent < 60) {
+      // Limits: 15% to 50%
+      if (newPercent > 15 && newPercent < 50) {
         setSidebarPercent(newPercent);
       }
     }
@@ -171,11 +174,9 @@ const MainLayout = () => {
         <main
           className="main-content"
           ref={containerRef}
-          style={{ gridTemplateColumns: `${sidebarPercent}% 12px calc(${100 - sidebarPercent}% - 12px)` }}
-        // Note: Percentage based split with explicit calendar width
         >
-          <div className="sidebar-container">
-            <UpcomingSidebar />
+          <div className="calendar-container" style={{ flex: `1 1 calc(${100 - sidebarPercent}% - 6px)` }}>
+            <Calendar />
           </div>
 
           <div
@@ -185,8 +186,8 @@ const MainLayout = () => {
             <div className="resize-line" />
           </div>
 
-          <div className="calendar-container">
-            <Calendar />
+          <div className="sidebar-container" style={{ width: `${sidebarPercent}%`, flexShrink: 0 }}>
+            <UpcomingSidebar />
           </div>
         </main>
 

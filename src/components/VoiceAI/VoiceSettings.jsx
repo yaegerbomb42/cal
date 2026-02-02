@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Volume2, Mic, Zap, Settings as SettingsIcon } from 'lucide-react';
 import { voiceAIService } from '../../services/voiceAIService';
 import JarvisParticles from './JarvisParticles';
@@ -9,7 +9,7 @@ import './JarvisParticles.css';
  * 
  * Provides toggleable voice input/output settings with HAL personality
  */
-const VoiceSettings = ({ onClose }) => {
+const VoiceSettings = () => {
     const [voiceEnabled, setVoiceEnabled] = useState(voiceAIService.isEnabled);
     const [speakEnabled, setSpeakEnabled] = useState(true);
     const [voiceSpeed, setVoiceSpeed] = useState(voiceAIService.voiceSpeed);

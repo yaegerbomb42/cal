@@ -339,40 +339,50 @@ const UpcomingSidebar = () => {
                 <>
                     <div className="sidebar-header">
                         <div className="header-title-row">
-                            <h3>{viewMode === 'upcoming' ? 'Upcoming' : 'Archive'}</h3>
-                            <div className="header-actions">
-                                <button
-                                    className={`icon-btn ${focusMode ? 'active' : ''}`}
-                                    onClick={toggleFocusMode}
-                                    title="Enter Focus Mode"
-                                >
-                                    <Zap size={16} />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode(viewMode === 'upcoming' ? 'archive' : 'upcoming')}
-                                    className={`icon-btn ${viewMode === 'archive' ? 'active' : ''}`}
-                                    title={viewMode === 'upcoming' ? "View Past Events" : "View Upcoming"}
-                                >
-                                    {viewMode === 'upcoming' ? <History size={16} /> : <Calendar size={16} />}
-                                </button>
-                                <button
-                                    onClick={() => setShowDeleteModal(!showDeleteModal)}
-                                    className={`icon-btn ${showDeleteModal ? 'active-red' : ''}`}
-                                    title="Bulk Delete"
-                                >
-                                    <div className="stacked-trash-icon">
-                                        <Trash2 size={14} className="trash-front" />
-                                        <Trash2 size={14} className="trash-back" />
-                                    </div>
-                                </button>
-                            </div>
+                            <h3>{viewMode === 'upcoming' ? 'Upcoming' : viewMode === 'archive' ? 'Archive' : viewMode === 'bulk-trash' ? 'Bulk Delete' : 'Upcoming'}</h3>
                         </div>
-                        {!showDeleteModal && (
+
+                        {/* Four-button navigation row - switches between states */}
+                        <div className="sidebar-nav-row">
+                            <button
+                                className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
+                                onClick={() => setViewMode('bulk-trash')}
+                                title="Bulk Delete"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 6h4m0 0V4h4v2m-4 0h4m6 0h2M7 6v12a2 2 0 002 2h6a2 2 0 002-2V6" />
+                                    <path d="M11 6h2" opacity="0.5" />
+                                </svg>
+                            </button>
+                            <button
+                                className={`nav-btn-item ${focusMode ? 'active' : ''}`}
+                                onClick={toggleFocusMode}
+                                title="Focus Mode"
+                            >
+                                <Zap size={16} />
+                            </button>
+                            <button
+                                className={`nav-btn-item ${viewMode === 'archive' ? 'active' : ''}`}
+                                onClick={() => setViewMode('archive')}
+                                title="Archive"
+                            >
+                                <Archive size={16} />
+                            </button>
+                            <button
+                                className={`nav-btn-item ${viewMode === 'upcoming' && !focusMode ? 'active' : ''}`}
+                                onClick={() => setViewMode('upcoming')}
+                                title="Upcoming"
+                            >
+                                <Calendar size={16} />
+                            </button>
+                        </div>
+
+                        {viewMode !== 'bulk-trash' && (
                             <span className="event-count">{displayEvents.length} events</span>
                         )}
                     </div>
 
-                    {!showDeleteModal && (
+                    {viewMode !== 'bulk-trash' && (
                         <div className="filter-container" style={{ padding: '0.75rem 1rem' }}>
                             <CustomMultiSelect
                                 options={[
@@ -389,8 +399,8 @@ const UpcomingSidebar = () => {
                         </div>
                     )}
 
-                    {/* Delete By Name Modal/Area */}
-                    {showDeleteModal && (
+                    {/* Bulk Delete View */}
+                    {viewMode === 'bulk-trash' && (
                         <div className="delete-modal-area fade-in">
                             <div className="delete-header">
                                 <span className="delete-title">Bulk delete by name</span>
@@ -405,9 +415,6 @@ const UpcomingSidebar = () => {
                                     onChange={(e) => setDeleteSearch(e.target.value)}
                                     className="delete-input"
                                 />
-                                <button onClick={() => setShowDeleteModal(false)} className="close-btn">
-                                    <X size={14} />
-                                </button>
                             </div>
                             <button
                                 disabled={!deleteSearch.trim()}

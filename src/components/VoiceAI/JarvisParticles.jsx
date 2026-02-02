@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { voiceAIService } from '../../services/voiceAIService';
 import './JarvisParticles.css';
@@ -16,8 +16,8 @@ const JarvisParticles = ({ isActive, isSpeaking, onTranscript, className }) => {
     const canvasRef = useRef(null);
     const animationRef = useRef(null);
     const particlesRef = useRef([]);
-    const audioContextRef = useRef(null);
-    const analyserRef = useRef(null);
+    // const audioContextRef = useRef(null);
+    // const analyserRef = useRef(null);
     const [isListening, setIsListening] = useState(false);
     const [currentWord, setCurrentWord] = useState('');
     const [amplitude, setAmplitude] = useState(0);

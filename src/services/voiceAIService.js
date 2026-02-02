@@ -114,7 +114,7 @@ class VoiceAIService {
 
         this.wakeWordRecognition.onend = () => {
             if (this.isWakeWordEnabled && !this.isListening) {
-                try { this.wakeWordRecognition.start(); } catch (e) { }
+                try { this.wakeWordRecognition.start(); } catch { /* ignore */ }
             }
         };
     }
@@ -122,7 +122,7 @@ class VoiceAIService {
     startListening() {
         if (!this.recognition || this.isListening) return false;
         if (this.wakeWordRecognition) {
-            try { this.wakeWordRecognition.stop(); } catch (e) { }
+            try { this.wakeWordRecognition.stop(); } catch { /* ignore */ }
         }
 
         try {
@@ -146,7 +146,7 @@ class VoiceAIService {
         try {
             this.wakeWordRecognition.start();
             this.isWakeWordListening = true;
-        } catch (e) { }
+        } catch { /* ignore */ }
     }
 
     stopWakeWord() {
@@ -155,7 +155,7 @@ class VoiceAIService {
         try {
             this.wakeWordRecognition.stop();
             this.isWakeWordListening = false;
-        } catch (e) { }
+        } catch { /* ignore */ }
     }
 
     speak(text, options = {}) {

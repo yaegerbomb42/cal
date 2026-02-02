@@ -63,7 +63,7 @@ const Login = () => {
                     </div>
                     <span>CalAI</span>
                 </div>
-                <button onClick={() => setShowAuth(true)} className="nav-btn">Sign In</button>
+                {/* Sign-in button removed - using center CTA only */}
             </nav>
 
             <main className="landing-content">

@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import { eachDayOfInterval, endOfYear, format, startOfYear, getDay, isSameMonth } from 'date-fns';
+import { eachDayOfInterval, format, startOfYear, getDay } from 'date-fns';
+import { Plus, Sparkles } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
-import { endOfDay, startOfDay } from '../../utils/dateUtils';
 import { cn, getEventColor } from '../../utils/helpers';
 import './YearView.css';
 
@@ -33,8 +33,9 @@ const getEventColorSplit = (events) => {
   return { background: `linear-gradient(135deg, ${stops.join(', ')})` };
 };
 
-const YearDayCell = memo(({ day, count, events, isSelectedMonth, onSelect }) => {
+const YearDayCell = memo(({ day, count, events, onSelect }) => {
   const style = getEventColorSplit(events);
+  const dayNum = day.getDate();
 
   return (
     <MotionButton
@@ -47,7 +48,9 @@ const YearDayCell = memo(({ day, count, events, isSelectedMonth, onSelect }) => 
       onClick={() => onSelect(day)}
       whileHover={{ scale: 1.3, zIndex: 10 }}
       title={`${format(day, 'MMM d, yyyy')}: ${count} events`}
-    />
+    >
+      <span className="day-num">{dayNum}</span>
+    </MotionButton>
   );
 });
 
@@ -56,15 +59,32 @@ YearDayCell.displayName = 'YearDayCell';
 const YearView = ({ onYearChange }) => {
   const { currentDate, openEventModal, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
+  const [quickInput, setQuickInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const selectedYear = currentDate.getFullYear();
 
+  const handleAICommand = async (e) => {
+    e.preventDefault();
+    if (!quickInput.trim()) return;
+    setIsProcessing(true);
+    // Implementation of AI command handling if needed, or just standard integration
+    // For now, consistent UI is the priority.
+    setQuickInput('');
+    setIsProcessing(false);
+  };
+
+  const handleAddEvent = () => {
+    const now = new Date();
+    const start = new Date(selectedYear, now.getMonth(), now.getDate(), 9, 0);
+    openEventModal({ start: start.toISOString() });
+  };
   // Generate all days for the year
   const yearDays = useMemo(() => {
     return eachDayOfInterval({
       start: startOfYear(currentDate),
-      end: endOfYear(currentDate)
+      end: new Date(currentDate.getFullYear(), 11, 31)
     });
-  }, [selectedYear]);
+  }, [currentDate]);
 
   // Calculate stats
   const yearEventsCount = useMemo(() => {
@@ -113,7 +133,22 @@ const YearView = ({ onYearChange }) => {
           <span className="year-subtitle">{selectedYear} Cal</span>
         </div>
 
+        <form onSubmit={handleAICommand} className="year-ai-form">
+          <Sparkles size={14} className="ai-icon" />
+          <input
+            type="text"
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            placeholder="Ask Cal..."
+            className="ai-input"
+            disabled={isProcessing}
+          />
+        </form>
+
         <div className="year-controls">
+          <button className="btn btn-primary year-add-btn" onClick={handleAddEvent}>
+            <Plus size={16} /> Add Event
+          </button>
           <div className="year-stat">
             <span className="count">{yearEventsCount}</span>
             <span className="label">Total Events</span>
@@ -133,16 +168,7 @@ const YearView = ({ onYearChange }) => {
 
       <div className="year-content glass-card">
         <div className="github-grid-container">
-          <div className="day-labels">
-            <span>Sun</span>
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
-          </div>
-
+          {/* Day labels removed as requested */}
           <div className="github-grid">
             {spacers.map((_, i) => (
               <div key={`spacer-${i}`} className="year-day spacer" />

@@ -12,6 +12,8 @@ import { ValidationError } from '../../utils/errors';
 import './EventModal.css';
 
 import SmartDateInput from '../Common/SmartDateInput';
+import ClockPicker from '../Common/ClockPicker';
+import SmartSchedulePortal from './SmartSchedulePortal';
 
 const padTime = (value) => String(value).padStart(2, '0');
 
@@ -109,6 +111,7 @@ const EventModal = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [showSmartSchedule, setShowSmartSchedule] = useState(false);
 
   useEffect(() => {
     if (!isEventModalOpen) return;
@@ -201,65 +204,7 @@ const EventModal = () => {
 
 
 
-  const findNextSlot = async () => {
-    const duration = formData.start && formData.end
-      ? Math.round((new Date(formData.end) - new Date(formData.start)) / (60 * 1000))
-      : 60;
-
-    try {
-      // Use AI-powered slot suggestion
-      const { geminiService } = await import('../../services/geminiService');
-      const suggestions = await geminiService.suggestOptimalSlot(
-        {
-          title: formData.title,
-          category: formData.category,
-          duration: duration,
-          preferredDate: formData.start ? new Date(formData.start) : new Date()
-        },
-        events.slice(-50) // Recent events for context
-      );
-
-      if (suggestions && suggestions.length > 0) {
-        const best = suggestions[0];
-        setFormData(prev => ({
-          ...prev,
-          start: toLocalInputValue(new Date(best.start)),
-          end: toLocalInputValue(new Date(best.end))
-        }));
-        toastService.success(`✨ ${best.reason || 'Found an optimal slot!'}`);
-        return;
-      }
-    } catch {
-      // Fallback to simple heuristic
-    }
-
-    // Simple fallback: find first 1h gap in next 7 days
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    let checkTime = new Date(now);
-    checkTime.setHours(checkTime.getHours() + 1);
-
-    for (let i = 0; i < 24 * 7; i++) {
-      const slotEnd = new Date(checkTime.getTime() + duration * 60 * 1000);
-      const hasConflict = events.some(e => {
-        const s = new Date(e.start);
-        const en = new Date(e.end);
-        return (checkTime < en && slotEnd > s);
-      });
-
-      if (!hasConflict) {
-        setFormData(prev => ({
-          ...prev,
-          start: toLocalInputValue(checkTime),
-          end: toLocalInputValue(slotEnd)
-        }));
-        toastService.info("Found an available slot!");
-        return;
-      }
-      checkTime.setHours(checkTime.getHours() + 1);
-    }
-    toastService.warning("No clear slots found in the next week.");
-  };
+  // findNextSlot was replaced by SmartSchedulePortal component
 
   const handleDurationChange = (minutes) => {
     if (!formData.start) return;
@@ -326,20 +271,7 @@ const EventModal = () => {
     }));
   };
 
-  const handleDateChange = (field, value) => {
-    const current = formData[field] ? new Date(formData[field]) : new Date();
-    const [year, month, day] = value.split('-').map(Number);
-    current.setFullYear(year, month - 1, day);
-    if (!isEditing && field === 'start') {
-      if (isToday(current)) {
-        const rounded = ensureValidStartTime(roundToNearestFiveMinutes(current));
-        handleChange(field, toLocalInputValue(rounded));
-        return;
-      }
-      current.setHours(12, 0, 0, 0);
-    }
-    handleChange(field, toLocalInputValue(ensureValidStartTime(current)));
-  };
+
 
 
 
@@ -408,25 +340,41 @@ const EventModal = () => {
                 </div>
 
                 {/* AI Fit Schedule Button */}
-                <button
-                  type="button"
-                  onClick={findNextSlot}
-                  className="ai-fit-schedule-btn"
-                >
-                  <div className="ai-fit-label">
-                    <Sparkles size={16} className="text-accent" />
-                    <span>Fit into schedule with AI</span>
-                  </div>
-                  <div className="mini-schedule-vis">
-                    <div className="vis-slot" />
-                    <div className="vis-slot busy" />
-                    <div className="vis-slot" />
-                    <div className="vis-slot suggestion" />
-                    <div className="vis-slot busy" />
-                    <div className="vis-slot" />
-                  </div>
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowSmartSchedule(!showSmartSchedule)}
+                    className="ai-fit-schedule-btn"
+                  >
+                    <div className="ai-fit-label">
+                      <Sparkles size={16} className="text-accent" />
+                      <span>Fit into schedule with AI</span>
+                    </div>
+                    <div className="mini-schedule-vis">
+                      <div className="vis-slot" />
+                      <div className="vis-slot busy" />
+                      <div className="vis-slot" />
+                      <div className="vis-slot suggestion" />
+                      <div className="vis-slot busy" />
+                      <div className="vis-slot" />
+                    </div>
+                  </button>
 
+                  <SmartSchedulePortal
+                    isOpen={showSmartSchedule}
+                    onClose={() => setShowSmartSchedule(false)}
+                    onSelectSlot={(start, end) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        start: toLocalInputValue(start),
+                        end: toLocalInputValue(end)
+                      }));
+                    }}
+                    eventTitle={formData.title}
+                    existingEvents={events}
+                    preferredDate={formData.start ? new Date(formData.start) : new Date()}
+                  />
+                </div>
 
 
                 <div className="quick-durations">
@@ -518,46 +466,36 @@ const EventModal = () => {
                   />
                 </div>
 
-                {/* Date & Time Row - Smart Input Split */}
+                {/* Date & Time Row - Smart Input with Clock Picker */}
                 <div className="time-inputs-row">
                   <div className="time-input-group" style={{ flex: 1.5 }}>
                     <label>Start</label>
-                    <div className="flex-row gap-2">
-                      <div style={{ flex: 2 }}>
-                        <SmartDateInput
-                          value={formData.start ? new Date(formData.start) : new Date()}
-                          onChange={(date) => updateDateTime('start', 'date', date)}
-                          autoFocus={!isEditing}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <input
-                          type="time"
-                          value={getTimeString(formData.start)}
-                          onChange={(e) => updateDateTime('start', 'time', e.target.value)}
-                          className="clean-time-input"
-                        />
-                      </div>
+                    <div className="flex-col gap-2">
+                      <SmartDateInput
+                        value={formData.start ? new Date(formData.start) : new Date()}
+                        onChange={(date) => updateDateTime('start', 'date', date)}
+                        autoFocus={!isEditing}
+                      />
+                      <ClockPicker
+                        value={getTimeString(formData.start)}
+                        onChange={(timeStr) => updateDateTime('start', 'time', timeStr)}
+                        label=""
+                      />
                     </div>
                   </div>
 
                   <div className="time-input-group" style={{ flex: 1.5 }}>
                     <label>End</label>
-                    <div className="flex-row gap-2">
-                      <div style={{ flex: 2 }}>
-                        <SmartDateInput
-                          value={formData.end ? new Date(formData.end) : new Date()}
-                          onChange={(date) => updateDateTime('end', 'date', date)}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <input
-                          type="time"
-                          value={getTimeString(formData.end)}
-                          onChange={(e) => updateDateTime('end', 'time', e.target.value)}
-                          className="clean-time-input"
-                        />
-                      </div>
+                    <div className="flex-col gap-2">
+                      <SmartDateInput
+                        value={formData.end ? new Date(formData.end) : new Date()}
+                        onChange={(date) => updateDateTime('end', 'date', date)}
+                      />
+                      <ClockPicker
+                        value={getTimeString(formData.end)}
+                        onChange={(timeStr) => updateDateTime('end', 'time', timeStr)}
+                        label=""
+                      />
                     </div>
                   </div>
                 </div>

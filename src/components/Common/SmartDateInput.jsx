@@ -18,7 +18,7 @@ const SmartDateInput = ({ value, onChange, label, autoFocus }) => {
                 setIsValid(true);
             }
         }
-    }, [value]);
+    }, [value, inputValue]);
 
     const parseDate = (text) => {
         if (!text) return null;

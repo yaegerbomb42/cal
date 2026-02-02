@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Trash2, Edit2, Copy, Palette, CheckCircle, X } from 'lucide-react';
 import './ContextMenu.css';
