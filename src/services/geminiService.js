@@ -1,6 +1,6 @@
 /**
- * CRITICAL: NEVER USE ANY MODEL OTHER THAN 'gemini-2.0-flash' (Gemini 3 Flash).
- * This is a hardcoded requirement. Do not downgrade to Pro or change to newer models.
+ * CRITICAL: NEVER USE ANY MODEL OTHER THAN 'gemini-3-flash-preview' (Gemini 3 Flash Preview).
+ * This is a hardcoded requirement. Do not downgrade to older models (2.0/1.5).
  */
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { localBrainService } from './localBrainService.js';
@@ -30,16 +30,16 @@ export class GeminiService {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
 
-      // MANDATORY: Strictly use 'gemini-2.0-flash' (referred to as Gemini 3 Flash by user).
+      // MANDATORY: Strictly use 'gemini-3-flash-preview' (Gemini 3 Flash Preview).
       // NEVER switch to Pro or a different version.
-      const ENFORCED_MODEL = 'gemini-2.0-flash';
+      const ENFORCED_MODEL = 'gemini-3-flash-preview';
       this.modelFlash = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
       this.modelPro = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
 
       this.isInitialized = true;
       return true;
     } catch (error) {
-      logger.error('Failed to initialize Gemini 2.0 Flash', { error });
+      logger.error('Failed to initialize Gemini 3 Flash Preview', { error });
       this.isInitialized = false;
       return false;
     }
