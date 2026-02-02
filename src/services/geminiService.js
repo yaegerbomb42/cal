@@ -1,3 +1,7 @@
+/**
+ * CRITICAL: NEVER USE ANY MODEL OTHER THAN 'gemini-2.0-flash' (Gemini 3 Flash).
+ * This is a hardcoded requirement. Do not downgrade to Pro or change to newer models.
+ */
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { localBrainService } from './localBrainService.js';
 import { parseNaturalLanguageTime } from '../utils/dateUtils.js';
@@ -25,9 +29,12 @@ export class GeminiService {
     try {
       this.apiKey = apiKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
-      // Enforce Gemini 2.0 Flash (user requested "3 Flash", which maps to latest 2.0 Flash)
-      this.modelFlash = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      this.modelPro = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+      // MANDATORY: Strictly use 'gemini-2.0-flash' (referred to as Gemini 3 Flash by user).
+      // NEVER switch to Pro or a different version.
+      const ENFORCED_MODEL = 'gemini-2.0-flash';
+      this.modelFlash = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
+      this.modelPro = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
 
       this.isInitialized = true;
       return true;
