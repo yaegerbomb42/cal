@@ -64,7 +64,7 @@ const MainLayout = () => {
   // Refs for direct manipulation
   const sidebarRef = useRef(null);
   const calendarRef = useRef(null);
-  // containerRef is already defined above
+  const containerRef = useRef(null);
 
   const startResizing = useCallback((e) => {
     e.preventDefault();
