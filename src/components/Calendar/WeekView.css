@@ -313,13 +313,7 @@
 }
 
 .week-time-indicator-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-  margin-left: -5px;
-  flex-shrink: 0;
+  display: none;
 }
 
 .week-time-indicator-line {
@@ -358,8 +352,8 @@
   pointer-events: auto;
   overflow: hidden;
   overflow: hidden;
-  backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   font-size: 0.75rem;
   line-height: 1.1;
@@ -466,15 +460,7 @@
 }
 
 .week-current-time .current-time-circle {
-  width: 10px;
-  height: 10px;
-  background: #ef4444;
-  border-radius: 50%;
-  position: absolute;
-  left: -5px;
-  top: -4px;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
-  animation: pulse-dot 2s infinite ease-in-out;
+  display: none;
 }
 
 @keyframes pulse-neon {
@@ -494,35 +480,19 @@
   }
 }
 
-@keyframes pulse-dot {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
-  }
-
-  50% {
-    transform: scale(1.2);
-    box-shadow: 0 0 15px rgba(239, 68, 68, 1);
-  }
-
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
-  }
-}
-
 .week-current-time .current-time-label {
   position: absolute;
   left: -62px;
-  top: -12px;
-  background: rgba(15, 23, 42, 0.9);
+  top: -10px;
+  background: rgba(15, 23, 42, 0.95);
   color: #fde68a;
   border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 2px 6px;
-  border-radius: 8px;
+  padding: 1px 5px;
+  border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  z-index: 50;
 }
 
 .week-empty-state {

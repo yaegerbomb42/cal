@@ -177,7 +177,7 @@ const DayView = () => {
           {showCurrentTime && currentTimePosition !== null && (
             <div className="day-current-time" style={{ top: `${currentTimePosition}px` }}>
               <div className="current-time-line"></div>
-              <div className="current-time-circle"></div>
+
               <div className="current-time-label">{format(currentTick, 'h:mm a')}</div>
             </div>
           )}

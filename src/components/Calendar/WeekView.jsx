@@ -265,7 +265,7 @@ const WeekView = () => {
                     className="week-time-indicator"
                     style={{ top: `${getCurrentTimePosition(pixelsPerHour)}px` }}
                   >
-                    <div className="week-time-indicator-dot" />
+
                     <div className="week-time-indicator-line" />
                   </div>
                 )}
@@ -277,7 +277,7 @@ const WeekView = () => {
         {showCurrentTime && currentTimePosition !== null && (
           <div className="week-current-time" style={{ top: `${currentTimePosition}px` }}>
             <div className="current-time-line"></div>
-            <div className="current-time-circle"></div>
+
             <div className="current-time-label">{formatTime24(new Date(currentTick))}</div>
           </div>
         )}

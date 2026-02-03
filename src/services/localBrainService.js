@@ -165,29 +165,53 @@ export const localBrainService = {
      * Parse natural language text into a JSON event using the local model.
      * This mimics the structure of geminiService.parseEventFromText
      */
-    async parseEvent(text) {
+    /**
+     * Parse natural language text into a JSON event using the local model.
+     * Uses Chain-of-Thought (CoT) and Regex Hints for better accuracy.
+     */
+    async parseEvent(text, hints = {}) {
         const { timeZone, localTime, iso } = getTemporalContext();
+
+        // Construct detailed hints string
+        let hintsContext = "";
+        if (hints.start || hints.end || hints.title || hints.location) {
+            hintsContext = `
+HARDCODED HINTS (Trust these if the text is ambiguous):
+- Detected Date/Time: ${hints.start ? new Date(hints.start).toLocaleString() : 'N/A'}
+- Detected Title Keyword: "${hints.title || 'N/A'}"
+- Detected Location: "${hints.location || 'N/A'}"
+`;
+        }
+
         const systemPrompt = `
 ${getGroundingPrompt()}
 
-You are an event parser. User input will be a natural language description of a calendar event.
-Extract: title, start (ISO string), end (ISO string), description, location, category.
+You are an intelligent event parser.
 Current local date/time: ${localTime}
-Current ISO time: ${iso}
+(ISO: ${iso})
 User timezone: ${timeZone}
-Rules:
-- Interpret times in the user's timezone.
-- If end time is missing, assume a 1-hour duration unless context implies otherwise.
-- Category must be one of: work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, other.
-- Return ONLY valid JSON (no markdown, no extra text).
-Example:
-User: "Lunch with Bob tomorrow at 12pm"
-JSON: { "title": "Lunch with Bob", "start": "2024-01-02T20:00:00.000Z", "end": "2024-01-02T21:00:00.000Z" }
+
+${hintsContext}
+
+INSTRUCTIONS:
+1. THINK FIRST: Analyze the user's input step-by-step.
+   - Identify the Event Title (look for capitalized names like "PAWS" or "Lunch").
+   - Identify Date & Time (convert "tomorrow", "next monday" to actual dates).
+   - Identify Location and Category.
+2. OUTPUT: Return a JSON object.
+
+USER INPUT: "${text}"
+
+RESPONSE FORMAT:
+Think: [Your step-by-step reasoning here]
+JSON: { "title": "...", "start": "ISO_STRING", "end": "ISO_STRING", "location": "...", "category": "..." }
 `;
 
+        // 1. Generate CoT Reaponse
         const response = await this.chat(text, systemPrompt);
 
         const parseJsonResponse = (candidate) => {
+            // Try to find JSON block after "JSON:" or just the first JSON object
             const jsonMatch = candidate.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 return JSON.parse(jsonMatch[0]);
@@ -198,10 +222,12 @@ JSON: { "title": "Lunch with Bob", "start": "2024-01-02T20:00:00.000Z", "end": "
         try {
             return parseJsonResponse(response);
         } catch {
+            // Retry with stricter constraint if CoT format failed
+            console.warn("Local Brain: parsed JSON failed, retrying with strict JSON prompt");
             try {
                 const repairPrompt = `
-Return ONLY a JSON object with keys: title, start, end, description, location, category.
-No extra text. Use ISO 8601 UTC strings for start/end.`;
+STOP thinking. RETURN ONLY THE JSON OBJECT.
+{ "title": "...", "start": "...", "end": "..." }`;
                 const repaired = await this.chat(text, `${systemPrompt}\n\n${repairPrompt}`);
                 return parseJsonResponse(repaired);
             } catch {

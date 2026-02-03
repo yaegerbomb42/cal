@@ -290,30 +290,23 @@
 }
 
 .day-current-time .current-time-circle {
-  width: 10px;
-  height: 10px;
-  background: #ef4444;
-  border-radius: 50%;
-  position: absolute;
-  left: -5px;
-  top: -4px;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
-  animation: pulse-dot 2s infinite ease-in-out;
+  display: none;
 }
 
 .day-current-time .current-time-label {
   position: absolute;
   left: -65px;
-  top: -12px;
-  background: rgba(15, 23, 42, 0.9);
+  top: -10px;
+  background: rgba(15, 23, 42, 0.95);
   color: #fde68a;
   border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 2px 6px;
-  border-radius: 8px;
+  padding: 1px 5px;
+  border-radius: 6px;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  z-index: 50;
 }
 
 @keyframes pulse-neon {

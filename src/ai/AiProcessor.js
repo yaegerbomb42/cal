@@ -94,14 +94,49 @@ const to24Hour = (hour, meridiem) => {
   return value;
 };
 
-const inferTitle = (text) => {
-  const cleaned = stripNoise(
-    text
-      .replace(/\b(on|at|from|between|until|tomorrow|today|next|this|last)\b[\s\S]*/i, '')
-      .replace(/\b(schedule|book|add|create|set up|remind me to)\b/i, '')
-  );
+const RECURRENCE_PATTERNS = [
+  { regex: /\bevery\s+day\b/i, type: 'daily' },
+  { regex: /\bdaily\b/i, type: 'daily' },
+  { regex: /\bevery\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i, type: 'weekly' },
+  { regex: /\bweekly\b/i, type: 'weekly' },
+  { regex: /\b(once|1)\s+a\s+week\b/i, type: 'weekly' }
+];
 
-  if (cleaned.length >= 3) {
+const extractRecurrence = (input) => {
+  for (const pattern of RECURRENCE_PATTERNS) {
+    const match = input.match(pattern.regex);
+    if (match) {
+      if (pattern.type === 'weekly' && match[1]) {
+        // "every monday" -> specific day
+        return { type: 'weekly', daysOfWeek: [dayNameToIndex(match[1])] };
+      }
+      return { type: pattern.type };
+    }
+  }
+  return null;
+};
+
+const inferTitle = (text) => {
+  // 1. Strip time/date references (existing logic)
+  let cleaned = text
+    .replace(TIME_RANGE_REGEX, '')
+    .replace(TIME_REGEX, '')
+    .replace(/\b(on|at|from|between|until|tomorrow|today|next|this|last)\b[\s\S]*/i, '') // Aggressive date stripping
+    .replace(new RegExp(DATE_PATTERNS.map(p => p.regex.source).join('|'), 'gi'), '');
+
+  // 2. Strip recurrence phrases
+  RECURRENCE_PATTERNS.forEach(p => {
+    cleaned = cleaned.replace(p.regex, '');
+  });
+
+  // 3. Strip verb prefixes
+  cleaned = cleaned
+    .replace(/\b(schedule|book|add|create|set up|remind me to)\b/i, '')
+    .replace(/\b(recurring|repeating|event|called|named|titled)\b/i, ''); // Remove "called" e.g. "called PAWS"
+
+  cleaned = stripNoise(cleaned);
+
+  if (cleaned.length >= 2) {
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
@@ -124,6 +159,7 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
   const range = extractTimeRange(input);
   const timeToken = extractTime(input);
   const location = extractLocation(input);
+  const recurrence = extractRecurrence(input);
 
   let start = null;
   let end = null;
@@ -138,11 +174,28 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
 
   const title = inferTitle(input);
 
+  // If we found a recurrence like "every monday", ensure start date matches that day
+  if (recurrence?.type === 'weekly' && recurrence.daysOfWeek?.length > 0) {
+    const targetDay = recurrence.daysOfWeek[0];
+    const currentDay = baseDate.getDay();
+    if (currentDay !== targetDay) {
+      // Adjust baseDate to the next instance of that day
+      // Note: This modifies 'start' if it was already set based on baseDate
+      const daysToAdd = (targetDay - currentDay + 7) % 7;
+      if (daysToAdd > 0 && start) {
+        const newStart = addDays(start, daysToAdd);
+        start = newStart;
+        end = new Date(newStart.getTime() + (end.getTime() - start.getTime()));
+      }
+    }
+  }
+
   return {
     title: title || undefined,
     start: start ? start.toISOString() : undefined,
     end: end ? end.toISOString() : undefined,
-    location: location || undefined
+    location: location || undefined,
+    recurring: recurrence || undefined
   };
 };
 
@@ -290,7 +343,7 @@ export const processEventInput = async (
       // Fallback to local if cloud fails
       if (webLLMReady && localBrainService?.isLoaded) {
         try {
-          const parsed = await localBrainService.parseEvent(input);
+          const parsed = await localBrainService.parseEvent(input, baseDraft);
           draft = { ...draft, ...parsed };
           source = 'webllm';
         } catch (e) {
@@ -301,7 +354,8 @@ export const processEventInput = async (
   } else if (webLLMReady && localBrainService?.isLoaded) {
     // Prefer Local or Cloud not available
     try {
-      const parsed = await localBrainService.parseEvent(input);
+      // Pass baseDraft (regex heuristics) as hints to the local brain
+      const parsed = await localBrainService.parseEvent(input, baseDraft);
       draft = { ...draft, ...parsed };
       source = 'webllm';
     } catch (error) {
