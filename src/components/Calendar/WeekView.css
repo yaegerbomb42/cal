@@ -453,11 +453,13 @@
 }
 
 .week-current-time .current-time-line {
-  height: 2px;
-  background: #ef4444;
-  /* Solid, steady neon red */
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
-  /* Removed pulse animation for steady look */
+  height: 1px;
+  /* Thinner line */
+  background: #facc15;
+  /* Yellow (Tailwind yellow-400 equivalent) */
+  box-shadow: none;
+  /* Less weighted */
+  opacity: 0.8;
 }
 
 .week-current-time .current-time-circle {
@@ -468,17 +470,20 @@
   position: absolute;
   left: -62px;
   top: -9px;
-  background: #ef4444;
-  color: #fff;
+  background: transparent;
+  color: #facc15;
+  /* Yellow text */
   border: none;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   z-index: 999;
-  /* Ensure high visibility */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
+  /* Remove box shadow */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  /* Add text shadow for visibility */
 }
 
 .week-empty-state {

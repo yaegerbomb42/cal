@@ -1,5 +1,5 @@
-import { useRef, useMemo, useState, useEffect } from 'react';
-import { eachDayOfInterval, format, startOfYear, endOfYear, getDay, getWeek } from 'date-fns';
+import { useRef, useMemo } from 'react';
+import { eachDayOfInterval, format, startOfYear, endOfYear, getDay } from 'date-fns';
 import { Plus } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
@@ -68,7 +68,7 @@ const YearView = ({ onYearChange }) => {
 
   return (
     <div className="year-view">
-      <div className="year-header glass-card" style={{ justifyContent: 'space-between', gap: '2rem' }}>
+      <div className="year-header glass-card" style={{ justifyContent: 'space-between', gap: '2rem', overflow: 'visible', zIndex: 50 }}>
         {/* Left: AI Chat */}
         <div className="year-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
           <AIChatInput
@@ -84,7 +84,7 @@ const YearView = ({ onYearChange }) => {
         {/* Center: Navigation */}
         <div className="year-center-group" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', justifyContent: 'center', flex: 1 }}>
           <div className="year-title-group" style={{ alignItems: 'center' }}>
-            <span className="year-label">Year Overview</span>
+            <span className="year-label">Year Selector</span>
             <NavigationDropdown
               label=""
               value={selectedYear}
@@ -105,7 +105,7 @@ const YearView = ({ onYearChange }) => {
 
         {/* Right: Controls */}
         <div className="year-controls" style={{ width: '280px', justifyContent: 'flex-end' }}>
-          <span className="year-stat-pill">{yearEventsCount} Contribs</span>
+          <span className="year-stat-pill">{yearEventsCount} Events</span>
           <button className="btn btn-primary year-add-btn" onClick={handleCreateEvent}>
             <Plus size={16} /> Add
           </button>

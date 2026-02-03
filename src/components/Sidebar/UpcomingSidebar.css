@@ -105,25 +105,37 @@ body.focus-mode-active .header:hover {
 }
 
 .header-title-row {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
+    /* Changed from grid to flex for true centering with absolute toggle */
+    justify-content: center;
     align-items: center;
-    gap: 0.75rem;
+    position: relative;
+    padding: 0 1rem;
+    height: 40px;
 }
 
 .header-title-row h3 {
     text-align: center;
     letter-spacing: 0.02em;
+    font-size: 1.1rem;
+    /* Unified size */
+    margin: 0;
+    flex: 1;
+    /* Takes center */
 }
 
 .header-spacer {
-    width: 32px;
-    height: 32px;
+    display: none;
+    /* Remove old spacer */
 }
 
+/* Ensure actions don't shift title if possible, or use absolute */
 .header-actions {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
-    justify-content: flex-end;
     gap: 0.5rem;
 }
 
@@ -131,17 +143,20 @@ body.focus-mode-active .header:hover {
 .sidebar-nav-row {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    padding: 12px 0;
+    gap: 16px;
+    /* Unified gap */
+    padding: 16px 0;
     margin-bottom: 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .nav-btn-item {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    /* Slightly larger, unified size */
+    height: 48px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.05);
+    /* ... rest ... */
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-secondary);
     display: inline-flex;

@@ -10,9 +10,9 @@
 
 .ai-chat-sidebar {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  bottom: 1rem;
+  top: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
   width: 400px;
   background: var(--glass-bg);
   -webkit-backdrop-filter: var(--backdrop-blur);
