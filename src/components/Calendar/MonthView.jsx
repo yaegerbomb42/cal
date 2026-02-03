@@ -8,6 +8,7 @@ import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { cn, getEventColor } from '../../utils/helpers';
 import AIChatInput from '../UI/AIChatInput';
 import NavigationDropdown from '../UI/NavigationDropdown';
+import StandardViewHeader from '../Header/StandardViewHeader';
 import './MonthView.css';
 
 const MonthView = () => {
@@ -36,67 +37,56 @@ const MonthView = () => {
 
   return (
     <div className="month-view">
-      <div className="month-summary glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
-
-        {/* Left: AI */}
-        <div className="month-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
-          <AIChatInput
-            onSubmit={({ text, files }) => {
-              if (text) {
-                window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
-                window.dispatchEvent(new CustomEvent('calai-open'));
-              }
-              if (files && files.length > 0) {
-                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-                window.dispatchEvent(new CustomEvent('calai-open'));
-              }
-            }}
-            compact
-          />
-        </div>
-
-        {/* Center: Month/Year Selection */}
-        <div className="month-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1rem' }}>
-          <NavigationDropdown
-            label="Month"
-            value={format(currentDate, 'MMMM')}
-            options={[
-              'January', 'February', 'March', 'April', 'May', 'June',
-              'July', 'August', 'September', 'October', 'November', 'December'
-            ].map((m, i) => ({ label: m, value: i }))}
-            onChange={(val) => {
-              const newDate = new Date(currentDate);
-              newDate.setMonth(val);
-              setCurrentDate(newDate);
-            }}
-            type="list"
-          />
-          <NavigationDropdown
-            label="Year"
-            value={currentDate.getFullYear()}
-            options={[...Array(5)].map((_, i) => {
-              const y = new Date().getFullYear() - 2 + i;
-              return { label: y.toString(), value: y };
-            })}
-            onChange={(val) => {
-              const newDate = new Date(currentDate);
-              newDate.setFullYear(val);
-              setCurrentDate(newDate);
-            }}
-            type="list"
-          />
-        </div>
-
-        {/* Right: Actions */}
-        <div className="month-actions" style={{ width: '280px', justifyContent: 'flex-end', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="month-summary-stat">
-            {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
+      <StandardViewHeader
+        onAIChatSubmit={({ text, files }) => {
+          if (text) {
+            window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+            window.dispatchEvent(new CustomEvent('calai-open'));
+          }
+          if (files && files.length > 0) {
+            window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+            window.dispatchEvent(new CustomEvent('calai-open'));
+          }
+        }}
+        centerContent={
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <NavigationDropdown
+              label="Month"
+              value={format(currentDate, 'MMMM')}
+              options={[
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+              ].map((m, i) => ({ label: m, value: i }))}
+              onChange={(val) => {
+                const newDate = new Date(currentDate);
+                newDate.setMonth(val);
+                setCurrentDate(newDate);
+              }}
+              type="list"
+            />
+            <NavigationDropdown
+              label="Year"
+              value={currentDate.getFullYear()}
+              options={[...Array(5)].map((_, i) => {
+                const y = new Date().getFullYear() - 2 + i;
+                return { label: y.toString(), value: y };
+              })}
+              onChange={(val) => {
+                const newDate = new Date(currentDate);
+                newDate.setFullYear(val);
+                setCurrentDate(newDate);
+              }}
+              type="list"
+            />
           </div>
-          <button className="btn btn-primary month-add-btn" onClick={() => openEventModal({ start: new Date() })}>
-            <Plus size={16} /> Add
-          </button>
-        </div>
-      </div>
+        }
+        rightContent={
+          <span className="header-stat-pill">
+            {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
+          </span>
+        }
+        onAddEvent={() => openEventModal({ start: new Date() })}
+      />
 
       {/* Calendar Grid */}
       <div className="month-grid">

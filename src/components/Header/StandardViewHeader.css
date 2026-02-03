@@ -1,0 +1,73 @@
+.standard-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 1rem 1.5rem;
+    width: 100%;
+    margin-bottom: 1rem;
+    /* Glassmorphism Logic usually handled by 'glass-card' class, 
+       but we ensure specific layout props here */
+    position: relative;
+    z-index: 50;
+    /* CRITICAL for dropdowns */
+    overflow: visible;
+    /* CRITICAL for dropdowns */
+    min-height: 80px;
+    /* Uniform height */
+}
+
+/* Sections */
+.header-section {
+    display: flex;
+    align-items: center;
+}
+
+.header-section.left {
+    width: 280px;
+    flex-shrink: 0;
+}
+
+.header-section.center {
+    flex: 1;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.header-section.right {
+    width: 280px;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Shared Elements styling if not already global */
+.header-stat-pill {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .standard-view-header {
+        flex-direction: column;
+        height: auto;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .header-section.left,
+    .header-section.right {
+        width: 100%;
+        justify-content: center;
+    }
+}

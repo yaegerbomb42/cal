@@ -301,189 +301,58 @@
   background: rgba(99, 102, 241, 0.03);
 }
 
-/* Live time indicator */
+/* Current Time Indicator */
 .week-time-indicator {
   position: absolute;
   left: 0;
   right: 0;
-  display: flex;
-  align-items: center;
-  z-index: 100;
+  height: 2px;
+  background-color: transparent;
+  /* Line itself handled below */
   pointer-events: none;
-}
-
-.week-time-indicator-dot {
-  display: none;
+  z-index: 20;
 }
 
 .week-time-indicator-line {
-  flex: 1;
-  height: 2px;
-  background: linear-gradient(to right, #ef4444, rgba(239, 68, 68, 0.3));
-}
-
-.week-hour-cell {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.week-hour-cell:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.week-events-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(var(--overlap-count, 1), 1fr);
-  grid-auto-rows: 1px;
-  column-gap: 6px;
-}
-
-.week-event {
-  position: relative;
-  border-radius: 6px;
-  padding: 2px 4px;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  pointer-events: auto;
-  overflow: hidden;
-  overflow: hidden;
-  -webkit-backdrop-filter: blur(4px);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  font-size: 0.75rem;
-  line-height: 1.1;
-  display: flex;
-  flex-direction: column;
-}
-
-.week-event.long-event {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  padding: 0;
-  overflow: visible;
-}
-
-.week-event.long-event::before {
-  content: '';
-  position: absolute;
-  top: 26px;
-  /* Below title/time header */
-  bottom: 8px;
-  /* Above base */
-  left: 4px;
-  width: 4px;
-  /* Pencil width */
-  background: var(--event-color);
-  z-index: 0;
-  opacity: 0.8;
-}
-
-.week-event.long-event::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
   width: 100%;
-  height: 8px;
-  /* Anvil Base */
-  background: var(--event-color);
-  border-radius: 2px;
-  z-index: 0;
-  opacity: 0.9;
-}
-
-.week-event.long-event .week-event-title,
-.week-event.long-event .week-event-time {
-  background: var(--event-color);
-  padding: 2px 6px;
-  border-radius: 4px;
-  width: fit-content;
-  max-width: 100%;
-  position: relative;
-  z-index: 1;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.week-event.long-event .week-event-time {
-  margin-top: 1px;
-  border-radius: 0 0 4px 4px;
-}
-
-.week-event.past {
-  opacity: 0.75;
-  filter: grayscale(80%);
-}
-
-.week-event-title {
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.week-event-time {
-  font-size: 0.65rem;
-  opacity: 0.9;
-  white-space: nowrap;
-}
-
-.week-event-location {
-  font-size: 0.6rem;
-  opacity: 0.8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  height: 2px;
+  background: #ef4444;
+  /* Red Line */
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
 .week-current-time {
   position: absolute;
   left: 70px;
+  /* Match grid offset */
   right: 0;
   height: 0;
   pointer-events: none;
-  z-index: 20;
+  z-index: 30;
 }
 
 .week-current-time .current-time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 1px;
-  /* Thinner line */
-  background: #facc15;
-  /* Yellow (Tailwind yellow-400 equivalent) */
-  box-shadow: none;
-  /* Less weighted */
-  opacity: 0.8;
-}
-
-.week-current-time .current-time-circle {
-  display: none;
+  background: rgba(239, 68, 68, 0.6);
 }
 
 .week-current-time .current-time-label {
   position: absolute;
-  left: -62px;
-  top: -9px;
+  left: -65px;
+  top: -10px;
+  transform: translateY(0);
   background: transparent;
   color: #facc15;
   /* Yellow text */
-  border: none;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  z-index: 999;
-  box-shadow: none;
-  /* Remove box shadow */
+  border: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  /* Add text shadow for visibility */
 }
 
 .week-empty-state {

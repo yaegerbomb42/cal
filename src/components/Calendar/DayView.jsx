@@ -19,6 +19,7 @@ import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import AIChatInput from '../UI/AIChatInput';
 import NavigationDropdown from '../UI/NavigationDropdown';
+import StandardViewHeader from '../Header/StandardViewHeader';
 import './DayView.css';
 
 const buildEventSnippet = (event) => {
@@ -75,52 +76,41 @@ const DayView = () => {
       animate={{ opacity: 1, x: 0 }}
       className="day-view"
     >
-      <div className={cn('day-header', 'glass-card')} style={{ justifyContent: 'space-between', gap: '2rem' }}>
-
-        {/* Left: AI */}
-        <div className="day-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
-          <AIChatInput
-            onSubmit={({ text, files }) => {
-              if (text) {
-                window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: text } }));
-              }
-              if (files && files.length > 0) {
-                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-                window.dispatchEvent(new CustomEvent('calai-open'));
-              }
-            }}
-            compact
-          />
-        </div>
-
-        {/* Center: Day selection (Dense Grid) */}
-        <div className="day-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row', gap: '1rem' }}>
-          <NavigationDropdown
-            label="Day of Year"
-            value={getDayOfYear(currentDate)}
-            range={{ start: 1, end: 366 }}
-            onChange={(dayNum) => {
-              const newDate = setDayOfYear(currentDate, dayNum);
-              setCurrentDate(newDate);
-            }}
-            type="grid" // Will be dense!
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div className="day-name" style={{ fontSize: '0.9rem' }}>{getRelativeDayLabel(currentDate)}</div>
-            <div className="day-date" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatFullDate(currentDate)}</div>
+      <StandardViewHeader
+        onAIChatSubmit={({ text, files }) => {
+          if (text) {
+            window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: text } }));
+          }
+          if (files && files.length > 0) {
+            window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+            window.dispatchEvent(new CustomEvent('calai-open'));
+          }
+        }}
+        centerContent={
+          <div className="day-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+            <NavigationDropdown
+              label="Day of Year"
+              value={getDayOfYear(currentDate)}
+              range={{ start: 1, end: 366 }}
+              onChange={(dayNum) => {
+                const newDate = setDayOfYear(currentDate, dayNum);
+                setCurrentDate(newDate);
+              }}
+              type="grid"
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <div className="day-name" style={{ fontSize: '0.9rem', fontWeight: 600 }}>{getRelativeDayLabel(currentDate)}</div>
+              <div className="day-date" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatFullDate(currentDate)}</div>
+            </div>
           </div>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="day-stats" style={{ width: '280px', justifyContent: 'flex-end', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        }
+        rightContent={
           <span className="day-stat-pill" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             {dayEvents.length} events
           </span>
-          <button className="btn btn-primary day-add-btn" onClick={handleAddEvent}>
-            <Plus size={16} /> Add
-          </button>
-        </div>
-      </div>
+        }
+        onAddEvent={handleAddEvent}
+      />
 
       <div
         className="day-grid glass-card"

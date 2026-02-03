@@ -11,6 +11,7 @@ import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import ContextMenu from '../UI/ContextMenu';
 import AIChatInput from '../UI/AIChatInput';
 import NavigationDropdown from '../UI/NavigationDropdown';
+import StandardViewHeader from '../Header/StandardViewHeader';
 import './WeekView.css';
 
 const WeekView = () => {
@@ -134,51 +135,36 @@ const WeekView = () => {
         '--magnify-index': magnifyHour ?? -1
       }}
     >
-      <div className="week-control-bar glass-card" style={{ justifyContent: 'space-between', gap: '2rem' }}>
-
-        {/* Left: AI */}
-        <div className="week-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
-          <AIChatInput
-            onSubmit={({ text, files }) => {
-              if (text) {
-                window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
-              }
-              if (files && files.length > 0) {
-                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-              }
-              window.dispatchEvent(new CustomEvent('calai-open'));
-            }}
-            compact
-          />
-        </div>
-
-        {/* Center: Week Selection */}
-        <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1rem' }}>
-          <NavigationDropdown
-            label="Week"
-            value={getWeek(currentDate)}
-            range={{ start: 1, end: 52 }}
-            onChange={(weekNum) => {
-              const newDate = setWeek(currentDate, weekNum);
-              setCurrentDate(newDate);
-            }}
-            type="grid" // Pyramid/Grid
-          />
-          <span className="week-range" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
-          </span>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="week-actions" style={{ width: '280px', justifyContent: 'flex-end', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <StandardViewHeader
+        onAIChatSubmit={({ text, files }) => {
+          if (text) window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+          if (files?.length) window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+          window.dispatchEvent(new CustomEvent('calai-open'));
+        }}
+        centerContent={
+          <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+            <NavigationDropdown
+              label="Week"
+              value={getWeek(currentDate)}
+              range={{ start: 1, end: 52 }}
+              onChange={(weekNum) => {
+                const newDate = setWeek(currentDate, weekNum);
+                setCurrentDate(newDate);
+              }}
+              type="grid"
+            />
+            <span className="week-range" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+              {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
+            </span>
+          </div>
+        }
+        rightContent={
           <span className="week-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
             {weekEventsCount} events
           </span>
-          <button className="btn btn-primary week-add-btn" onClick={() => openEventModal({ start: new Date() })}>
-            <Plus size={16} /> Add
-          </button>
-        </div>
-      </div>
+        }
+        onAddEvent={() => openEventModal({ start: new Date() })}
+      />
 
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>

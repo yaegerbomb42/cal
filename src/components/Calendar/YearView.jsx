@@ -5,6 +5,7 @@ import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import AIChatInput from '../UI/AIChatInput';
 import NavigationDropdown from '../UI/NavigationDropdown';
+import StandardViewHeader from '../Header/StandardViewHeader';
 import './YearView.css';
 
 const YearView = ({ onYearChange }) => {
@@ -68,23 +69,15 @@ const YearView = ({ onYearChange }) => {
 
   return (
     <div className="year-view">
-      <div className="year-header glass-card" style={{ justifyContent: 'space-between', gap: '2rem', overflow: 'visible', zIndex: 50 }}>
-        {/* Left: AI Chat */}
-        <div className="year-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
-          <AIChatInput
-            onSubmit={({ text, files }) => {
-              if (text) window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
-              if (files?.length) window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-              window.dispatchEvent(new CustomEvent('calai-open'));
-            }}
-            compact
-          />
-        </div>
-
-        {/* Center: Navigation */}
-        <div className="year-center-group" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', justifyContent: 'center', flex: 1 }}>
-          <div className="year-title-group" style={{ alignItems: 'center' }}>
-            <span className="year-label">Year Selector</span>
+      <StandardViewHeader
+        onAIChatSubmit={({ text, files }) => {
+          if (text) window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+          if (files?.length) window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+          window.dispatchEvent(new CustomEvent('calai-open'));
+        }}
+        centerContent={
+          <div className="year-title-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span className="year-label" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>Year Selector</span>
             <NavigationDropdown
               label=""
               value={selectedYear}
@@ -101,16 +94,12 @@ const YearView = ({ onYearChange }) => {
               type="list"
             />
           </div>
-        </div>
-
-        {/* Right: Controls */}
-        <div className="year-controls" style={{ width: '280px', justifyContent: 'flex-end' }}>
-          <span className="year-stat-pill">{yearEventsCount} Events</span>
-          <button className="btn btn-primary year-add-btn" onClick={handleCreateEvent}>
-            <Plus size={16} /> Add
-          </button>
-        </div>
-      </div>
+        }
+        rightContent={
+          <span className="header-stat-pill">{yearEventsCount} Events</span>
+        }
+        onAddEvent={handleCreateEvent}
+      />
 
       <div className="year-content-scroll" ref={scrollRef}>
         <div className="github-year-grid">

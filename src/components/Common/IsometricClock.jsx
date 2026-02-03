@@ -53,7 +53,10 @@ const IsometricClock = ({ value, onChange, label }) => {
             const newDate = new Date(time);
 
             if (isDragging === 'minute') {
-                const minute = Math.round(angle / 6); // 0-60
+                // Snap to 5 minutes
+                let minute = Math.round(angle / 6); // 0-60
+                minute = Math.round(minute / 5) * 5; // Snap to nearest 5
+                if (minute === 60) minute = 0;
                 newDate.setMinutes(minute);
             } else if (isDragging === 'hour') {
                 // Logic for hours is tricky because of AM/PM and 12h wrap.
