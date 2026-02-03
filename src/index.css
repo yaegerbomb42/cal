@@ -1,59 +1,62 @@
-/* Base */
 :root {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   line-height: 1.6;
   font-weight: 400;
 
-  /* Colors */
+  /* Colors - Premium Dark Apple */
   --bg-primary: #000000;
-  /* Pure Black */
-  --bg-secondary: #0a0a0c;
+  --bg-secondary: #0c0c0e;
+  /* Slightly richer dark gray */
   --bg-tertiary: #1c1c1e;
-  /* Apple System Dark */
 
+  /* Vibrant Accents */
   --accent: #FF3B30;
-  /* Apple Red */
+  /* Keep classic Apple Red, it's iconic */
   --accent-rgb: 255, 59, 48;
   --accent-hover: #FF453A;
-  --accent-glow: rgba(255, 59, 48, 0.4);
+  --accent-glow: rgba(255, 59, 48, 0.5);
+  /* Stronger glow */
 
-  --text-primary: #FFFFFF;
-  --text-secondary: #8E8E93;
-  /* Apple Gray */
+  --text-primary: #F5F5F7;
+  /* Slightly softer white for better reading */
+  --text-secondary: #98989D;
+  /* Lighter gray for better contrast */
   --text-muted: #636366;
   --text-disabled: #3A3A3C;
 
-  --glass-bg: rgba(28, 28, 30, 0.7);
-  --glass-strong: rgba(28, 28, 30, 0.9);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-divider: rgba(255, 255, 255, 0.05);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+  /* Refined Glassmorphism */
+  --glass-bg: rgba(30, 30, 32, 0.65);
+  /* More transparency */
+  --glass-strong: rgba(30, 30, 32, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  /* Crisper border */
+  --glass-divider: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  /* Softer shadow */
 
-  --backdrop-blur: blur(20px);
-  --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --backdrop-blur: blur(30px);
+  /* Heavy premium blur */
+  --border: rgba(255, 255, 255, 0.12);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
 
-  --success: #34C759;
-  /* Apple Green */
+  --success: #32D74B;
+  /* More vibrant Green */
   --warning: #FF9F0A;
-  /* Apple Orange */
-  --error: #FF3B30;
-  /* Apple Red */
+  --error: #FF453A;
 
-  /* Pastels for Event Types */
+  /* Vivid Pastels for Event Types */
   --accent-work: #FFD60A;
-  /* Yellow */
-  --accent-personal: #FF375F;
-  /* Pinkish-Red */
+  --accent-personal: #FF2D55;
+  /* Punchier Red/Pink */
   --accent-fun: #BF5AF2;
-  /* Purple */
   --accent-hobby: #64D2FF;
-  /* Sky Blue */
-  --accent-task: #10b981;
-  --accent-todo: #fbbf24;
-  --accent-event: #4f46e5;
+  --accent-task: #30D158;
+  /* Bright Green */
+  --accent-todo: #FF9F0A;
+  --accent-event: #0A84FF;
+  /* Bright Blue */
   --accent-appointment: #FF9F0A;
-  --accent-holiday: #30D158;
+  --accent-holiday: #32D74B;
 }
 
 /* Base Body Style */
