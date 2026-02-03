@@ -20,21 +20,9 @@ const MonthView = () => {
     return isSameMonth(day, currentDate) ? total + getEventsForDate(day).length : total;
   }, 0);
 
-  const handleDayClick = (day) => {
-    setCurrentDate(day);
-    setView(CALENDAR_VIEWS.DAY);
-  };
-
   const handleEventClick = (event, e) => {
     e.stopPropagation();
     openEventModal(event);
-  };
-
-  const handleDayDoubleClick = (day) => {
-    openEventModal({
-      start: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0),
-      end: new Date(day.getFullYear(), day.getMonth(), day.getDate(), 10, 0)
-    });
   };
 
   const handleAddEventClick = (day, e) => {
@@ -81,31 +69,29 @@ const MonthView = () => {
 
       {/* Calendar Grid */}
       <div className="month-grid">
-        {monthDays.map((day, index) => {
+        {monthDays.map((day) => {
           const dayEvents = getEventsForDate(day);
-          const isCurrentMonth = isSameMonth(day, currentDate);
-          const isDayToday = isToday(day);
+          const isSelected = isSameMonth(day, currentDate) && isToday(day);
 
           return (
             <MotionDiv
               key={day.toISOString()}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.01 }}
-              onClick={() => handleDayClick(day)}
-              onDoubleClick={() => handleDayDoubleClick(day)}
+              transition={{ duration: 0.2 }}
               className={cn(
-                'month-day',
-                'glass-card',
-                !isCurrentMonth && 'other-month',
-                isDayToday && 'today',
-                dayEvents.length > 0 && 'has-events'
+                'month-day-cell',
+                !isSameMonth(day, currentDate) && 'opacity-30',
+                isToday(day) && 'is-today'
               )}
+              onClick={() => {
+                setCurrentDate(day);
+                setView(CALENDAR_VIEWS.DAY);
+              }}
+              style={{ cursor: 'pointer' }}
             >
               <div className="day-heading">
-                <div className="day-number">
-                  {day.getDate()}
-                </div>
+                <div className="day-number">{format(day, 'd')}</div>
                 <button
                   type="button"
                   className="day-add-btn"

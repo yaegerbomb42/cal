@@ -94,7 +94,7 @@ Parse the following text into a calendar event. The text might be a casual reque
 - description: Full details, context, and original text if complex.
 - start date and time
 - end date and time (if not specified, assume 1 hour duration unless context suggests otherwise)
-- location (optional)
+- location: Extract the FULL address if possible, or a specific building/room name. (e.g. "123 Main St, New York, NY" or "Conference Room B"). Use a format compatible with Google Maps.
 - category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, or other)
 - recurring (if the event repeats)
 
@@ -109,6 +109,7 @@ CRITICAL INSTRUCTIONS:
 - If the user says "8am", they mean 8:00 AM in ${timeZone}.
 - Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
 - TITLE SHOULD BE BRIEF. Move details to 'description'.
+- If the user explicitly names the event (e.g. "called PAWS", "Title: Meeting"), use that EXACT title.
 - If the user explicitly provides a description (e.g. "Description: ..."), use it.
 - If the text is "Recurring task every monday Feb 2, 2026, 11:00 AM", the title is "Recurring task", NOT the whole string.
 - Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
@@ -154,7 +155,26 @@ If the text doesn't contain enough information for a calendar event, respond wit
       if (!model) {
         throw new AIServiceError('Gemini model not available. Reconnect your API key.');
       }
-      const result = await model.generateContent(prompt);
+
+      const generationConfig = {
+        temperature: 0.2, // Low temp for parsing
+      };
+
+      // Add thinking config if using preview model (experimental support in JS SDK)
+      // Note: This relies on the model supporting thinking_config/thinkingConfig
+      // Using snake_case for raw parameter pass-through if needed, or camelCase for SDK
+      // We pass it as 'thinkingConfig' hoping SDK maps it, or 'thinking_config' if raw.
+      // Trying camelCase which is standard for Google JS SDK.
+      const requestOptions = {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          ...generationConfig,
+          thinkingConfig: { includeThoughts: true } // Attempting to enable thoughts for better reasoning
+        }
+      };
+
+      // Direct call fallback if SDK object structure is different
+      const result = await model.generateContent(requestOptions);
       const response = await result.response;
       const responseText = response.text();
 
@@ -230,7 +250,8 @@ Return a JSON array. Each item must include:
 - description (optional)
 - start (ISO 8601 UTC string)
 - end (ISO 8601 UTC string)
-- location (optional)
+- location (Specific address or place name for Maps)
+- evidence (Quote the specific text or visual element in the image that makes you think this is an event. Used to explain the result to the user.)
 - category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, other)
 
 Rules:

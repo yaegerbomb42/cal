@@ -151,9 +151,9 @@ const hasExplicitTime = (input) => Boolean(input.match(TIME_RANGE_REGEX) || inpu
 const hasExplicitDate = (input) => {
   return Boolean(
     input.match(/\btoday\b|\btomorrow\b|\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i) ||
-      input.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/) ||
-      input.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/) ||
-      input.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i)
+    input.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/) ||
+    input.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/) ||
+    input.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i)
   );
 };
 
@@ -272,26 +272,51 @@ export const processEventInput = async (
   }
 
   const webLLMReady = Boolean(benchmark?.ready);
-  const webLLMUnreliable = Boolean(benchmark && !benchmark.ready);
 
-  if (webLLMReady && localBrainService?.isLoaded) {
-    try {
-      const parsed = await localBrainService.parseEvent(input);
-      draft = { ...draft, ...parsed };
-      source = 'webllm';
-    } catch (error) {
-      aiEventEmitter.emit('calai-webllm-error', { message: error.message });
-    }
-  } else if (!webLLMUnreliable && geminiService?.isInitialized) {
+  const preferLocal = localBrainService?.getPreferLocal?.() ?? false;
+
+  // PRIORITY: Cloud First (unless local is strictly preferred)
+  // If user explicitly wants local, try local first.
+  // Otherwise, use cloud if available.
+  const tryCloudFirst = !preferLocal && geminiService?.isInitialized;
+
+  if (tryCloudFirst) {
     try {
       const parsed = await geminiService.parseEventFromText(input);
       draft = { ...draft, ...parsed };
       source = 'gemini';
     } catch (error) {
       aiEventEmitter.emit('calai-gemini-error', { message: error.message });
+      // Fallback to local if cloud fails
+      if (webLLMReady && localBrainService?.isLoaded) {
+        try {
+          const parsed = await localBrainService.parseEvent(input);
+          draft = { ...draft, ...parsed };
+          source = 'webllm';
+        } catch (e) {
+          aiEventEmitter.emit('calai-webllm-error', { message: e.message });
+        }
+      }
     }
-  } else if (webLLMUnreliable) {
-    source = 'rule';
+  } else if (webLLMReady && localBrainService?.isLoaded) {
+    // Prefer Local or Cloud not available
+    try {
+      const parsed = await localBrainService.parseEvent(input);
+      draft = { ...draft, ...parsed };
+      source = 'webllm';
+    } catch (error) {
+      aiEventEmitter.emit('calai-webllm-error', { message: error.message });
+      // Fallback to cloud
+      if (geminiService?.isInitialized) {
+        try {
+          const parsed = await geminiService.parseEventFromText(input);
+          draft = { ...draft, ...parsed };
+          source = 'gemini';
+        } catch (e) {
+          aiEventEmitter.emit('calai-gemini-error', { message: e.message });
+        }
+      }
+    }
   }
 
   const sanitized = sanitizeDraft({ ...draft });

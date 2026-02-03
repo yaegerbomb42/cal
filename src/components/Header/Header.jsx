@@ -61,7 +61,7 @@ const Header = ({ onOpenSettings }) => {
 
           {/* Center: Navigation Controls */}
           <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button className="nav-today-btn-header" onClick={goToToday}>Today</button>
+
             <div className="nav-arrows" style={{ display: 'flex', gap: '2px' }}>
               <button className="nav-btn icon-only" onClick={() => navigateDate(-1)}><ChevronLeft size={16} /></button>
               <button className="nav-btn icon-only" onClick={() => navigateDate(1)}><ChevronRight size={16} /></button>

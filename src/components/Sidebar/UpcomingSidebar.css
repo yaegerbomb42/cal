@@ -126,40 +126,59 @@ body.focus-mode-active .header:hover {
     gap: 0.5rem;
 }
 
-/* Four-button navigation row */
+/* Navigation Row - Centered & Scaled */
 .sidebar-nav-row {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    padding: 8px 0;
+    gap: 12px;
+    padding: 12px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .nav-btn-item {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    background: var(--bg-tertiary);
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
     color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .nav-btn-item:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .nav-btn-item.active {
-    border-color: rgba(99, 102, 241, 0.6);
-    background: rgba(99, 102, 241, 0.2);
-    color: var(--accent);
-    box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    transform: scale(1.05);
+}
+
+/* Add a subtle glow/shine effect to active buttons */
+.nav-btn-item.active::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 .nav-btn-item .bulk-trash-img {

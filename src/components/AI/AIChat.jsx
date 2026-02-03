@@ -385,6 +385,20 @@ const AIChat = ({ isOpen, onClose }) => {
   /* File Processing */
   const processFiles = useCallback(async (files) => {
     if (files.length === 0) return;
+
+    // Display images in chat immediately
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          addMessage('user-image', e.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        addMessage('user', `[File: ${file.name}]`);
+      }
+    }
+
     setIsImageProcessing(true);
     setStatus('info', 'Analyzing files with Gemini 3...');
     try {
@@ -506,10 +520,14 @@ const AIChat = ({ isOpen, onClose }) => {
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`message ${message.type}`}
+                className={`message ${message.type === 'user-image' ? 'user' : message.type}`}
               >
                 <div className="message-content">
-                  <p>{message.content}</p>
+                  {message.type === 'user-image' ? (
+                    <img src={message.content} alt="User upload" className="chat-uploaded-image" style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '4px' }} />
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
                 </div>
               </MotionDiv>
             ))}

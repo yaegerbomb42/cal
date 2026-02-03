@@ -106,11 +106,16 @@ const MainLayout = () => {
       if (newWidth < minWidth) newWidth = minWidth;
       if (newWidth > maxWidth) newWidth = maxWidth;
 
-      // Apply directly to DOM elements
+      // Apply directly to DOM elements via CSS variable for performance
       const newPercent = (newWidth / containerWidth) * 100;
+      containerRef.current.style.setProperty('--sidebar-percent', `${newPercent}%`);
 
-      sidebarRef.current.style.width = `${newPercent}%`;
-      calendarRef.current.style.flex = `1 1 calc(${100 - newPercent}% - 6px)`;
+      // We don't need to set state on every frame if we want pure performance, 
+      // but if we want to sync, we can just do the DOM update here and the state update on stop.
+      // However, since we are using the --sidebar-percent in the main render style prop (triggered by state),
+      // we might want to avoid re-rendering the whole component on every mouse move if possible.
+      // But the current implementation uses state for the initial render. 
+      // Let's rely on the DOM update for the drag, and state for the final set.
     }
   }, []);
 
@@ -204,11 +209,11 @@ const MainLayout = () => {
         <main
           className="main-content"
           ref={containerRef}
+          style={{ '--sidebar-percent': `${sidebarPercent}%` }}
         >
           <div
             className="sidebar-container"
             ref={sidebarRef}
-            style={{ width: `${sidebarPercent}%`, flexShrink: 0 }}
           >
             <UpcomingSidebar />
           </div>
@@ -223,7 +228,6 @@ const MainLayout = () => {
           <div
             className="calendar-container"
             ref={calendarRef}
-            style={{ flex: `1 1 calc(${100 - sidebarPercent}% - 6px)` }}
           >
             <Calendar />
           </div>

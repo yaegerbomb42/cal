@@ -192,36 +192,41 @@ const UpcomingSidebar = () => {
         e.preventDefault();
         if (!quickAddText.trim()) return;
 
+        // Auto-Schedule Logic
+        // If it starts with "Todo:", "Task:", or just looks like a task, 
+        // we try to find a slot.
         try {
-            // Optimistic UI update or loading state could go here
-            const plan = await geminiService.parseFocusPlan(quickAddText, todayEvents);
+            // Simple mock "AI" or regex for now, then real AI later if needed.
+            // For now, we assume EVERYTHING entered here is a task to be scheduled.
+            const { findNextFreeSlot } = await import('../../utils/scheduler');
+            const slot = findNextFreeSlot(events, 30); // Default 30 min
 
-            plan.forEach(task => {
+            if (slot) {
                 addEvent({
-                    title: task.title,
-                    start: task.suggestedStart,
-                    end: task.suggestedEnd,
+                    title: quickAddText,
+                    start: slot.start,
+                    end: slot.end,
                     category: 'task',
-                    priority: task.priority, // New field
-                    description: task.description || 'Focus Mode Task',
+                    priority: 'medium',
+                    description: 'Auto-scheduled by AI',
                     completed: false
                 });
-            });
-
+                // toastService.success(`Scheduled for ${new Date(slot.start).toLocaleTimeString()}`);
+            } else {
+                // Fallback if full
+                const start = new Date();
+                const end = new Date(start.getTime() + 30 * 60000);
+                addEvent({
+                    title: quickAddText,
+                    start: start.toISOString(),
+                    end: end.toISOString(),
+                    category: 'task',
+                    completed: false
+                });
+            }
             setQuickAddText('');
-            // Maybe show a toast/confetti for "Plan Created!"
         } catch (error) {
             console.error("Focus Plan Error:", error);
-            // Fallback to simple add
-            const start = new Date();
-            const end = new Date(start.getTime() + 60 * 60 * 1000);
-            addEvent({
-                title: quickAddText,
-                start: start.toISOString(),
-                end: end.toISOString(),
-                category: 'task',
-                priority: 'medium'
-            });
             setQuickAddText('');
         }
     };
@@ -257,35 +262,35 @@ const UpcomingSidebar = () => {
                     </h3>
                 </div>
 
-                {/* Unified Navigation - Always Visible */}
+                {/* Unified Navigation - Centered & Reordered */}
                 <div className="sidebar-nav-row">
                     <button
-                        className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
-                        onClick={() => setViewMode('bulk-trash')}
-                        title="Bulk Delete"
+                        className={`nav-btn-item ${viewMode === 'upcoming' ? 'active' : ''}`}
+                        onClick={() => setViewMode('upcoming')}
+                        title="Upcoming Events"
                     >
-                        <Trash2 size={16} />
+                        <Calendar size={18} />
                     </button>
                     <button
                         className={`nav-btn-item ${viewMode === 'focus' ? 'active' : ''}`}
                         onClick={() => setViewMode('focus')}
                         title="Focus Mode"
                     >
-                        <Zap size={16} />
+                        <Zap size={18} />
                     </button>
                     <button
                         className={`nav-btn-item ${viewMode === 'archive' ? 'active' : ''}`}
                         onClick={() => setViewMode('archive')}
                         title="Archive"
                     >
-                        <Archive size={16} />
+                        <Archive size={18} />
                     </button>
                     <button
-                        className={`nav-btn-item ${viewMode === 'upcoming' ? 'active' : ''}`}
-                        onClick={() => setViewMode('upcoming')}
-                        title="Upcoming"
+                        className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
+                        onClick={() => setViewMode('bulk-trash')}
+                        title="Trash / Bulk Delete"
                     >
-                        <Calendar size={16} />
+                        <Trash2 size={18} />
                     </button>
                 </div>
 

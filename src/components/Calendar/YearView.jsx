@@ -59,7 +59,7 @@ const YearDayCell = memo(({ day, count, events, onSelect, isHighlighted }) => {
 
 YearDayCell.displayName = 'YearDayCell';
 
-const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect, highlightedSlots = [] }) => {
+const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect, onMonthClick, highlightedSlots = [] }) => {
   const days = useMemo(() => {
     return eachDayOfInterval({
       start: startOfMonth(monthDate),
@@ -72,7 +72,14 @@ const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect, highlightedSlots 
 
   return (
     <div className="month-block">
-      <h4 className="month-title">{format(monthDate, 'MMMM')}</h4>
+      <h4
+        className="month-title"
+        onClick={() => onMonthClick(monthDate)}
+        style={{ cursor: 'pointer', display: 'inline-block' }}
+        title="Zoom to Month View"
+      >
+        {format(monthDate, 'MMMM')}
+      </h4>
       <div className="month-days-grid">
         {/* Day Headers (S M T W T F S) */}
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
@@ -107,7 +114,7 @@ const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect, highlightedSlots 
 };
 
 const YearView = ({ onYearChange }) => {
-  const { currentDate, openEventModal, setCurrentDate } = useCalendar();
+  const { currentDate, openEventModal, setCurrentDate, setView } = useCalendar();
   const { getEventsForDate } = useEvents();
   const selectedYear = currentDate.getFullYear();
   const [highlightedSlots, setHighlightedSlots] = useState([]);
@@ -227,6 +234,10 @@ const YearView = ({ onYearChange }) => {
               monthDate={month}
               getEventsForDate={getEventsForDate}
               onDaySelect={handleDaySelect}
+              onMonthClick={(date) => {
+                setCurrentDate(date);
+                setView('month'); // Using string directly or import CALENDAR_VIEWS if defined
+              }}
               highlightedSlots={highlightedSlots}
             />
           ))}

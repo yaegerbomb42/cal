@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CalendarContext } from './calendarContext';
 import { CALENDAR_VIEWS } from './calendarViews';
 
@@ -48,6 +48,35 @@ export const CalendarProvider = ({
     setSelectedEvent(null);
     setIsEventModalOpen(false);
   };
+
+  // Zoomable Navigation Logic
+  // Arrow Up: Zoom Out (Day -> Week -> Month -> Year)
+  // Arrow Down: Zoom In (Year -> Month -> Week -> Day)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if input/textarea is focused or modifier keys are pressed
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        const viewOrder = [CALENDAR_VIEWS.DAY, CALENDAR_VIEWS.WEEK, CALENDAR_VIEWS.MONTH, CALENDAR_VIEWS.YEAR];
+        const currentIndex = viewOrder.indexOf(view);
+        if (currentIndex < viewOrder.length - 1) {
+          setView(viewOrder[currentIndex + 1]);
+        }
+      } else if (e.key === 'ArrowDown') {
+        const viewOrder = [CALENDAR_VIEWS.DAY, CALENDAR_VIEWS.WEEK, CALENDAR_VIEWS.MONTH, CALENDAR_VIEWS.YEAR];
+        const currentIndex = viewOrder.indexOf(view);
+        if (currentIndex > 0) {
+          setView(viewOrder[currentIndex - 1]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [view, setView]);
 
   return (
     <CalendarContext.Provider value={{
