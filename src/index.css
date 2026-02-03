@@ -410,30 +410,35 @@ h6 {
   background-color: #0f172a;
 }
 
-/* === CALM PASTEL LIGHT MODE === */
+/* === HIGH CONTRAST LIGHT MODE === */
 [data-theme="light"] {
-  --bg-primary: #f8f6f3;
-  --bg-secondary: #f2efeb;
-  --bg-tertiary: #fcfbf9;
-  --accent: #8b9dc3;
-  --accent-hover: #7889b0;
-  --accent-glow: rgba(139, 157, 195, 0.15);
-  --text-primary: #3d4852;
-  --text-secondary: #606f7b;
-  --text-muted: #8795a1;
-  --text-disabled: #b8c2cc;
-  --glass-bg: rgba(252, 251, 249, 0.9);
-  --glass-strong: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(139, 157, 195, 0.12);
-  --glass-divider: rgba(0, 0, 0, 0.04);
-  --glass-shadow: 0 4px 24px rgba(139, 157, 195, 0.08);
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #fafafa;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-glow: rgba(79, 70, 229, 0.2);
+  --text-primary: #0f172a;
+  /* Very dark, almost black */
+  --text-secondary: #334155;
+  /* Dark slate */
+  --text-muted: #64748b;
+  /* Medium slate for readability */
+  --text-disabled: #94a3b8;
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-strong: rgba(255, 255, 255, 0.98);
+  --glass-border: rgba(15, 23, 42, 0.15);
+  /* Dark borders for contrast */
+  --glass-divider: rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
   --backdrop-blur: blur(20px);
-  --border: rgba(139, 157, 195, 0.15);
-  --shadow: 0 4px 16px rgba(139, 157, 195, 0.06);
+  --border: rgba(15, 23, 42, 0.2);
+  /* Strong dark border */
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="light"] body {
-  background: linear-gradient(145deg, #f8f6f3 0%, #f0ece6 50%, #e8e4de 100%);
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
   color: var(--text-primary);
 }
 

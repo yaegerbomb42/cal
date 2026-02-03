@@ -12,6 +12,8 @@ import { ValidationError } from '../../utils/errors';
 import './EventModal.css';
 
 import SmartDateInput from '../Common/SmartDateInput';
+import ClockPicker from '../Common/ClockPicker';
+import SmartSchedulePortal from './SmartSchedulePortal';
 import ConflictResolutionModal from './ConflictResolutionModal';
 import { geminiService } from '../../services/geminiService';
 

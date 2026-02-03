@@ -11,6 +11,8 @@
     flex-direction: column;
     border: 1px solid var(--glass-border);
     overflow: hidden;
+    z-index: 10;
+    /* Below modal z-index: 1000 */
 }
 
 .productivity-sidebar {
@@ -1017,4 +1019,41 @@ body.focus-mode-active .header:hover {
 .priority-indicator.low {
     color: #3b82f6;
     border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* === LIGHT MODE OVERRIDES === */
+[data-theme="light"] .sidebar-header h3 {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .event-count {
+    color: var(--text-primary);
+    background: rgba(79, 70, 229, 0.1);
+}
+
+[data-theme="light"] .nav-btn-item {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-secondary);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .nav-btn-item:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .filter-chip {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .filter-chip.active {
+    background: rgba(79, 70, 229, 0.15);
+    color: var(--text-primary);
+    border-color: rgba(79, 70, 229, 0.4);
+}
+
+[data-theme="light"] .no-events {
+    color: var(--text-muted);
 }

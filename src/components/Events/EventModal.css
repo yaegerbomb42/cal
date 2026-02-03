@@ -65,8 +65,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  overflow-y: auto;
-  /* Internal scroll if needed */
+  overflow-y: visible;
+  /* No scroll bars allowed */
 }
 
 .modal-col.left-col {
@@ -215,7 +215,7 @@
 @media (max-width: 800px) {
   .modal-content-grid {
     grid-template-columns: 1fr;
-    overflow-y: auto;
+    overflow-y: visible;
   }
 
   .modal-col {

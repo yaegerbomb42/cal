@@ -2,7 +2,8 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.7);
-    z-index: 1099;
+    z-index: 1500;
+    /* Above modal z-index: 1000 */
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
 }
@@ -12,15 +13,18 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 90vw;
+    width: calc(100% - 32px);
+    /* Ensure margins on both sides */
     max-width: 700px;
+    /* Don't exceed this, but shrink if needed */
     background: rgba(15, 23, 42, 0.98);
     border: 1px solid rgba(99, 102, 241, 0.4);
     border-radius: 16px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
-    z-index: 1100;
+    z-index: 1501;
+    /* Above backdrop */
     overflow: hidden;
 }
 
@@ -344,4 +348,39 @@
     align-items: center;
     justify-content: center;
     color: white;
+}
+
+/* === LIGHT MODE OVERRIDES === */
+[data-theme="light"] .smart-schedule-portal {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+[data-theme="light"] .portal-header {
+    background: rgba(79, 70, 229, 0.08);
+}
+
+[data-theme="light"] .suggestion-card {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .suggestion-card:hover {
+    background: rgba(79, 70, 229, 0.08);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+[data-theme="light"] .suggestion-card.selected {
+    background: rgba(79, 70, 229, 0.15);
+    border-color: rgba(79, 70, 229, 0.5);
+}
+
+[data-theme="light"] .portal-visualizer {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .timeline-event.busy {
+    background: rgba(0, 0, 0, 0.1);
+    border-left-color: rgba(0, 0, 0, 0.3);
 }

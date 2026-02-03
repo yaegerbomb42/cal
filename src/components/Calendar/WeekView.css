@@ -316,8 +316,11 @@
 .week-time-indicator-line {
   width: 100%;
   height: 2px;
+  /* Moderate thickness */
   background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.9), 0 0 4px rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), 0 0 4px rgba(239, 68, 68, 0.6);
+  /* Moderate glow */
+  z-index: 40;
 }
 
 .week-current-time {
@@ -335,8 +338,11 @@
   left: 0;
   right: 0;
   height: 2px;
+  /* Moderate thickness */
   background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.9), 0 0 4px rgba(239, 68, 68, 0.7);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), 0 0 4px rgba(239, 68, 68, 0.6);
+  /* Moderate glow */
+  z-index: 40;
 }
 
 .week-current-time .current-time-label {
