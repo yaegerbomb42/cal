@@ -68,18 +68,18 @@ const Header = ({ onOpenSettings }) => {
             </div>
           </div>
 
-          {/* Right: View Dropdown & Settings */}
-          <div className="header-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div className="view-dropdown-wrapper">
-              <select
-                value={view}
-                onChange={(e) => setView(e.target.value)}
-                className="view-select-dropdown"
-              >
-                {viewButtons.map(({ key, label }) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
+          {/* Right: View Selector & Settings */}
+          <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div className="view-selector glass-panel">
+              {viewButtons.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setView(key)}
+                  className={`view-btn ${view === key ? 'active' : ''}`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             <MotionButton

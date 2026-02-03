@@ -67,6 +67,59 @@
   color: var(--text-primary);
 }
 
+/* Month Header Standardization */
+.month-summary {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.month-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.month-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.month-summary-title {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.month-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.month-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+}
+
+.month-header {
+  display: none;
+  /* Removed from UI request */
+}
+
 .day-heading {
   display: flex;
   align-items: center;

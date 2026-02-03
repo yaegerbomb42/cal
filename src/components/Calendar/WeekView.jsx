@@ -139,7 +139,7 @@ const WeekView = () => {
           <span className="week-range">{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}</span>
         </div>
 
-        <div className="week-ai-wrapper">
+        <div className="week-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
           <AIChatInput
             onSubmit={({ text, files }) => {
               if (text) {
@@ -152,6 +152,12 @@ const WeekView = () => {
             }}
             compact
           />
+        </div>
+
+        <div className="week-actions">
+          <button className="btn btn-primary week-add-btn" onClick={() => openEventModal({ start: new Date() })}>
+            <Plus size={16} /> Add Event
+          </button>
         </div>
       </div>
 

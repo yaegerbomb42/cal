@@ -178,10 +178,11 @@ const YearView = ({ onYearChange }) => {
     <div className="year-view">
       <div className="year-header glass-card">
         <div className="year-title-group">
-          <span className="year-subtitle">{selectedYear} Cal</span>
+          <span className="year-label">Year Overview</span>
+          <span className="year-subtitle">{selectedYear}</span>
         </div>
 
-        <div className="year-ai-wrapper" style={{ flex: 1, padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+        <div className="year-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
           <AIChatInput
             onSubmit={({ text, files }) => {
               // Same logic
@@ -202,20 +203,19 @@ const YearView = ({ onYearChange }) => {
           <button className="btn btn-primary year-add-btn" onClick={handleAddEvent}>
             <Plus size={16} /> Add Event
           </button>
-          <div className="year-stat">
-            <span className="count">{yearEventsCount}</span>
-            <span className="label">Total Events</span>
-          </div>
 
-          <select
-            value={selectedYear}
-            onChange={handleYearSelect}
-            className="year-dropdown"
-          >
-            {yearOptions.map(y => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          <div className="year-filter-group">
+            <span className="year-stat-pill">{yearEventsCount} Events</span>
+            <select
+              value={selectedYear}
+              onChange={handleYearSelect}
+              className="year-dropdown"
+            >
+              {yearOptions.map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

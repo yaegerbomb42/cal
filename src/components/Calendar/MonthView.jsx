@@ -48,9 +48,12 @@ const MonthView = () => {
   return (
     <div className="month-view">
       <div className="month-summary glass-card">
-        <div className="month-summary-title">This Month</div>
+        <div className="month-info">
+          <div className="month-label">Month</div>
+          <div className="month-summary-title">{format(currentDate, 'MMMM yyyy')}</div>
+        </div>
 
-        <div className="month-ai-wrapper" style={{ flex: 1, padding: '0 20px', maxWidth: '500px' }}>
+        <div className="month-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
           <AIChatInput
             onSubmit={({ text, files }) => {
               if (text) {
@@ -66,18 +69,14 @@ const MonthView = () => {
           />
         </div>
 
-        <div className="month-summary-stat">
-          {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
-        </div>
-      </div>
-
-      {/* Week Day Headers */}
-      <div className="month-header">
-        {weekDays.map((day) => (
-          <div key={day} className="week-day-header">
-            {day}
+        <div className="month-actions">
+          <button className="btn btn-primary month-add-btn" onClick={() => openEventModal({ start: new Date() })}>
+            <Plus size={16} /> Add Event
+          </button>
+          <div className="month-summary-stat">
+            {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Calendar Grid */}

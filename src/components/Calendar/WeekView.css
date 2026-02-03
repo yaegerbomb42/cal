@@ -12,11 +12,24 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 1rem;
-  padding: 0.4rem 1rem;
+  padding: 0.5rem 1rem;
   margin-bottom: 0.5rem;
   border-radius: 12px;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
+}
+
+.week-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.week-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
 }
 
 .week-nav-group {
