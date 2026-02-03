@@ -1,63 +1,32 @@
+/* Maximized Month View */
 .month-view {
   width: 100%;
   height: 100%;
-}
-
-.month-summary {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.month-summary-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.month-summary-stat {
-  text-align: center;
-}
-
-.month-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  margin-bottom: 0.5rem;
-}
-
-.week-day-header {
-  padding: 1rem;
-  text-align: center;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--glass-bg);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  flex-direction: column;
 }
 
 .month-grid {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  /* Force 5 rows to fill height */
   gap: 1px;
   background: var(--glass-border);
   border-radius: 16px;
   overflow: hidden;
+  margin-bottom: 0;
 }
 
+/* Ensure days grow into available space */
 .month-day {
-  min-height: 110px;
-  padding: 0.6rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  min-height: 0;
+  /* Allow flex compression/expansion */
+  height: 100%;
+  padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  border-radius: 0;
-  border: none;
-  position: relative;
-  overflow: hidden;
 }
 
 .month-day:hover {

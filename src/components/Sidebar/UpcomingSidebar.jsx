@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
-import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check } from 'lucide-react';
+import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check, Sparkles } from 'lucide-react';
 import { getEventColor } from '../../utils/helpers';
 import { paginateItems } from '../../utils/pagination';
 import { isToday } from 'date-fns';
@@ -89,16 +89,13 @@ const UpcomingSidebar = () => {
     const { user } = useAuth(); // Needed for persistence
 
     // View States
-    const [viewMode, setViewMode] = useState('upcoming');
+    const [viewMode, setViewMode] = useState('upcoming'); // 'upcoming', 'focus', 'archive', 'bulk-trash'
 
     // Filter State - Default to 'all' or load from persistence handled in Effect
     const [categoryFilters, setCategoryFilters] = useState(['all']);
 
-    const [focusMode, setFocusMode] = useState(false);
-
     // ... existing list states ...
     const [page, setPage] = useState(1);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteSearch, setDeleteSearch] = useState('');
     const pageSize = 5;
 
@@ -127,10 +124,7 @@ const UpcomingSidebar = () => {
 
     // ... helper functions ...
 
-    const toggleFocusMode = () => {
-        setFocusMode(!focusMode);
-        document.body.classList.toggle('focus-mode-active');
-    };
+    // Removed toggleFocusMode as it is now part of viewMode
 
     // --- Helpers ---
     const now = new Date();
@@ -248,27 +242,65 @@ const UpcomingSidebar = () => {
         if (window.confirm(`Permanently delete all events titled "${deleteSearch}"? This cannot be undone.`)) {
             deleteEventsByName(deleteSearch);
             setDeleteSearch('');
-            setShowDeleteModal(false);
         }
     };
 
     return (
-        <div className={`upcoming-sidebar glass-card ${focusMode ? 'focus-mode-sidebar' : ''}`}>
+        <div className={`upcoming-sidebar glass-card ${viewMode === 'focus' ? 'focus-mode-sidebar' : ''}`}>
+            <div className="sidebar-header">
+                <div className="header-title-row">
+                    <h3>
+                        {viewMode === 'upcoming' && 'Upcoming'}
+                        {viewMode === 'focus' && 'Focus Mode'}
+                        {viewMode === 'archive' && 'Archive'}
+                        {viewMode === 'bulk-trash' && 'Bulk Delete'}
+                    </h3>
+                </div>
+
+                {/* Unified Navigation - Always Visible */}
+                <div className="sidebar-nav-row">
+                    <button
+                        className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
+                        onClick={() => setViewMode('bulk-trash')}
+                        title="Bulk Delete"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                    <button
+                        className={`nav-btn-item ${viewMode === 'focus' ? 'active' : ''}`}
+                        onClick={() => setViewMode('focus')}
+                        title="Focus Mode"
+                    >
+                        <Zap size={16} />
+                    </button>
+                    <button
+                        className={`nav-btn-item ${viewMode === 'archive' ? 'active' : ''}`}
+                        onClick={() => setViewMode('archive')}
+                        title="Archive"
+                    >
+                        <Archive size={16} />
+                    </button>
+                    <button
+                        className={`nav-btn-item ${viewMode === 'upcoming' ? 'active' : ''}`}
+                        onClick={() => setViewMode('upcoming')}
+                        title="Upcoming"
+                    >
+                        <Calendar size={16} />
+                    </button>
+                </div>
+
+                {viewMode !== 'bulk-trash' && viewMode !== 'focus' && (
+                    <span className="event-count">{displayEvents.length} events</span>
+                )}
+            </div>
 
             {/* --- FOCUS MODE VIEW --- */}
-            {focusMode ? (
-                <div className="focus-mode-content">
-                    <div className="sidebar-header">
-                        <h3>Today's Plan</h3>
-                        <div className="header-actions">
-                            <button
-                                className={`icon-btn active`}
-                                onClick={toggleFocusMode}
-                                title="Exit Focus Mode"
-                            >
-                                <Zap size={16} fill="currentColor" />
-                            </button>
-                        </div>
+            {viewMode === 'focus' && (
+                <div className="focus-mode-content fade-in">
+                    <div className="focus-header-actions">
+                        <button className="pro-btn-secondary small" onClick={() => handleSmartFocusSubmit({ preventDefault: () => { } })}>
+                            <Sparkles size={14} className="text-accent" /> Auto-Plan
+                        </button>
                     </div>
 
                     {/* Quick Add Bar */}
@@ -276,15 +308,9 @@ const UpcomingSidebar = () => {
                         <Plus size={16} className="quick-add-icon" />
                         <input
                             type="text"
-                            placeholder="Add task for today..."
+                            placeholder="Add task or ask AI..."
                             value={quickAddText}
                             onChange={(e) => setQuickAddText(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSmartFocusSubmit(e);
-                                }
-                            }}
                             className="quick-add-input"
                         />
                     </form>
@@ -334,98 +360,25 @@ const UpcomingSidebar = () => {
                         )}
                     </div>
                 </div>
-            ) : (
-                /* --- STANDARD VIEW --- */
+            )}
+
+            {/* --- STANDARD LIST VIEW --- */}
+            {(viewMode === 'upcoming' || viewMode === 'archive') && (
                 <>
-                    <div className="sidebar-header">
-                        <div className="header-title-row">
-                            <h3>{viewMode === 'upcoming' ? 'Upcoming' : viewMode === 'archive' ? 'Archive' : viewMode === 'bulk-trash' ? 'Bulk Delete' : 'Upcoming'}</h3>
-                        </div>
-
-                        {/* Four-button navigation row - switches between states */}
-                        <div className="sidebar-nav-row">
-                            <button
-                                className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
-                                onClick={() => setViewMode('bulk-trash')}
-                                title="Bulk Delete"
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M3 6h4m0 0V4h4v2m-4 0h4m6 0h2M7 6v12a2 2 0 002 2h6a2 2 0 002-2V6" />
-                                    <path d="M11 6h2" opacity="0.5" />
-                                </svg>
-                            </button>
-                            <button
-                                className={`nav-btn-item ${focusMode ? 'active' : ''}`}
-                                onClick={toggleFocusMode}
-                                title="Focus Mode"
-                            >
-                                <Zap size={16} />
-                            </button>
-                            <button
-                                className={`nav-btn-item ${viewMode === 'archive' ? 'active' : ''}`}
-                                onClick={() => setViewMode('archive')}
-                                title="Archive"
-                            >
-                                <Archive size={16} />
-                            </button>
-                            <button
-                                className={`nav-btn-item ${viewMode === 'upcoming' && !focusMode ? 'active' : ''}`}
-                                onClick={() => setViewMode('upcoming')}
-                                title="Upcoming"
-                            >
-                                <Calendar size={16} />
-                            </button>
-                        </div>
-
-                        {viewMode !== 'bulk-trash' && (
-                            <span className="event-count">{displayEvents.length} events</span>
-                        )}
+                    <div className="filter-container" style={{ padding: '0 1rem 0.75rem 1rem' }}>
+                        <CustomMultiSelect
+                            options={[
+                                { value: 'all', label: 'All Categories' },
+                                { value: 'work', label: 'Work', color: getEventColor('work') },
+                                { value: 'personal', label: 'Personal', color: getEventColor('personal') },
+                                { value: 'fun', label: 'Fun', color: getEventColor('fun') },
+                                { value: 'task', label: 'Task', color: getEventColor('task') },
+                                { value: 'event', label: 'Event', color: getEventColor('event') }
+                            ]}
+                            selectedValues={categoryFilters}
+                            onChange={handleFilterChange}
+                        />
                     </div>
-
-                    {viewMode !== 'bulk-trash' && (
-                        <div className="filter-container" style={{ padding: '0.75rem 1rem' }}>
-                            <CustomMultiSelect
-                                options={[
-                                    { value: 'all', label: 'All Categories' },
-                                    { value: 'work', label: 'Work', color: getEventColor('work') },
-                                    { value: 'personal', label: 'Personal', color: getEventColor('personal') },
-                                    { value: 'fun', label: 'Fun', color: getEventColor('fun') },
-                                    { value: 'task', label: 'Task', color: getEventColor('task') },
-                                    { value: 'event', label: 'Event', color: getEventColor('event') }
-                                ]}
-                                selectedValues={categoryFilters}
-                                onChange={handleFilterChange}
-                            />
-                        </div>
-                    )}
-
-                    {/* Bulk Delete View */}
-                    {viewMode === 'bulk-trash' && (
-                        <div className="delete-modal-area fade-in">
-                            <div className="delete-header">
-                                <span className="delete-title">Bulk delete by name</span>
-                                <span className="delete-subtitle">Remove every event with the exact title below.</span>
-                            </div>
-                            <div className="delete-input-wrapper">
-                                <Search size={14} className="search-icon" />
-                                <input
-                                    type="text"
-                                    placeholder="Enter exact event title"
-                                    value={deleteSearch}
-                                    onChange={(e) => setDeleteSearch(e.target.value)}
-                                    className="delete-input"
-                                />
-                            </div>
-                            <button
-                                disabled={!deleteSearch.trim()}
-                                onClick={handleBulkDelete}
-                                className="delete-confirm-btn"
-                            >
-                                Delete matching events
-                            </button>
-                            <p className="delete-hint">This action removes all events with the exact title.</p>
-                        </div>
-                    )}
 
                     <div className="upcoming-list">
                         {displayEvents.length === 0 ? (
@@ -486,7 +439,7 @@ const UpcomingSidebar = () => {
                         )}
                     </div>
 
-                    {displayEvents.length > pageSize && !showDeleteModal && (
+                    {displayEvents.length > pageSize && (
                         <div className="pagination-controls" role="navigation" aria-label="Upcoming events pagination">
                             <button
                                 type="button"
@@ -510,6 +463,34 @@ const UpcomingSidebar = () => {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* --- BULK DELETE VIEW --- */}
+            {viewMode === 'bulk-trash' && (
+                <div className="delete-modal-area fade-in">
+                    <div className="delete-header">
+                        <span className="delete-title">Bulk delete by name</span>
+                        <span className="delete-subtitle">Remove every event with the exact title below.</span>
+                    </div>
+                    <div className="delete-input-wrapper">
+                        <Search size={14} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Enter exact event title"
+                            value={deleteSearch}
+                            onChange={(e) => setDeleteSearch(e.target.value)}
+                            className="delete-input"
+                        />
+                    </div>
+                    <button
+                        disabled={!deleteSearch.trim()}
+                        onClick={handleBulkDelete}
+                        className="delete-confirm-btn"
+                    >
+                        Delete matching events
+                    </button>
+                    <p className="delete-hint">This action removes all events with the exact title.</p>
+                </div>
             )}
         </div>
     );

@@ -243,9 +243,11 @@
   border-top: none;
   border-radius: 0 0 16px 16px;
   background: var(--glass-bg);
-  height: calc(var(--hour-height) * 24);
+  height: 100%;
+  /* Fill container */
+  overflow-y: auto;
+  /* Enable vertical scolling */
   position: relative;
-  overflow: hidden;
 }
 
 .week-time-column {
@@ -537,7 +539,8 @@
 
 @media (max-width: 768px) {
   .week-view {
-    --hour-height: 22px;
+    --hour-height: 40px;
+    /* Taller on mobile for touch targets */
   }
 
   .week-control-bar {

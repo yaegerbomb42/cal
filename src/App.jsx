@@ -73,8 +73,8 @@ const MainLayout = () => {
   const resize = useCallback((mouseMoveEvent) => {
     if (isResizing && containerRef.current) {
       const containerRect = containerRef.current.getBoundingClientRect();
-      // Calculate from the RIGHT edge (sidebar width)
-      const newWidth = containerRect.right - mouseMoveEvent.clientX;
+      // Calculate from the LEFT edge (sidebar starting on left)
+      const newWidth = mouseMoveEvent.clientX - containerRect.left;
       const containerWidth = containerRect.width;
       const newPercent = (newWidth / containerWidth) * 100;
 
@@ -175,8 +175,8 @@ const MainLayout = () => {
           className="main-content"
           ref={containerRef}
         >
-          <div className="calendar-container" style={{ flex: `1 1 calc(${100 - sidebarPercent}% - 6px)` }}>
-            <Calendar />
+          <div className="sidebar-container" style={{ width: `${sidebarPercent}%`, flexShrink: 0 }}>
+            <UpcomingSidebar />
           </div>
 
           <div
@@ -186,8 +186,8 @@ const MainLayout = () => {
             <div className="resize-line" />
           </div>
 
-          <div className="sidebar-container" style={{ width: `${sidebarPercent}%`, flexShrink: 0 }}>
-            <UpcomingSidebar />
+          <div className="calendar-container" style={{ flex: `1 1 calc(${100 - sidebarPercent}% - 6px)` }}>
+            <Calendar />
           </div>
         </main>
 

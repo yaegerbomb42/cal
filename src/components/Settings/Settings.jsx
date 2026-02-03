@@ -121,11 +121,11 @@ const Settings = ({ isOpen, onClose }) => {
 
   const tabs = [
     { id: 'account', label: 'Account', icon: User, color: '#6366f1' },
-    { id: 'ai', label: 'AI Engine', icon: Cpu, color: '#8b5cf6' },
-    { id: 'preferences', label: 'Preferences', icon: Zap, color: '#f59e0b' },
-    { id: 'packs', label: 'Cal Packs', icon: CalendarIcon, color: '#10b981' },
+    { id: 'ai', label: 'Intelligence', icon: Cpu, color: '#8b5cf6' },
+    { id: 'preferences', label: 'Config', icon: Zap, color: '#f59e0b' },
+    { id: 'packs', label: 'Packs', icon: CalendarIcon, color: '#10b981' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
-    { id: 'data', label: 'Storage', icon: Download, color: '#f43f5e' },
+    { id: 'data', label: 'Data', icon: Download, color: '#f43f5e' },
     { id: 'about', label: 'About', icon: Sparkles, color: '#ec4899' }
   ];
 
@@ -462,16 +462,17 @@ const Settings = ({ isOpen, onClose }) => {
               <div className="input-wrapper">
                 <Key size={14} className="input-icon" />
                 <input
-                  type={showApiKey ? "text" : "password"}
+                  type="password"
                   value={showApiKey ? apiKey : (apiKey || (hasSavedApiKey ? '•'.repeat(20) : ''))}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter Gemini API Key"
+                  placeholder="Paste Gemini API Key"
+                  autoComplete="off"
                 />
                 <button onClick={() => setShowApiKey(!showApiKey)} className="icon-btn">
                   {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
-              <button onClick={handleSaveApiKey} disabled={!apiKey.trim()} className="save-btn pro-btn-primary">Save</button>
+              <button onClick={handleSaveApiKey} disabled={!apiKey.trim()} className="save-btn pro-btn-primary">Save Securely</button>
             </div>
             <div className="status-row">
               {connectionStatus === 'success' ? (
@@ -479,7 +480,7 @@ const Settings = ({ isOpen, onClose }) => {
               ) : (
                 <span className="status-badge neutral">Not connected</span>
               )}
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" className="link-text">Get API Key</a>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" className="link-text">Get Key</a>
             </div>
           </div>
         ) : (
@@ -748,7 +749,7 @@ const Settings = ({ isOpen, onClose }) => {
 
                         <div className="scheduling-presets">
                           <button
-                            className={`preset-card ${priorityPrefs.urgencyWeight >= 70 ? 'selected' : ''}`}
+                            className={`preset-card ${priorityPrefs?.urgencyWeight >= 70 ? 'selected' : ''}`}
                             onClick={() => {
                               updatePriorityPref('urgencyWeight', 85);
                               updatePriorityPref('conflictResolution', 'priority');
@@ -758,13 +759,13 @@ const Settings = ({ isOpen, onClose }) => {
                             <div className="preset-icon">📋</div>
                             <div className="preset-content">
                               <span className="preset-title">Structured</span>
-                              <span className="preset-desc">I stick to my schedule. Don't move things around.</span>
+                              <span className="preset-desc">Rigid schedule.</span>
                             </div>
-                            {priorityPrefs.urgencyWeight >= 70 && <Check size={16} className="preset-check" />}
+                            {priorityPrefs?.urgencyWeight >= 70 && <Check size={16} className="preset-check" />}
                           </button>
 
                           <button
-                            className={`preset-card ${priorityPrefs.urgencyWeight >= 40 && priorityPrefs.urgencyWeight < 70 ? 'selected' : ''}`}
+                            className={`preset-card ${priorityPrefs?.urgencyWeight >= 40 && priorityPrefs?.urgencyWeight < 70 ? 'selected' : ''}`}
                             onClick={() => {
                               updatePriorityPref('urgencyWeight', 55);
                               updatePriorityPref('conflictResolution', 'ask');
@@ -774,13 +775,13 @@ const Settings = ({ isOpen, onClose }) => {
                             <div className="preset-icon">⚖️</div>
                             <div className="preset-content">
                               <span className="preset-title">Balanced</span>
-                              <span className="preset-desc">Suggest changes, but ask me first.</span>
+                              <span className="preset-desc">Flexible but focused.</span>
                             </div>
-                            {priorityPrefs.urgencyWeight >= 40 && priorityPrefs.urgencyWeight < 70 && <Check size={16} className="preset-check" />}
+                            {priorityPrefs?.urgencyWeight >= 40 && priorityPrefs?.urgencyWeight < 70 && <Check size={16} className="preset-check" />}
                           </button>
 
                           <button
-                            className={`preset-card ${priorityPrefs.urgencyWeight < 40 ? 'selected' : ''}`}
+                            className={`preset-card ${priorityPrefs?.urgencyWeight < 40 ? 'selected' : ''}`}
                             onClick={() => {
                               updatePriorityPref('urgencyWeight', 25);
                               updatePriorityPref('conflictResolution', 'chronological');
@@ -789,10 +790,10 @@ const Settings = ({ isOpen, onClose }) => {
                           >
                             <div className="preset-icon">🌊</div>
                             <div className="preset-content">
-                              <span className="preset-title">Flexible</span>
-                              <span className="preset-desc">Optimize my time automatically. I'm easy-going.</span>
+                              <span className="preset-title">Fluid</span>
+                              <span className="preset-desc">Go with the flow.</span>
                             </div>
-                            {priorityPrefs.urgencyWeight < 40 && <Check size={16} className="preset-check" />}
+                            {priorityPrefs?.urgencyWeight < 40 && <Check size={16} className="preset-check" />}
                           </button>
                         </div>
                       </div>
@@ -815,7 +816,7 @@ const Settings = ({ isOpen, onClose }) => {
                               ].map(time => (
                                 <button
                                   key={time.id}
-                                  className={`energy-block ${priorityPrefs.peakEnergyTime === time.id ? 'selected' : ''}`}
+                                  className={`energy-block ${priorityPrefs?.peakEnergyTime === time.id ? 'selected' : ''}`}
                                   onClick={() => updatePriorityPref('peakEnergyTime', time.id)}
                                 >
                                   <span className="energy-icon">{time.icon}</span>
