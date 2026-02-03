@@ -355,27 +355,31 @@ const AIChat = ({ isOpen, onClose }) => {
     await processInput(text);
   };
 
-  const processImageFiles = async (files) => {
+  /* File Processing */
+  const processFiles = async (files) => {
     if (files.length === 0) return;
     setIsImageProcessing(true);
-    setStatus('info', 'Processing images with Gemini 3...');
+    setStatus('info', 'Analyzing files with Gemini 3...');
     try {
-      const parsedEvents = await geminiService.parseEventsFromImages(files);
-      const drafts = parsedEvents.map(event => finalizeDraft(event));
-      if (drafts.length === 0) {
-        addMessage('ai', "I couldn't find any events in those images. Want to try another?");
+      const parsedEvents = await geminiService.parseEventsFromFiles(files);
+      if (parsedEvents.length === 0) {
+        addMessage('ai', "I checked those files but couldn't find any clear calendar events.");
       } else {
-        addMessage('ai', `I found ${drafts.length} event${drafts.length === 1 ? '' : 's'} from your images. Review below.`);
+        const drafts = parsedEvents.map(event => ({
+          ...finalizeDraft(event),
+          evidence: event.evidence // Preserve evidence
+        }));
+        addMessage('ai', `I found ${drafts.length} event${drafts.length === 1 ? '' : 's'}. Please confirm them below.`);
         setImageDrafts(prev => [...prev, ...drafts]);
       }
     } catch (error) {
       if (error instanceof AIParseError || error instanceof AIServiceError) {
         addMessage('ai', error.message);
       } else {
-        logger.error('Image parsing error', { error });
-        addMessage('ai', 'I hit an error reading that image. Try a clearer screenshot.');
+        logger.error('File parsing error', { error });
+        addMessage('ai', 'I hit a snag reading those files. Ensure they are valid documents or images.');
       }
-      setStatus('error', 'Image processing failed');
+      setStatus('error', 'Analysis failed');
     } finally {
       setIsImageProcessing(false);
       if (imageInputRef.current) {
@@ -385,20 +389,40 @@ const AIChat = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleImageUpload = async (event) => {
+  const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files || []);
-    await processImageFiles(files);
+    await processFiles(files);
+  };
+
+  /* Drag & Drop Handlers */
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    await processFiles(files);
   };
 
   useEffect(() => {
-    const handleExternalImageUpload = (event) => {
+    const handleExternalUpload = (event) => {
       const files = Array.from(event.detail?.files || []);
       if (files.length === 0) return;
-      processImageFiles(files);
+      processFiles(files);
     };
-    window.addEventListener('calai-image-upload', handleExternalImageUpload);
-    return () => window.removeEventListener('calai-image-upload', handleExternalImageUpload);
-  }, []);
+    window.addEventListener('calai-image-upload', handleExternalUpload);
+    return () => window.removeEventListener('calai-image-upload', handleExternalUpload);
+  }, [processFiles]);
 
   if (!isOpen) return null;
 
@@ -410,14 +434,27 @@ const AIChat = ({ isOpen, onClose }) => {
         exit={{ opacity: 0 }}
         className="ai-chat-overlay"
         onClick={onClose}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         <MotionDiv
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="ai-chat-sidebar glass-card"
+          className={`ai-chat-sidebar glass-card ${isDragging ? 'drag-active' : ''}`}
         >
+          {isDragging && (
+            <div className="drag-overlay">
+              <div className="drag-content">
+                <ImagePlus size={48} className="text-accent mb-2" />
+                <h3>Drop files to analyze</h3>
+                <p>Images, PDFs, Text</p>
+              </div>
+            </div>
+          )}
+
           <div className="chat-header">
             <div className="chat-title">
               <Sparkles className="ai-icon" size={18} />
@@ -494,9 +531,9 @@ const AIChat = ({ isOpen, onClose }) => {
               >
                 <div className="event-card-header">
                   <Calendar size={16} />
-                  <span>Image Events</span>
+                  <span>Batch Review ({imageDrafts.length})</span>
                 </div>
-                <p className="event-desc">Review and confirm each image-derived event.</p>
+                <p className="event-desc">Confirm all events extracted from your files.</p>
                 <div className="image-event-actions">
                   <button onClick={handleConfirmAllImageEvents} className="btn-primary w-full">
                     <Check size={16} /> Add All
@@ -513,23 +550,31 @@ const AIChat = ({ isOpen, onClose }) => {
                 className="event-confirmation-card glass-card"
               >
                 <div className="event-card-header">
-                  <Calendar size={16} />
-                  <span>Image Draft</span>
+                  <Sparkles size={14} className="text-accent" />
+                  <span>AI Analysis</span>
                 </div>
                 <h4>{draft.title}</h4>
                 <p className="event-time">
                   {new Date(draft.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
                 </p>
+
+                {draft.evidence && (
+                  <div className="ai-evidence-box">
+                    <strong>Why:</strong> "{draft.evidence}"
+                  </div>
+                )}
+
                 {draft.description && <p className="event-desc">{draft.description}</p>}
+
                 <div className="event-card-actions">
-                  <button onClick={() => handleEditImageEvent(index)} className="btn-icon" aria-label="Edit image draft">
+                  <button onClick={() => handleEditImageEvent(index)} className="btn-icon" aria-label="Edit draft">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={() => handleDiscardImageEvent(index)} className="btn-icon danger" aria-label="Discard image draft">
+                  <button onClick={() => handleDiscardImageEvent(index)} className="btn-icon danger" aria-label="Discard draft">
                     <Trash2 size={16} />
                   </button>
                   <button onClick={() => handleConfirmImageEvent(index)} className="btn-primary w-full">
-                    <Check size={16} /> Add Event
+                    <Check size={16} /> Add
                   </button>
                 </div>
               </MotionDiv>
@@ -548,9 +593,9 @@ const AIChat = ({ isOpen, onClose }) => {
             <input
               ref={imageInputRef}
               type="file"
-              accept="image/*"
+              accept=".pdf,.txt,.md,.csv,image/*"
               multiple
-              onChange={handleImageUpload}
+              onChange={handleFileUpload}
               className="chat-image-input"
             />
             {!isLocalMode && (
@@ -559,7 +604,7 @@ const AIChat = ({ isOpen, onClose }) => {
                 onClick={() => imageInputRef.current?.click()}
                 className="chat-upload-btn"
                 disabled={isImageProcessing || isLoading}
-                title="Upload event images"
+                title="Upload files"
               >
                 <ImagePlus size={16} />
               </button>
