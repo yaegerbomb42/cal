@@ -120,13 +120,13 @@ const SmartSchedulePortal = ({
                 }, existingEvents);
 
                 // Map results to include confidence if missing (standardize for UI)
-                const mapped = results.map((r, i) => ({
+                const mapped = Array.isArray(results) ? results.map((r, i) => ({
                     ...r,
                     start: new Date(r.start),
                     end: new Date(r.end),
                     confidence: r.confidence || (0.95 - (i * 0.1)),
                     reason: r.reason || 'AI optimized slot'
-                }));
+                })).filter(r => !isNaN(r.start.getTime()) && !isNaN(r.end.getTime())) : [];
                 setSuggestions(mapped);
             } catch (error) {
                 console.error('Failed to fetch AI suggestions', error);
