@@ -243,7 +243,9 @@
   border-top: none;
   border-radius: 0 0 16px 16px;
   background: var(--glass-bg);
-  height: 100%;
+  flex: 1;
+  min-height: 0;
+  height: auto;
   /* Fill container */
   overflow-y: auto;
   /* Enable vertical scolling */

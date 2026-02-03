@@ -13,6 +13,7 @@
   --bg-tertiary: #222630;
   --accent: #4f46e5;
   /* Electric Indigo/Blue from reference */
+  --accent-rgb: 79, 70, 229;
   --accent-hover: #6366f1;
   --accent-glow: rgba(79, 70, 229, 0.4);
   --text-primary: #ffffff;

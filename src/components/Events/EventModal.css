@@ -36,18 +36,18 @@
 }
 
 .modal-form {
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1.25rem;
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
-  gap: 12px;
+  gap: 8px;
 }
 
 .modal-panels {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 /* Compact Section Styles */
@@ -55,16 +55,16 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   margin-bottom: 0;
 }
 

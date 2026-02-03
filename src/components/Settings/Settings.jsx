@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, LogOut, User, Sparkles, MessageSquare, Clock, Cpu, Zap, Globe } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, Check, LogOut, User, Sparkles, MessageSquare, Clock, Cpu, Zap, Globe } from 'lucide-react';
 import { CloudDownloadOutlined, EventNoteOutlined } from '@mui/icons-material';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
@@ -709,7 +709,7 @@ const Settings = ({ isOpen, onClose }) => {
 
                       <div className="info-box mt-4 neutral">
                         <CalendarIcon size={16} />
-                        <p>Adds events directly to your calendar when toggled on.</p>
+                        <p>Toggle packs to automatically populate your calendar.</p>
                       </div>
                     </div>
                   )}
@@ -748,8 +748,8 @@ const Settings = ({ isOpen, onClose }) => {
                             <span className="stat-label">Lifetime Events</span>
                           </div>
                           <div className="stat-item">
-                            <span className="stat-value">{user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</span>
-                            <span className="stat-label">Member Since</span>
+                            <span className="stat-value">{storageStats.size} {storageStats.unit}</span>
+                            <span className="stat-label">Storage Used</span>
                           </div>
                           <div className="stat-item">
                             <span className="stat-value">{Math.round((Date.now() - (user?.metadata?.creationTime ? new Date(user.metadata.creationTime).getTime() : Date.now())) / (1000 * 60 * 60 * 24))}d</span>
