@@ -20,11 +20,14 @@ export const ThemeProvider = ({ children }) => {
     light: {
       '--bg-color': '#f8fafc',
       '--surface-color': '#ffffff',
+      '--glass-bg': 'rgba(255, 255, 255, 0.75)',
+      '--glass-border': 'rgba(0, 0, 0, 0.08)',
       '--card-bg': 'rgba(255, 255, 255, 0.9)',
       '--text-color': '#0f172a',
       '--muted-text': '#64748b',
       '--border-color': 'rgba(148, 163, 184, 0.35)',
-      '--accent-color': '#4f46e5'
+      '--accent-color': '#4f46e5',
+      '--accent-glow': 'rgba(79, 70, 229, 0.15)'
     }
   }), []);
 

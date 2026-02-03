@@ -1,18 +1,20 @@
 .year-view {
-  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  padding: 0 1rem;
   overflow: hidden;
 }
 
 .year-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  padding: 1rem 1.5rem;
+  display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  gap: 1rem;
+  gap: 1.5rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   flex-shrink: 0;
 }
 
@@ -22,7 +24,7 @@
 }
 
 .year-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   color: var(--text-muted);
   font-weight: 600;
@@ -30,214 +32,166 @@
 }
 
 .year-subtitle {
+  font-size: 1.5rem;
+  font-weight: 800;
   color: var(--text-primary);
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.year-filter-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.year-stat-pill {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  padding: 4px 8px;
-  background: var(--bg-tertiary);
-  border-radius: 6px;
+  line-height: 1.1;
 }
 
 .year-controls {
+  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-}
-
-/* AI Form & Controls */
-.year-ai-form {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  background: rgba(var(--accent-rgb), 0.05);
-  border: 1px solid rgba(var(--accent-rgb), 0.1);
-  border-radius: 99px;
-  padding: 0.35rem 0.85rem;
-  max-width: 300px;
-  flex: 1;
-}
-
-.year-ai-form .ai-icon {
-  color: var(--accent);
-}
-
-.year-ai-form .ai-input {
-  background: transparent;
-  border: none;
-  font-size: 0.8rem;
-  color: var(--text-primary);
-  width: 100%;
-  outline: none;
-}
-
-.year-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem;
-}
-
-.year-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1;
-}
-
-.year-stat .count {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.year-stat .label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.year-dropdown {
-  background: rgba(15, 23, 42, 0.6);
-  color: var(--text-primary);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-/* Year Content Scroll Area */
-.year-content-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 1rem 1rem 1rem;
-}
-
-/* 12-Month Grid Layout */
-.months-grid-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  padding-bottom: 2rem;
-}
-
-.month-block {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
   gap: 1rem;
 }
 
-.month-title {
-  margin: 0;
-  font-size: 1.1rem;
+.year-stat-pill {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--text-primary);
-}
-
-.month-days-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-}
-
-.day-header {
-  text-align: center;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-/* Day Cell */
-.year-day {
-  aspect-ratio: 1;
-  width: 100%;
-  border-radius: 4px;
+  color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+
+.year-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.year-dropdown {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
   cursor: pointer;
+  outline: none;
+}
+
+/* GitHub Style Grid */
+.year-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-bottom: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.github-year-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   position: relative;
-  transition: all 0.2s ease;
 }
 
-.year-day:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-  z-index: 5;
+.months-label-row {
+  display: flex;
+  margin-left: 30px;
+  /* Offset for day labels */
+  height: 20px;
+  position: relative;
 }
 
-.year-day.spacer {
-  background: transparent;
-  pointer-events: none;
+.month-label-item {
+  position: absolute;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
-/* Event Cells */
-.year-day.has-events {
-  /* Background color set inline by JS */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.grid-body {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.event-count-badge {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+.day-labels-col {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  padding-top: 1px;
 }
 
-@media (max-width: 768px) {
-  .year-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .year-controls {
-    width: 100%;
-    justify-content: space-between;
-  }
+.weekday-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 12px;
+  height: 12px;
 }
 
-/* AI Smart Scheduler Highlight */
-.blink-highlight {
-  animation: blinkCard 1.5s infinite;
-  border: 1px solid var(--accent);
-  box-shadow: 0 0 10px var(--accent);
+/* 53 Columns for weeks */
+.squares-grid {
+  display: grid;
+  grid-template-columns: repeat(53, 12px);
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  grid-auto-flow: column;
+  /* Fill by column (week) */
+}
+
+.year-day-square {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  /* Empty state */
+  cursor: pointer;
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+.year-day-square:hover {
+  transform: scale(1.3);
   z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-@keyframes blinkCard {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-    box-shadow: 0 0 0 rgba(99, 102, 241, 0);
-  }
+.year-day-square.level-0 {
+  background: rgba(255, 255, 255, 0.05);
+}
 
-  50% {
-    transform: scale(1.15);
-    opacity: 0.8;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
-  }
+.year-day-square.level-1 {
+  background: rgba(99, 102, 241, 0.3);
+}
 
-  100% {
-    transform: scale(1);
-    opacity: 1;
-    box-shadow: 0 0 0 rgba(99, 102, 241, 0);
-  }
+.year-day-square.level-2 {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+.year-day-square.level-3 {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+.year-day-square.level-4 {
+  background: rgba(99, 102, 241, 1.0);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+/* Tooltip on hover */
+.year-day-square:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }

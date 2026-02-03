@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Settings, ChevronLeft, ChevronRight, MousePointerClick } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
 import './Header.css';
 
-const Header = ({ onOpenSettings }) => {
+const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
   const { view, setView, goToToday, openEventModal, navigateDate } = useCalendar();
   const MotionHeader = motion.header;
   const MotionDiv = motion.div;
@@ -70,6 +70,26 @@ const Header = ({ onOpenSettings }) => {
 
           {/* Right: View Selector & Settings */}
           <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Zoom Nav Toggle */}
+            <MotionButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onToggleZoomNav}
+              className={`btn icon-only glass-btn ${isZoomNavEnabled ? 'active-nav-toggle' : ''}`}
+              style={{
+                background: isZoomNavEnabled ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                color: isZoomNavEnabled ? 'white' : 'var(--text-secondary)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '8px',
+                width: '32px',
+                height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+              title={isZoomNavEnabled ? "Zoom Nav ON (Use Arrow Keys)" : "Zoom Nav OFF"}
+            >
+              <MousePointerClick size={16} />
+            </MotionButton>
+
             <div className="view-selector glass-panel">
               {viewButtons.map(({ key, label }) => (
                 <button

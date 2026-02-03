@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import { CalendarProvider } from './contexts/CalendarContext.jsx';
+import { useCalendar } from './contexts/useCalendar'; // Added hook
 import { EventsProvider } from './contexts/EventsContext.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth';
@@ -52,8 +53,10 @@ function App() {
 
 const MainLayout = () => {
   const { user, loading } = useAuth();
+  const { view, setView } = useCalendar(); // Needed for zoom nav
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isZoomNavEnabled, setIsZoomNavEnabled] = useState(false); // Zoom Nav Toggle
   const MotionDiv = motion.div;
 
   // Sidebar Resize Logic (Percentage Based)
@@ -61,7 +64,7 @@ const MainLayout = () => {
   const [sidebarPercent, setSidebarPercent] = useState(30);
   const isResizingRef = useRef(false);
 
-  // Refs for direct manipulation
+  // ... (keeping existing resize logic refs)
   const sidebarRef = useRef(null);
   const calendarRef = useRef(null);
   const containerRef = useRef(null);
@@ -109,13 +112,6 @@ const MainLayout = () => {
       // Apply directly to DOM elements via CSS variable for performance
       const newPercent = (newWidth / containerWidth) * 100;
       containerRef.current.style.setProperty('--sidebar-percent', `${newPercent}%`);
-
-      // We don't need to set state on every frame if we want pure performance, 
-      // but if we want to sync, we can just do the DOM update here and the state update on stop.
-      // However, since we are using the --sidebar-percent in the main render style prop (triggered by state),
-      // we might want to avoid re-rendering the whole component on every mouse move if possible.
-      // But the current implementation uses state for the initial render. 
-      // Let's rely on the DOM update for the drag, and state for the final set.
     }
   }, []);
 
@@ -128,6 +124,36 @@ const MainLayout = () => {
       window.removeEventListener("mouseup", stopResizing);
     };
   }, [resize, stopResizing]);
+
+  // Zoom Navigation Logic (Arrow Keys)
+  useEffect(() => {
+    if (!isZoomNavEnabled) return;
+
+    const handleZoomKey = (e) => {
+      // Ignore if in input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+      const VIEWS = ['day', 'week', 'month', 'year']; // Zoom In -> Out
+      const currentIndex = VIEWS.indexOf(view);
+
+      if (e.key === 'ArrowUp') {
+        // Zoom OUT (e.g., Week -> Month)
+        e.preventDefault();
+        if (currentIndex < VIEWS.length - 1) {
+          setView(VIEWS[currentIndex + 1]);
+        }
+      } else if (e.key === 'ArrowDown') {
+        // Zoom IN (e.g., Month -> Week)
+        e.preventDefault();
+        if (currentIndex > 0) {
+          setView(VIEWS[currentIndex - 1]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleZoomKey);
+    return () => window.removeEventListener('keydown', handleZoomKey);
+  }, [isZoomNavEnabled, view, setView]);
 
   useEffect(() => {
     const initializeAI = async () => {
@@ -161,6 +187,8 @@ const MainLayout = () => {
       const isInput = tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
 
       // Ignore modifier keys, special keys, and if in modal/input
+      // Also ignore Arrow keys if zoom is enabled to prevent conflict? 
+      // Currently the other listener handles Arrows.
       const isTypingKey = e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
 
       if (isInput || !isTypingKey) return;
@@ -204,6 +232,8 @@ const MainLayout = () => {
         <Header
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenAI={() => setIsAIChatOpen(true)}
+          isZoomNavEnabled={isZoomNavEnabled}
+          onToggleZoomNav={() => setIsZoomNavEnabled(!isZoomNavEnabled)}
         />
 
         <main
@@ -223,6 +253,7 @@ const MainLayout = () => {
             onMouseDown={startResizing}
           >
             <div className="resize-line" />
+            <div className="resize-grabber" />
           </div>
 
           <div

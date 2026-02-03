@@ -14,6 +14,8 @@
   /* Force 5 rows to fill height */
   gap: 1px;
   background: var(--glass-border);
+  /* This creates the grid lines via the gap */
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 0;

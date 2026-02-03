@@ -454,45 +454,31 @@
 
 .week-current-time .current-time-line {
   height: 2px;
-  background: linear-gradient(90deg, #fb7185, #f97316);
-  box-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 16px rgba(239, 68, 68, 0.4);
-  animation: pulse-neon 2s infinite ease-in-out;
+  background: #ef4444;
+  /* Solid, steady neon red */
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
+  /* Removed pulse animation for steady look */
 }
 
 .week-current-time .current-time-circle {
   display: none;
 }
 
-@keyframes pulse-neon {
-  0% {
-    box-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 16px rgba(239, 68, 68, 0.4);
-    opacity: 0.8;
-  }
-
-  50% {
-    box-shadow: 0 0 12px rgba(249, 115, 22, 0.9), 0 0 24px rgba(239, 68, 68, 0.6);
-    opacity: 1;
-  }
-
-  100% {
-    box-shadow: 0 0 8px rgba(249, 115, 22, 0.6), 0 0 16px rgba(239, 68, 68, 0.4);
-    opacity: 0.8;
-  }
-}
-
 .week-current-time .current-time-label {
   position: absolute;
   left: -62px;
-  top: -10px;
-  background: rgba(15, 23, 42, 0.95);
-  color: #fde68a;
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  padding: 1px 5px;
-  border-radius: 6px;
-  font-size: 0.7rem;
+  top: -9px;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  z-index: 50;
+  letter-spacing: 0.02em;
+  z-index: 999;
+  /* Ensure high visibility */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .week-empty-state {

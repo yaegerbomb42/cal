@@ -290,7 +290,11 @@ const UpcomingSidebar = () => {
                         onClick={() => setViewMode('bulk-trash')}
                         title="Trash / Bulk Delete"
                     >
-                        <Trash2 size={18} />
+                        {/* Multi-Trash Icon */}
+                        <div className="stacked-trash-icon">
+                            <Trash2 size={14} className="trash-back" />
+                            <Trash2 size={18} className="trash-front" />
+                        </div>
                     </button>
                 </div>
 
@@ -410,15 +414,18 @@ const UpcomingSidebar = () => {
                                         </div>
 
                                         <div className="event-info">
-                                            <h4 className={`event-title ${event.completed ? 'strikethrough' : ''}`}>{event.title}</h4>
-                                            <div className="event-meta-row">
-                                                <span className="time-til">{getTimeLabel(event.start)}</span>
-                                                <span className="event-time">
-                                                    {new Date(event.start).toLocaleString([], { hour: 'numeric', minute: '2-digit' })}
+                                            {/* Single line attempt: Title ... Meta */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', width: '100%' }}>
+                                                <span className={`event-title ${event.completed ? 'strikethrough' : ''}`}>
+                                                    {event.title}
                                                 </span>
-                                                {event.category && (
-                                                    <span className="category-tag">{event.category}</span>
-                                                )}
+
+                                                <div className="event-meta-inline">
+                                                    <span className="time-til">{getTimeLabel(event.start)}</span>
+                                                    {event.category && (
+                                                        <span className="category-tag">{event.category}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
 

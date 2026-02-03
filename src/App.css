@@ -93,38 +93,57 @@ body {
 }
 
 /* Resize Handle - Classic Pane Divider */
-/* Resize Handle - Minimal Partition */
+/* Resize Handle - Visible Divider */
 .resize-handle {
-  width: 12px;
+  width: 8px;
+  /* Hit area width */
   cursor: col-resize;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 50;
-  margin: 0 -4px;
+  margin: 0 -3px;
+  /* slight center overlap logic if needed, or 0 if flex */
+  margin: 0;
   position: relative;
   background: transparent;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
-.resize-handle:hover .resize-line {
-  background: var(--accent);
-  opacity: 1;
+/* The visual line inside the hit area */
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  /* Visual line width */
+  background: rgba(255, 255, 255, 0.05);
+  /* Subtle default divider */
+  transition: all 0.2s;
 }
 
-.resize-handle:active .resize-line {
+/* Hover/Active states */
+.resize-handle:hover::after,
+.resize-handle:active::after {
   background: var(--accent);
-  width: 4px;
+  /* Highlight on interact */
+  width: 2px;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.resize-grabber {
+  display: none;
+  /* Hide old grabber, using full line now */
 }
 
 .resize-line {
-  width: 2px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.resize-line::before {
   display: none;
+  /* Hide old line logic */
 }

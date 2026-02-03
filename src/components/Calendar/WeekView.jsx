@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Copy, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, getWeek, setWeek, getYear } from 'date-fns';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
@@ -10,10 +10,11 @@ import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import ContextMenu from '../UI/ContextMenu';
 import AIChatInput from '../UI/AIChatInput';
+import NavigationDropdown from '../UI/NavigationDropdown';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal } = useCalendar();
+  const { currentDate, openEventModal, setCurrentDate } = useCalendar();
   const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
@@ -133,13 +134,10 @@ const WeekView = () => {
         '--magnify-index': magnifyHour ?? -1
       }}
     >
-      <div className="week-control-bar glass-card">
-        <div className="week-title-group">
-          <span className="week-label">Week of</span>
-          <span className="week-range">{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}</span>
-        </div>
+      <div className="week-control-bar glass-card" style={{ justifyContent: 'space-between', gap: '2rem' }}>
 
-        <div className="week-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
+        {/* Left: AI */}
+        <div className="week-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
           <AIChatInput
             onSubmit={({ text, files }) => {
               if (text) {
@@ -154,9 +152,30 @@ const WeekView = () => {
           />
         </div>
 
-        <div className="week-actions">
+        {/* Center: Week Selection */}
+        <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1rem' }}>
+          <NavigationDropdown
+            label="Week"
+            value={getWeek(currentDate)}
+            range={{ start: 1, end: 52 }}
+            onChange={(weekNum) => {
+              const newDate = setWeek(currentDate, weekNum);
+              setCurrentDate(newDate);
+            }}
+            type="grid" // Pyramid/Grid
+          />
+          <span className="week-range" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
+          </span>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="week-actions" style={{ width: '280px', justifyContent: 'flex-end', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="week-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
+            {weekEventsCount} events
+          </span>
           <button className="btn btn-primary week-add-btn" onClick={() => openEventModal({ start: new Date() })}>
-            <Plus size={16} /> Add Event
+            <Plus size={16} /> Add
           </button>
         </div>
       </div>

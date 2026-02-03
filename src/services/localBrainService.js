@@ -143,8 +143,11 @@ export const localBrainService = {
             }
 
             // Case 2: WebLLM
+            const personality = this.getPersonalitySystemPrompt();
+            const fullSystem = `${systemInstruction}\n\n${personality}`;
+
             const messages = [
-                { role: "system", content: systemInstruction },
+                { role: "system", content: fullSystem },
                 { role: "user", content: userMessage }
             ];
 

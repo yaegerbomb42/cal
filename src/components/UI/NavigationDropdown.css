@@ -1,0 +1,192 @@
+.nav-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.nav-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nav-dropdown-trigger:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent);
+}
+
+.nav-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.nav-value {
+    font-weight: 600;
+}
+
+.nav-arrow {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+}
+
+.nav-arrow.open {
+    transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) !important;
+    /* Override framer motion x if needed, but easier to just center align props */
+    /* Actually better to left align if in corner, but user wants centered headers. layout strategy: 
+     Since headers are centered, menus should probably drop down centered. 
+  */
+    transform-origin: top center;
+
+    background: #0f172a;
+    /* Solid dark bg for clarity or extreme blur */
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+    min-width: 140px;
+}
+
+/* Simple List (Years/Months) */
+.simple-list {
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+}
+
+.list-item {
+    text-align: left;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.1s;
+}
+
+.list-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.list-item.active {
+    background: var(--accent);
+    color: white;
+}
+
+/* Medium Grid (Weeks) - Pyramid Look */
+.medium-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 cols wide */
+    gap: 4px;
+    padding: 8px;
+    width: 240px;
+    /* Fixed suitable width */
+}
+
+/* Make it look somewhat pyramid-y by centering usage? CSS Grid is rigid. 
+   To do true pyramid, Flex wrap and center justify might be better.
+*/
+.medium-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    width: 280px;
+    padding: 12px;
+}
+
+.grid-item {
+    width: 40px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.grid-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    z-index: 2;
+}
+
+.grid-item.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Dense Grid (Days) */
+.dense-grid-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    width: 320px;
+    padding: 12px;
+}
+
+.dense-grid-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    /* Or center */
+    gap: 2px;
+}
+
+.grid-item-tiny {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+.grid-item-tiny:hover {
+    background: white;
+    color: black;
+    transform: scale(1.5);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    border-radius: 50%;
+}
+
+.grid-item-tiny.active {
+    background: var(--accent);
+    color: white;
+    font-weight: bold;
+}

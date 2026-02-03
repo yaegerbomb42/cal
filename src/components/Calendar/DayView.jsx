@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, getDayOfYear, setDayOfYear } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor, formatDuration } from '../../utils/helpers';
@@ -18,6 +18,7 @@ import { Clock, Plus } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import AIChatInput from '../UI/AIChatInput';
+import NavigationDropdown from '../UI/NavigationDropdown';
 import './DayView.css';
 
 const buildEventSnippet = (event) => {
@@ -36,7 +37,7 @@ const buildEventSnippet = (event) => {
 };
 
 const DayView = () => {
-  const { currentDate, openEventModal } = useCalendar();
+  const { currentDate, openEventModal, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
 
   const MotionDiv = motion.div;
@@ -74,20 +75,15 @@ const DayView = () => {
       animate={{ opacity: 1, x: 0 }}
       className="day-view"
     >
-      <div className={cn('day-header', 'glass-card')}>
-        <div className="day-info">
-          <div className="day-name">{getRelativeDayLabel(currentDate)}</div>
-          <div className="day-date">{formatFullDate(currentDate)}</div>
-        </div>
+      <div className={cn('day-header', 'glass-card')} style={{ justifyContent: 'space-between', gap: '2rem' }}>
 
-        <div className="day-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
+        {/* Left: AI */}
+        <div className="day-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
           <AIChatInput
             onSubmit={({ text, files }) => {
               if (text) {
                 window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: text } }));
               }
-              // If files, we might want to open main AI logic?
-              // Standard behavior: 
               if (files && files.length > 0) {
                 window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
                 window.dispatchEvent(new CustomEvent('calai-open'));
@@ -97,9 +93,31 @@ const DayView = () => {
           />
         </div>
 
-        <div className="day-stats">
+        {/* Center: Day selection (Dense Grid) */}
+        <div className="day-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'row', gap: '1rem' }}>
+          <NavigationDropdown
+            label="Day of Year"
+            value={getDayOfYear(currentDate)}
+            range={{ start: 1, end: 366 }}
+            onChange={(dayNum) => {
+              const newDate = setDayOfYear(currentDate, dayNum);
+              setCurrentDate(newDate);
+            }}
+            type="grid" // Will be dense!
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div className="day-name" style={{ fontSize: '0.9rem' }}>{getRelativeDayLabel(currentDate)}</div>
+            <div className="day-date" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatFullDate(currentDate)}</div>
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="day-stats" style={{ width: '280px', justifyContent: 'flex-end', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="day-stat-pill" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            {dayEvents.length} events
+          </span>
           <button className="btn btn-primary day-add-btn" onClick={handleAddEvent}>
-            <Plus size={16} /> Add Event
+            <Plus size={16} /> Add
           </button>
         </div>
       </div>

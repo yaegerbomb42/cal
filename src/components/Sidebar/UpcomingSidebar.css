@@ -5,7 +5,8 @@
     border-radius: 24px;
     padding: 24px;
     height: 100%;
-    width: 320px;
+    width: 100%;
+    /* key fix for resizing */
     display: flex;
     flex-direction: column;
     border: 1px solid var(--glass-border);
@@ -475,28 +476,41 @@ body.focus-mode-active .header:hover {
     scrollbar-width: thin;
 }
 
+
 .upcoming-event-item {
     display: flex;
-    gap: 16px;
-    padding: 12px 52px 12px 12px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    gap: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    /* Darker background for pop */
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    align-items: center;
+}
+
+.upcoming-event-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--category-color, var(--accent));
+    opacity: 0.8;
 }
 
 .upcoming-event-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateX(4px);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(2px);
 }
 
 .upcoming-event-item.past-event {
-    opacity: 0.55;
-    filter: grayscale(0.4);
-    transform: scale(0.98);
+    opacity: 0.5;
+    filter: grayscale(0.8);
 }
 
 .event-date-badge {
@@ -504,83 +518,73 @@ body.focus-mode-active .header:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 50px;
-    height: 50px;
+    min-width: 44px;
+    height: 44px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.event-date-badge .month {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--text-muted);
-}
-
-.event-date-badge .day {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
 }
 
 .event-info {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 6px;
-    padding-right: 36px;
+    flex-direction: row;
+    /* Single line layout attempt */
+    align-items: center;
+    gap: 8px;
     min-width: 0;
+    padding-right: 4px;
 }
 
 .event-info .event-title {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.3;
+    /* flex: 1;  Let it grow/shrink */
 }
 
-.event-info .event-title.strikethrough {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
-
-.event-meta-row {
+/* Force metadata to stay inline or hide if too small? 
+   User wants "one line". So we combine title and meta?
+   Or putting meta next to title.
+*/
+.event-meta-inline {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.time-til {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    background: rgba(99, 102, 241, 0.15);
-    padding: 2px 8px;
-    border-radius: 6px;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
     white-space: nowrap;
 }
 
-.event-time {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+/* Hiding the old meta row if we restructure structure in JSX slightly or just display:none it 
+   and rely on the new structure I'll assume I update JSX to match
+*/
+.time-til {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    /* Pop color */
+    background: rgba(99, 102, 241, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .category-tag {
+    /* Make this pop more */
     font-size: 0.65rem;
-    font-weight: 600;
-    color: var(--category-color, var(--text-muted));
-    background: rgba(0, 0, 0, 0.2);
-    padding: 2px 6px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--category-color);
+    padding: 1px 6px;
     border-radius: 4px;
-    text-transform: capitalize;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
 
 /* Actions */
 .event-actions {
@@ -799,6 +803,7 @@ body.focus-mode-active .header:hover {
     border-style: solid;
     border-color: rgba(99, 102, 241, 0.4);
     background: rgba(99, 102, 241, 0.05);
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
 }
 
 .focus-quick-add .quick-add-icon {
@@ -811,7 +816,13 @@ body.focus-mode-active .header:hover {
     border: none;
     outline: none;
     color: var(--text-primary);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.focus-quick-add .quick-add-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
 }
 
 .focus-list {
@@ -819,77 +830,116 @@ body.focus-mode-active .header:hover {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    /* More spacing for cards */
+    padding: 4px;
+    /* Space for shadows */
 }
 
+/* Premium Card Style for Focus Items */
 .focus-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-    border-radius: 0;
-    transition: all 0.2s ease;
-}
-
-.focus-item:last-child {
-    border-bottom: none;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* Subtle glass border */
+    border-radius: 16px;
+    /* Modern rounded corners */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .focus-item:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .focus-item.completed {
     opacity: 0.6;
     background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.1);
 }
 
 .check-btn {
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.check-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .checked-icon {
     color: #10b981;
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.4));
 }
 
 .unchecked-icon {
     color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.focus-item:hover .unchecked-icon {
+    color: var(--text-secondary);
+    opacity: 1;
 }
 
 .focus-title {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-primary);
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
 }
 
 .focus-title.strikethrough {
     text-decoration: line-through;
-    opacity: 0.7;
-}
-
-.focus-time {
-    font-size: 0.8rem;
+    opacity: 0.6;
     color: var(--text-muted);
 }
 
+.focus-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 8px;
+    border-radius: 6px;
+    width: fit-content;
+}
+
 .focus-edit-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--glass-border);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 6px;
     cursor: pointer;
     color: var(--text-muted);
     transition: all 0.2s;
+    opacity: 0;
+    /* Hidden by default for cleaner look */
+}
+
+.focus-item:hover .focus-edit-btn {
+    opacity: 1;
 }
 
 .focus-edit-btn:hover {
     background: rgba(99, 102, 241, 0.15);
     color: var(--accent);
+    border-color: rgba(99, 102, 241, 0.3);
 }
 
 .focus-empty {
@@ -897,44 +947,59 @@ body.focus-mode-active .header:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 48px 24px;
+    gap: 16px;
+    padding: 64px 24px;
     text-align: center;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+    border-radius: 24px;
+    margin: 12px 0;
 }
 
 .focus-empty p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 /* Priority Indicators */
 .focus-item-content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     flex: 1;
+    min-width: 0;
+    /* Enable ellipsis */
 }
 
 .focus-item-top {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
+    /* Handle long titles graciously */
 }
 
 .priority-indicator {
     font-weight: 800;
-    font-size: 0.75rem;
-    letter-spacing: -1px;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .priority-indicator.high {
     color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .priority-indicator.medium {
     color: #f97316;
+    border: 1px solid rgba(249, 115, 22, 0.3);
 }
 
 .priority-indicator.low {
     color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }

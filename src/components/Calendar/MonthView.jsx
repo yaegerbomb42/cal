@@ -7,6 +7,7 @@ import { useEvents } from '../../contexts/useEvents';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { cn, getEventColor } from '../../utils/helpers';
 import AIChatInput from '../UI/AIChatInput';
+import NavigationDropdown from '../UI/NavigationDropdown';
 import './MonthView.css';
 
 const MonthView = () => {
@@ -35,13 +36,10 @@ const MonthView = () => {
 
   return (
     <div className="month-view">
-      <div className="month-summary glass-card">
-        <div className="month-info">
-          <div className="month-label">Month</div>
-          <div className="month-summary-title">{format(currentDate, 'MMMM yyyy')}</div>
-        </div>
+      <div className="month-summary glass-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
 
-        <div className="month-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
+        {/* Left: AI */}
+        <div className="month-ai-wrapper" style={{ width: '280px', flexShrink: 0 }}>
           <AIChatInput
             onSubmit={({ text, files }) => {
               if (text) {
@@ -57,13 +55,46 @@ const MonthView = () => {
           />
         </div>
 
-        <div className="month-actions">
-          <button className="btn btn-primary month-add-btn" onClick={() => openEventModal({ start: new Date() })}>
-            <Plus size={16} /> Add Event
-          </button>
+        {/* Center: Month/Year Selection */}
+        <div className="month-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, gap: '1rem' }}>
+          <NavigationDropdown
+            label="Month"
+            value={format(currentDate, 'MMMM')}
+            options={[
+              'January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'
+            ].map((m, i) => ({ label: m, value: i }))}
+            onChange={(val) => {
+              const newDate = new Date(currentDate);
+              newDate.setMonth(val);
+              setCurrentDate(newDate);
+            }}
+            type="list"
+          />
+          <NavigationDropdown
+            label="Year"
+            value={currentDate.getFullYear()}
+            options={[...Array(5)].map((_, i) => {
+              const y = new Date().getFullYear() - 2 + i;
+              return { label: y.toString(), value: y };
+            })}
+            onChange={(val) => {
+              const newDate = new Date(currentDate);
+              newDate.setFullYear(val);
+              setCurrentDate(newDate);
+            }}
+            type="list"
+          />
+        </div>
+
+        {/* Right: Actions */}
+        <div className="month-actions" style={{ width: '280px', justifyContent: 'flex-end', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className="month-summary-stat">
             {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
           </div>
+          <button className="btn btn-primary month-add-btn" onClick={() => openEventModal({ start: new Date() })}>
+            <Plus size={16} /> Add
+          </button>
         </div>
       </div>
 
@@ -85,8 +116,8 @@ const MonthView = () => {
                 isToday(day) && 'is-today'
               )}
               onClick={() => {
-                setCurrentDate(day);
-                setView(CALENDAR_VIEWS.DAY);
+                // Open modal pre-filled for this day at 9 AM
+                handleAddEventClick(day, { stopPropagation: () => { } });
               }}
               style={{ cursor: 'pointer' }}
             >

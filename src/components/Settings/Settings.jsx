@@ -32,6 +32,22 @@ const Settings = ({ isOpen, onClose }) => {
   const [hasSavedApiKey, setHasSavedApiKey] = useState(false);
   const savedApiKeyRef = useRef(null);
 
+  // AI Personality
+  const [aiPersonality, setAiPersonalityState] = useState('professional');
+
+  const setAiPersonality = (p) => {
+    setAiPersonalityState(p);
+    localStorage.setItem('calai-ai-personality', p);
+    // Directly update services to avoid reload need
+    if (window.geminiService) window.geminiService.setPersonality(p);
+    if (window.localBrainService) window.localBrainService.setPersonality(p);
+  };
+
+  useEffect(() => {
+    const stored = localStorage.getItem('calai-ai-personality');
+    if (stored) setAiPersonalityState(stored);
+  }, []);
+
   // Local Brain State
   const [localBrainProgress, setLocalBrainProgress] = useState(null);
   const [isLocalBrainLoaded, setIsLocalBrainLoaded] = useState(false);
@@ -77,7 +93,7 @@ const Settings = ({ isOpen, onClose }) => {
     eveningFocus: 'light_tasks',
 
     // AI Behavior
-    autoReschedule: true,
+    autoReschedule: true, // "Smart Rescheduling (Requires user approval via chat w/ diff view, or manual placement)"
     smartReminders: true,
     conflictResolution: 'priority' // 'priority' | 'chronological' | 'ask'
   });
@@ -530,6 +546,37 @@ const Settings = ({ isOpen, onClose }) => {
             {isLocalBrainLoaded && <div className="status-row"><span className="status-badge success"><CheckCircle size={12} /> Model Loaded</span></div>}
           </div>
         )}
+
+        <div className="personality-config" style={{ marginTop: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ASSISTANT PERSONALITY</label>
+          <div className="personality-selector" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+            {['professional', 'friendly', 'surfer', 'sassy'].map((p) => (
+              <button
+                key={p}
+                className={cn('personality-btn', aiPersonality === p && 'active')}
+                style={{
+                  padding: '0.5rem',
+                  borderRadius: '8px',
+                  background: aiPersonality === p ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--glass-border)',
+                  color: aiPersonality === p ? '#fff' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  textTransform: 'capitalize'
+                }}
+                onClick={() => setAiPersonality(p)}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            {aiPersonality === 'professional' && "Concise, helpful, and standard."}
+            {aiPersonality === 'friendly' && "Warm, approachable, uses emojis 😊"}
+            {aiPersonality === 'surfer' && "Chill vibes, uses slang like 'dude' 🤙"}
+            {aiPersonality === 'sassy' && "Witty, sarcastic, keeps it real 💅"}
+          </div>
+        </div>
       </div>
 
       <div className="ai-chat-panel glass-card">
