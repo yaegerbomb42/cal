@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
 import { eachDayOfInterval, format, endOfMonth, startOfMonth, getDay } from 'date-fns';
 import { Plus, Sparkles } from 'lucide-react';
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor } from '../../utils/helpers';
+import AIChatInput from '../UI/AIChatInput';
 import './YearView.css';
 
 const MotionButton = motion.button;
@@ -33,7 +34,7 @@ const getEventColorSplit = (events) => {
   return { background: `linear-gradient(135deg, ${stops.join(', ')})` };
 };
 
-const YearDayCell = memo(({ day, count, events, onSelect }) => {
+const YearDayCell = memo(({ day, count, events, onSelect, isHighlighted }) => {
   const style = getEventColorSplit(events);
 
   return (
@@ -41,7 +42,8 @@ const YearDayCell = memo(({ day, count, events, onSelect }) => {
       type="button"
       className={cn(
         'year-day',
-        count > 0 && 'has-events'
+        count > 0 && 'has-events',
+        isHighlighted && 'blink-highlight'
       )}
       style={style}
       onClick={() => onSelect(day)}
@@ -57,7 +59,7 @@ const YearDayCell = memo(({ day, count, events, onSelect }) => {
 
 YearDayCell.displayName = 'YearDayCell';
 
-const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect }) => {
+const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect, highlightedSlots = [] }) => {
   const days = useMemo(() => {
     return eachDayOfInterval({
       start: startOfMonth(monthDate),
@@ -83,6 +85,11 @@ const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect }) => {
 
         {days.map(day => {
           const events = getEventsForDate(day);
+          const isHighlighted = highlightedSlots.some(slot => {
+            const s = new Date(slot.start);
+            return s.getDate() === day.getDate() && s.getMonth() === day.getMonth() && s.getFullYear() === day.getFullYear();
+          });
+
           return (
             <YearDayCell
               key={day.toISOString()}
@@ -90,6 +97,7 @@ const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect }) => {
               count={events.length}
               events={events}
               onSelect={onDaySelect}
+              isHighlighted={isHighlighted}
             />
           );
         })}
@@ -101,20 +109,31 @@ const MonthGrid = ({ monthDate, getEventsForDate, onDaySelect }) => {
 const YearView = ({ onYearChange }) => {
   const { currentDate, openEventModal, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
-  const [quickInput, setQuickInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const selectedYear = currentDate.getFullYear();
+  const [highlightedSlots, setHighlightedSlots] = useState([]);
 
-  const handleAICommand = async (e) => {
-    e.preventDefault();
-    if (!quickInput.trim()) return;
-    setIsProcessing(true);
-    // Placeholder logic utilizing variables to satisfy lint
-    setTimeout(() => {
-      setIsProcessing(false);
-      setQuickInput('');
-    }, 500);
-  };
+  useEffect(() => {
+    const handleHighlight = (e) => {
+      const { slots } = e.detail;
+      setHighlightedSlots(slots || []);
+
+      // Auto-jump to the first slot if it's far away
+      if (slots && slots.length > 0) {
+        const firstDate = new Date(slots[0].start);
+        if (firstDate.getFullYear() !== selectedYear) {
+          onYearChange?.(firstDate);
+        }
+      }
+
+      // Clear highlights after 10 seconds
+      setTimeout(() => setHighlightedSlots([]), 10000);
+    };
+
+    window.addEventListener('CALAI_HIGHLIGHT_SLOTS', handleHighlight);
+    return () => window.removeEventListener('CALAI_HIGHLIGHT_SLOTS', handleHighlight);
+  }, [selectedYear, onYearChange]);
+
+
 
   const handleAddEvent = () => {
     const now = new Date();
@@ -162,17 +181,22 @@ const YearView = ({ onYearChange }) => {
           <span className="year-subtitle">{selectedYear} Cal</span>
         </div>
 
-        <form onSubmit={handleAICommand} className="year-ai-form">
-          <Sparkles size={14} className="ai-icon" />
-          <input
-            type="text"
-            value={quickInput}
-            onChange={(e) => setQuickInput(e.target.value)}
-            placeholder="Ask Cal..."
-            className="ai-input"
-            disabled={isProcessing}
+        <div className="year-ai-wrapper" style={{ flex: 1, padding: '0 20px', display: 'flex', justifyContent: 'center' }}>
+          <AIChatInput
+            onSubmit={({ text, files }) => {
+              // Same logic
+              if (text) {
+                window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+                window.dispatchEvent(new CustomEvent('calai-open'));
+              }
+              if (files && files.length > 0) {
+                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+                window.dispatchEvent(new CustomEvent('calai-open'));
+              }
+            }}
+            compact
           />
-        </form>
+        </div>
 
         <div className="year-controls">
           <button className="btn btn-primary year-add-btn" onClick={handleAddEvent}>
@@ -203,6 +227,7 @@ const YearView = ({ onYearChange }) => {
               monthDate={month}
               getEventsForDate={getEventsForDate}
               onDaySelect={handleDaySelect}
+              highlightedSlots={highlightedSlots}
             />
           ))}
         </div>

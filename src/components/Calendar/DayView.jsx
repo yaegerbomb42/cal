@@ -14,9 +14,10 @@ import {
   isToday,
   getCurrentTimePosition
 } from '../../utils/dateUtils';
-import { ChevronLeft, ChevronRight, Clock, MapPin, Sparkles, Send, Plus } from 'lucide-react';
+import { Clock, Plus } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
+import AIChatInput from '../UI/AIChatInput';
 import './DayView.css';
 
 const buildEventSnippet = (event) => {
@@ -37,17 +38,7 @@ const buildEventSnippet = (event) => {
 const DayView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
-  const [quickInput, setQuickInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleAICommand = async (e) => {
-    e.preventDefault();
-    if (!quickInput.trim()) return;
-    setIsProcessing(true);
-    window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: quickInput } }));
-    setQuickInput('');
-    setIsProcessing(false);
-  };
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
   const dayGridRef = useRef(null);
@@ -89,17 +80,22 @@ const DayView = () => {
           <div className="day-date">{formatFullDate(currentDate)}</div>
         </div>
 
-        <form onSubmit={handleAICommand} className="day-ai-form">
-          <Sparkles size={14} className="ai-icon" />
-          <input
-            type="text"
-            value={quickInput}
-            onChange={(e) => setQuickInput(e.target.value)}
-            placeholder="Ask Cal..."
-            className="ai-input"
-            disabled={isProcessing}
+        <div className="day-ai-wrapper" style={{ flex: 1, padding: '0 20px' }}>
+          <AIChatInput
+            onSubmit={({ text, files }) => {
+              if (text) {
+                window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: text } }));
+              }
+              // If files, we might want to open main AI logic?
+              // Standard behavior: 
+              if (files && files.length > 0) {
+                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+                window.dispatchEvent(new CustomEvent('calai-open'));
+              }
+            }}
+            compact
           />
-        </form>
+        </div>
 
         <div className="day-stats">
           <button className="btn btn-primary day-add-btn" onClick={handleAddEvent}>

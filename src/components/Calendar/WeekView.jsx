@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Send, ImagePlus, Plus, ChevronLeft, ChevronRight, Edit2, Copy, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Copy, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
@@ -9,14 +9,12 @@ import { cn, formatDuration, getEventColor } from '../../utils/helpers';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import ContextMenu from '../UI/ContextMenu';
+import AIChatInput from '../UI/AIChatInput';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal, navigateDate, goToToday } = useCalendar();
-  // I will dispatch the event. The "openAI" panel visibility might need a global context trigger.
-  // For now I will use window dispatch and assume strict separation.
-
-  const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents(); // Added deleteEvent
+  const { currentDate, openEventModal } = useCalendar();
+  const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
@@ -40,25 +38,10 @@ const WeekView = () => {
   };
 
   const handleDuplicateEvent = (event) => {
-    // Basic duplication logic
-    // Basic duplication logic
-    // const newEvent = { ...event, id: crypto.randomUUID(), title: `${event.title} (Copy)` };
-    // Assuming context has addEvent, but if not we might need to use updateEvent logic or window dispatch
-    // Actually useEvents hook usually exposes addEvent. I'll rely on it or similar.
-    // Wait, useEvents usually exposes addEvent. I will assume `addEvent` exists in the context now.
-    // If not, I'll log a warning or use a specific implementation.
-    // Actually, I'll dispatch a custom event if addEvent is missing, but standard implementation has it.
-    // Let's assume addEvent is available from useEvents based on Sidebar usage.
-    // If not in destructuring above, I need to add it.
     if (updateEvent) {
-      // Creating a new event via Context would be best. 
-      // I will add `addEvent` to the destructuring in a second edit if needed, but I'll try to use it here.
-      // For now, I'll just open the modal with the event details as a template if duplicate is tricky.
       openEventModal({ ...event, id: undefined, title: `${event.title} (Copy)` });
     }
   };
-
-
 
   const weekEvents = events.filter((event) => {
     const eventStart = new Date(event.start);
@@ -72,12 +55,6 @@ const WeekView = () => {
   const { pixelsPerHour, magnifyHour } = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
-
-  // AI Input State
-  const [quickInput, setQuickInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const imageInputRef = useRef(null);
-  const quickInputRef = useRef(null);
 
   useEffect(() => {
     const updateTime = () => setCurrentTick(Date.now());
@@ -101,13 +78,12 @@ const WeekView = () => {
 
   const handleDayAddEvent = (day) => {
     const startTime = new Date(day);
-    startTime.setHours(9, 0, 0, 0); // Default to 9 AM
+    startTime.setHours(9, 0, 0, 0);
     const endTime = new Date(startTime);
     endTime.setHours(10, 0, 0, 0);
     openEventModal({ start: startTime, end: endTime });
   };
 
-  // Drag-to-reschedule handlers
   const handleDragStart = (event, e) => {
     setDraggedEvent(event);
     e.dataTransfer.setData('text/plain', event.id);
@@ -122,28 +98,17 @@ const WeekView = () => {
   const handleDropOnCell = (day, hour, e) => {
     e.preventDefault();
     if (!draggedEvent) return;
-
     try {
       const originalEvent = draggedEvent;
       const originalStart = new Date(originalEvent.start);
       const originalEnd = new Date(originalEvent.end);
-
-      // Calculate duration safely
       const duration = originalEnd.getTime() - originalStart.getTime();
 
-      // Create new start date based on drop target
       const newStart = new Date(day);
       if (isNaN(newStart.getTime())) throw new Error("Invalid drop day");
 
-      // Preserve minutes from original time, set hours from drop target
       newStart.setHours(hour.getHours(), originalStart.getMinutes(), 0, 0);
-
       const newEnd = new Date(newStart.getTime() + duration);
-
-      if (isNaN(newStart.getTime()) || isNaN(newEnd.getTime())) {
-        console.error("Invalid date calculated during drop", { newStart, newEnd });
-        return;
-      }
 
       updateEvent(originalEvent.id, {
         start: newStart.toISOString(),
@@ -154,34 +119,6 @@ const WeekView = () => {
     } finally {
       setDraggedEvent(null);
     }
-  };
-
-  // AI Handlers
-  const handleAICommand = async (e) => {
-    e.preventDefault();
-    if (!quickInput.trim() || isProcessing) return;
-
-    setIsProcessing(true);
-    const userInput = quickInput.trim();
-    setQuickInput('');
-
-    try {
-      // Dispatch event for AI handler
-      // If we need to open the AI panel, we might need a way to do that.
-      // Assuming 'calai-ping' listeners handle the details.
-      window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text: userInput } }));
-      window.dispatchEvent(new CustomEvent('calai-open')); // Custom event to request open?
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleQuickImageUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
-    if (files.length === 0) return;
-    window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-    window.dispatchEvent(new CustomEvent('calai-open'));
-    event.target.value = '';
   };
 
   const showCurrentTime = weekDays.some(day => isToday(day));
@@ -197,58 +134,25 @@ const WeekView = () => {
       }}
     >
       <div className="week-control-bar glass-card">
-        <div className="week-nav-group">
-          <button className="nav-icon-btn" onClick={() => navigateDate(-1)} title="Previous week">
-            <ChevronLeft size={16} />
-          </button>
-          <button className="nav-today-btn" onClick={goToToday} title="Jump to today">
-            Today
-          </button>
-          <button className="nav-icon-btn" onClick={() => navigateDate(1)} title="Next week">
-            <ChevronRight size={16} />
-          </button>
-        </div>
-
         <div className="week-title-group">
           <span className="week-label">Week of</span>
           <span className="week-range">{format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}</span>
         </div>
 
-        <form onSubmit={handleAICommand} className="week-ai-form">
-          <Sparkles size={14} className="ai-icon" />
-          <input
-            type="text"
-            value={quickInput}
-            onChange={(e) => setQuickInput(e.target.value)}
-            placeholder="Chat with Cal..."
-            className="ai-input"
-            disabled={isProcessing}
-            ref={quickInputRef}
+        <div className="week-ai-wrapper">
+          <AIChatInput
+            onSubmit={({ text, files }) => {
+              if (text) {
+                window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+              }
+              if (files && files.length > 0) {
+                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+              }
+              window.dispatchEvent(new CustomEvent('calai-open'));
+            }}
+            compact
           />
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleQuickImageUpload}
-            hidden
-          />
-          <button
-            type="button"
-            className="ai-action-btn"
-            onClick={() => imageInputRef.current?.click()}
-            title="Upload image"
-          >
-            <ImagePlus size={14} />
-          </button>
-          <button
-            type="submit"
-            disabled={!quickInput.trim() || isProcessing}
-            className="ai-submit-btn"
-          >
-            <Send size={14} />
-          </button>
-        </form>
+        </div>
       </div>
 
       <div className="week-header glass-card">

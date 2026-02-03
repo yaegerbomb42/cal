@@ -1,0 +1,166 @@
+.ai-chat-input-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    z-index: 20;
+}
+
+.ai-input-container {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 12px;
+    border-radius: 99px;
+    /* Pill shape */
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.dark .ai-input-container {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ai-input-container:focus-within {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: var(--primary-color, #6366f1);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+    transform: translateY(-1px);
+}
+
+.dark .ai-input-container:focus-within {
+    background: rgba(30, 41, 59, 0.85);
+}
+
+.ai-sparkle-icon {
+    color: var(--primary-color, #6366f1);
+    flex-shrink: 0;
+}
+
+.ai-text-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    color: #1e293b;
+    outline: none;
+    min-width: 0;
+}
+
+.dark .ai-text-input {
+    color: #f8fafc;
+}
+
+.ai-text-input::placeholder {
+    color: #94a3b8;
+}
+
+.ai-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.ai-action-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-color, #6366f1);
+}
+
+.ai-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.send-btn {
+    background: var(--primary-color, #6366f1);
+    color: white;
+}
+
+.send-btn:hover {
+    background: #4f46e5;
+    /* darker shade */
+    color: white;
+    transform: scale(1.05);
+}
+
+.file-count-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #f43f5e;
+    color: white;
+    font-size: 10px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid white;
+}
+
+.ai-file-previews {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    margin-bottom: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+}
+
+.file-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    font-size: 12px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    max-width: 150px;
+}
+
+.dark .file-chip {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+.file-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-btn {
+    /* color: #64748b; default */
+}
+
+/* Compact mode for tighter spaces if needed */
+.ai-chat-input-wrapper.compact .ai-input-container {
+    padding: 4px 8px;
+}

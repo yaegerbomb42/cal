@@ -6,24 +6,32 @@
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
-  --bg-primary: #0a0f1d;
-  --bg-secondary: #0f172a;
-  --bg-tertiary: #111c34;
-  --accent: #5cc8ff;
-  --accent-hover: #7fd9ff;
-  --accent-glow: rgba(92, 200, 255, 0.35);
-  --text-primary: #ecf1ff;
-  --text-secondary: #c7d2fe;
-  --text-muted: #94a3b8;
-  --text-disabled: #64748b;
-  --glass-bg: rgba(14, 20, 38, 0.72);
-  --glass-strong: rgba(18, 25, 46, 0.85);
-  --glass-border: rgba(148, 163, 184, 0.2);
-  --glass-divider: rgba(148, 163, 184, 0.12);
-  --glass-shadow: 0 24px 60px rgba(2, 6, 23, 0.55);
-  --backdrop-blur: blur(22px);
-  --border: rgba(148, 163, 184, 0.2);
-  --shadow: 0 20px 48px rgba(2, 6, 23, 0.45);
+  --bg-primary: #121418;
+  /* Deep matte charcoal/black */
+  --bg-secondary: #1a1d24;
+  /* Slightly lighter card bg */
+  --bg-tertiary: #222630;
+  --accent: #4f46e5;
+  /* Electric Indigo/Blue from reference */
+  --accent-hover: #6366f1;
+  --accent-glow: rgba(79, 70, 229, 0.4);
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  /* Cool gray for secondary text */
+  --text-muted: #64748b;
+  --text-disabled: #475569;
+  --glass-bg: rgba(26, 29, 36, 0.85);
+  /* Darker, less transparent glass */
+  --glass-strong: rgba(26, 29, 36, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Subtle white border */
+  --glass-divider: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  /* Stronger shadow for depth */
+  --backdrop-blur: blur(12px);
+  /* Slightly reduced blur for cleaner look */
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   --accent-work: #60a5fa;
   --accent-personal: #f472b6;
   --accent-fun: #facc15;

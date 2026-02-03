@@ -102,12 +102,12 @@ body {
 }
 
 .resize-handle:hover .resize-line {
-  background: #6366f1;
+  background: var(--accent);
   opacity: 1;
 }
 
 .resize-handle:active .resize-line {
-  background: #6366f1;
+  background: var(--accent);
   width: 4px;
 }
 

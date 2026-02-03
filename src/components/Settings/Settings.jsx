@@ -137,6 +137,32 @@ const Settings = ({ isOpen, onClose }) => {
     }
   }, [testChatHistory]);
 
+  // Calculate Storage Usage
+  const [storageStats, setStorageStats] = useState({ size: 0, unit: 'B', percent: 0 });
+  useEffect(() => {
+    if (!events) return;
+    const json = JSON.stringify(events);
+    const bytes = new Blob([json]).size; // More accurate byte size
+
+    let size = bytes;
+    let unit = 'B';
+    if (size > 1024 * 1024) {
+      size = (size / (1024 * 1024)).toFixed(2);
+      unit = 'MB';
+    } else if (size > 1024) {
+      size = (size / 1024).toFixed(2);
+      unit = 'KB';
+    } else {
+      unit = 'B';
+    }
+
+    // Assuming 50MB "quota" for free tier/local storage safety
+    const quota = 50 * 1024 * 1024;
+    const percent = Math.min(100, (bytes / quota) * 100);
+
+    setStorageStats({ size, unit, percent, rawBytes: bytes });
+  }, [events, isOpen]);
+
   useEffect(() => {
     googleCalendarService.initialize().catch((error) => logger.error('GCal init error', { error }));
     const loadApiKey = async () => {
@@ -618,6 +644,25 @@ const Settings = ({ isOpen, onClose }) => {
                       <div className="glass-card padding-lg">
                         <h3>Data Export</h3>
                         <p className="text-muted">Download your calendar data to use elsewhere.</p>
+
+                        <div className="storage-metric mt-4 mb-4" style={{ padding: '16px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 500 }}>
+                            <span>Storage Used</span>
+                            <span style={{ color: '#6366f1' }}>{storageStats.size} {storageStats.unit}</span>
+                          </div>
+                          <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.max(1, storageStats.percent)}%` }}
+                              style={{ height: '100%', background: '#6366f1' }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.75rem', color: '#94a3b8' }}>
+                            <span>Local Events: {events.length}</span>
+                            <span>~50MB Limit</span>
+                          </div>
+                        </div>
+
                         <div className="actions-row mt-4">
                           <button onClick={handleExportData} className="feature-btn">
                             <CloudDownloadOutlined /> JSON
@@ -642,12 +687,10 @@ const Settings = ({ isOpen, onClose }) => {
                           <div key={pack.id} className={`pack-card glass-card ${generalEventPacks[pack.id] ? 'active' : ''}`}>
                             <div className="pack-header">
                               <div className="pack-icon-wrapper">
-                                <svg viewBox="0 0 24 24" width="36" height="36" className="holiday-pack-icon">
-                                  <rect x="2" y="6" width="14" height="12" rx="2" fill="rgba(16, 185, 129, 0.3)" stroke="rgba(16, 185, 129, 0.6)" strokeWidth="1" />
-                                  <rect x="5" y="4" width="14" height="12" rx="2" fill="rgba(99, 102, 241, 0.3)" stroke="rgba(99, 102, 241, 0.6)" strokeWidth="1" />
-                                  <rect x="8" y="2" width="14" height="12" rx="2" fill="rgba(244, 63, 94, 0.3)" stroke="rgba(244, 63, 94, 0.6)" strokeWidth="1" />
-                                  <text x="15" y="10" fontSize="6" fill="white" textAnchor="middle" fontWeight="bold">★</text>
-                                </svg>
+                                {pack.id === 'us-holidays' && <img src="/icons/us-holidays.png" alt="US Holidays" className="pack-img-icon" />}
+                                {pack.id === 'nfl-season' && <img src="/icons/nfl-season.png" alt="NFL" className="pack-img-icon" />}
+                                {pack.id === 'nba-season' && <img src="/icons/nba-season.png" alt="NBA" className="pack-img-icon" />}
+                                {pack.id === 'moon-phases' && <img src="/icons/moon-phases.png" alt="Moon" className="pack-img-icon" />}
                               </div>
                               <button
                                 className={`pack-add-btn ${generalEventPacks[pack.id] ? 'added' : ''}`}

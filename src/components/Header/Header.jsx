@@ -57,57 +57,40 @@ const Header = ({ onOpenSettings }) => {
                 <h1>CalAI</h1>
               </div>
             </MotionButton>
-
           </div>
 
-          {/* Center: Navigation Controls (Today | < | >) */}
-          <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button
-              className="nav-today-btn-header"
-              onClick={goToToday}
-              title="Jump to Today"
-            >
-              Today
-            </button>
-            <div className="nav-arrows" style={{ display: 'flex', gap: '4px' }}>
-              <button className="nav-btn icon-only" onClick={() => navigateDate(-1)} title="Previous">
-                <ChevronLeft size={16} />
-              </button>
-              <button className="nav-btn icon-only" onClick={() => navigateDate(1)} title="Next">
-                <ChevronRight size={16} />
-              </button>
+          {/* Center: Navigation Controls */}
+          <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="nav-today-btn-header" onClick={goToToday}>Today</button>
+            <div className="nav-arrows" style={{ display: 'flex', gap: '2px' }}>
+              <button className="nav-btn icon-only" onClick={() => navigateDate(-1)}><ChevronLeft size={16} /></button>
+              <button className="nav-btn icon-only" onClick={() => navigateDate(1)}><ChevronRight size={16} /></button>
             </div>
-            {/* Date Display could go here if requested, but user said remove/separate arrows */}
           </div>
 
-          {/* Right: View Switcher & Actions */}
-          <div className="header-right">
-            <div className="view-switch" role="tablist">
-              {viewButtons.map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={view === key}
-                  className={`view-switch-btn ${view === key ? 'active' : ''}`}
-                  onClick={() => setView(key)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="action-buttons">
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onOpenSettings}
-                className="btn settings-btn"
-                title="Settings"
+          {/* Right: View Dropdown & Settings */}
+          <div className="header-right" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div className="view-dropdown-wrapper">
+              <select
+                value={view}
+                onChange={(e) => setView(e.target.value)}
+                className="view-select-dropdown"
               >
-                <Settings size={18} />
-              </MotionButton>
+                {viewButtons.map(({ key, label }) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
             </div>
+
+            <MotionButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onOpenSettings}
+              className="btn settings-btn"
+              title="Settings"
+            >
+              <Settings size={18} />
+            </MotionButton>
           </div>
         </div>
       </div>

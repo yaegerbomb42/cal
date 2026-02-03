@@ -57,37 +57,67 @@ const MainLayout = () => {
   const MotionDiv = motion.div;
 
   // Sidebar Resize Logic (Percentage Based)
-  const [sidebarPercent, setSidebarPercent] = useState(30); // Default 30% width (more room for Upcoming)
-  const [isResizing, setIsResizing] = useState(false);
-  const containerRef = useRef(null);
+  // Sidebar Resize Logic (Direct DOM Manipulation for Performance)
+  const [sidebarPercent, setSidebarPercent] = useState(30);
+  const isResizingRef = useRef(false);
 
-  const startResizing = useCallback((mouseDownEvent) => {
-    mouseDownEvent.preventDefault();
-    setIsResizing(true);
+  // Refs for direct manipulation
+  const sidebarRef = useRef(null);
+  const calendarRef = useRef(null);
+  // containerRef is already defined above
+
+  const startResizing = useCallback((e) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none'; // Prevent text selection
   }, []);
 
   const stopResizing = useCallback(() => {
-    setIsResizing(false);
-  }, []);
+    if (isResizingRef.current) {
+      isResizingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
 
-  const resize = useCallback((mouseMoveEvent) => {
-    if (isResizing && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      // Calculate from the LEFT edge (sidebar starting on left)
-      const newWidth = mouseMoveEvent.clientX - containerRect.left;
-      const containerWidth = containerRect.width;
-      const newPercent = (newWidth / containerWidth) * 100;
-
-      // Limits: 15% to 50%
-      if (newPercent > 15 && newPercent < 50) {
-        setSidebarPercent(newPercent);
+      // Sync state at the end if needed for persistence, 
+      // but the DOM is already updated.
+      // We calculate the final percent to save it.
+      if (sidebarRef.current && containerRef.current) {
+        const containerWidth = containerRef.current.getBoundingClientRect().width;
+        const sidebarWidth = sidebarRef.current.getBoundingClientRect().width;
+        setSidebarPercent((sidebarWidth / containerWidth) * 100);
       }
     }
-  }, [isResizing]);
+  }, []);
+
+  const resize = useCallback((e) => {
+    if (isResizingRef.current && containerRef.current && sidebarRef.current && calendarRef.current) {
+      // Use requestAnimationFrame for smoother visual updates if needed, 
+      // but direct DOM update is usually fast enough here.
+
+      const containerRect = containerRef.current.getBoundingClientRect();
+      let newWidth = e.clientX - containerRect.left;
+      const containerWidth = containerRect.width;
+
+      // Constraints (15% to 50%)
+      const minWidth = containerWidth * 0.15;
+      const maxWidth = containerWidth * 0.50;
+
+      if (newWidth < minWidth) newWidth = minWidth;
+      if (newWidth > maxWidth) newWidth = maxWidth;
+
+      // Apply directly to DOM elements
+      const newPercent = (newWidth / containerWidth) * 100;
+
+      sidebarRef.current.style.width = `${newPercent}%`;
+      calendarRef.current.style.flex = `1 1 calc(${100 - newPercent}% - 6px)`;
+    }
+  }, []);
 
   useEffect(() => {
     window.addEventListener("mousemove", resize);
     window.addEventListener("mouseup", stopResizing);
+    // Cleanup on unmount
     return () => {
       window.removeEventListener("mousemove", resize);
       window.removeEventListener("mouseup", stopResizing);
@@ -175,7 +205,11 @@ const MainLayout = () => {
           className="main-content"
           ref={containerRef}
         >
-          <div className="sidebar-container" style={{ width: `${sidebarPercent}%`, flexShrink: 0 }}>
+          <div
+            className="sidebar-container"
+            ref={sidebarRef}
+            style={{ width: `${sidebarPercent}%`, flexShrink: 0 }}
+          >
             <UpcomingSidebar />
           </div>
 
@@ -186,7 +220,11 @@ const MainLayout = () => {
             <div className="resize-line" />
           </div>
 
-          <div className="calendar-container" style={{ flex: `1 1 calc(${100 - sidebarPercent}% - 6px)` }}>
+          <div
+            className="calendar-container"
+            ref={calendarRef}
+            style={{ flex: `1 1 calc(${100 - sidebarPercent}% - 6px)` }}
+          >
             <Calendar />
           </div>
         </main>

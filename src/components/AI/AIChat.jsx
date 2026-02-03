@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus, Mic, MicOff, Volume2 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
@@ -231,7 +231,7 @@ const AIChat = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleAIResponse = (response) => {
+  const handleAIResponse = async (response) => {
     try {
       const cleanedResponse = sanitizeAIOutput(response);
       const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
@@ -254,6 +254,33 @@ const AIChat = ({ isOpen, onClose }) => {
             addMessage('ai', `Your next appointment is "${next.title}" on ${timeStr}.`);
           } else {
             addMessage('ai', "You don't have any upcoming appointments scheduled.");
+          }
+          return;
+        }
+
+        if (data.intent === 'find_slots') {
+          addMessage('ai', data.answer || "Searching for optimal slots...");
+
+          // Fetch suggestions
+          const range = await geminiService.parseFuzzyDateRange(data.context || 'next month');
+          const suggestions = await geminiService.suggestOptimalSlot({
+            title: 'Suggested Event',
+            rangeStart: range?.start,
+            rangeEnd: range?.end,
+            context: data.context
+          }, events);
+
+          if (suggestions && suggestions.length > 0) {
+            // Dispatch highlight event
+            window.dispatchEvent(new CustomEvent('CALAI_HIGHLIGHT_SLOTS', {
+              detail: {
+                slots: suggestions,
+                context: data.context
+              }
+            }));
+            addMessage('ai', `I found ${suggestions.length} optimal slots. I've highlighted them on your calendar.`);
+          } else {
+            addMessage('ai', "I couldn't find any specific slots matching that range.");
           }
           return;
         }
@@ -356,7 +383,7 @@ const AIChat = ({ isOpen, onClose }) => {
   };
 
   /* File Processing */
-  const processFiles = async (files) => {
+  const processFiles = useCallback(async (files) => {
     if (files.length === 0) return;
     setIsImageProcessing(true);
     setStatus('info', 'Analyzing files with Gemini 3...');
@@ -387,7 +414,7 @@ const AIChat = ({ isOpen, onClose }) => {
       }
       setStatus(null, null);
     }
-  };
+  }, []); // Add dependencies if needed, but empty is safe for now as helpers are imported
 
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files || []);

@@ -5,6 +5,7 @@ import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { cn, getEventColor } from '../../utils/helpers';
+import AIChatInput from '../UI/AIChatInput';
 import './MonthView.css';
 
 const MonthView = () => {
@@ -48,6 +49,23 @@ const MonthView = () => {
     <div className="month-view">
       <div className="month-summary glass-card">
         <div className="month-summary-title">This Month</div>
+
+        <div className="month-ai-wrapper" style={{ flex: 1, padding: '0 20px', maxWidth: '500px' }}>
+          <AIChatInput
+            onSubmit={({ text, files }) => {
+              if (text) {
+                window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+                window.dispatchEvent(new CustomEvent('calai-open'));
+              }
+              if (files && files.length > 0) {
+                window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+                window.dispatchEvent(new CustomEvent('calai-open'));
+              }
+            }}
+            compact
+          />
+        </div>
+
         <div className="month-summary-stat">
           {`${monthEventsCount} event${monthEventsCount !== 1 ? 's' : ''}`}
         </div>
@@ -114,7 +132,7 @@ const MonthView = () => {
                     <span className="event-title">{event.title}</span>
                   </MotionDiv>
                 ))}
-                
+
                 {dayEvents.length > 3 && (
                   <div className="more-events">
                     {`+${dayEvents.length - 3} more event${dayEvents.length - 3 !== 1 ? 's' : ''}`}

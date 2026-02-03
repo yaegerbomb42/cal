@@ -604,37 +604,40 @@ Keep responses concise and actionable.
     const targetDate = eventDetails.preferredDate || now;
     const duration = eventDetails.duration || 60; // minutes
 
-    const prompt = `
-You are Cal, a smart calendar AI. Suggest 3 optimal time slots for this event:
+    // NEW: Handle explicitly fuzzy ranges if provided
+    const rangeStart = eventDetails.rangeStart ? new Date(eventDetails.rangeStart) : targetDate;
+    const rangeEnd = eventDetails.rangeEnd ? new Date(eventDetails.rangeEnd) : new Date(rangeStart.getTime() + 7 * 24 * 60 * 60 * 1000); // Default 7 days if no range
 
+    const prompt = `
+You are Cal, a smart calendar AI. The user wants to schedule an event.
 Event: "${eventDetails.title || 'Untitled Event'}"
 Category: ${eventDetails.category || 'personal'}
 Duration: ${duration} minutes
-Preferred Date: ${targetDate.toDateString()}
+Context/Range: "${eventDetails.context || 'near future'}"
+Search Range: ${rangeStart.toDateString()} to ${rangeEnd.toDateString()}
 User Timezone: ${timeZone}
 Current Time: ${now.toISOString()}
 
-Existing events on or near this date:
-${JSON.stringify(existingEvents.slice(0, 10).map(e => ({
+Existing events in this range:
+${JSON.stringify(existingEvents.slice(0, 50).map(e => ({
       title: e.title,
       start: e.start,
-      end: e.end,
-      category: e.category
+      end: e.end
     })), null, 2)}
 
-Rules:
-- Avoid conflicts with existing events
-- Consider typical ${eventDetails.category === 'work' ? 'work hours (9am-6pm)' : 'waking hours (8am-10pm)'}
-- Prioritize slots that give buffer time before/after meetings
-- For focus/work tasks, prefer morning slots
-- For social/fun events, prefer afternoon/evening
+Task: Suggest 3-5 optimal time slots within the Search Range.
+- If the request is vague ("sometime in March"), pick the BEST days distributed across the month.
+- Avoid conflicts.
+- Adhere to category norms (Work = 9-5 MF, Social = Evenings/Weekends).
+- "Reason" should be persuasive (e.g. "Light schedule this day").
 
 Return ONLY a JSON array:
 [
   {
     "start": "ISO_8601_UTC_STRING",
     "end": "ISO_8601_UTC_STRING",
-    "reason": "Brief explanation why this slot is optimal"
+    "reason": "Brief explanation",
+    "confidence": 0.9
   }
 ]
 `;
@@ -654,6 +657,29 @@ Return ONLY a JSON array:
       logger.error('Error suggesting optimal slots', { error });
       return this._localSlotSuggestion(eventDetails, existingEvents);
     }
+  }
+
+  /**
+   * Helper to parse "March" or "Next Week" into a date range
+   */
+  async parseFuzzyDateRange(text) {
+    if (!this.isInitialized) return null;
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const prompt = `
+     Convert the following time reference into a start and end ISO date range.
+     Text: "${text}"
+     Current Date: ${new Date().toISOString()}
+     Timezone: ${timeZone}
+     
+     Return JSON: {"start": "ISO", "end": "ISO"}
+     If no specific range, return null.
+     `;
+    try {
+      const result = await this.modelFlash.generateContent(prompt);
+      const txt = result.response.text();
+      const match = txt.match(/\{[\s\S]*\}/);
+      return match ? JSON.parse(match[0]) : null;
+    } catch { return null; }
   }
 
   /**

@@ -30,7 +30,7 @@
 }
 
 .month-day:hover {
-  background: rgba(20, 28, 52, 0.7);
+  background: var(--glass-bg);
   transform: none;
   box-shadow: inset 0 0 0 2px var(--accent);
 }
@@ -40,7 +40,7 @@
 }
 
 .month-day.today {
-  background: rgba(99, 102, 241, 0.2);
+  background: var(--accent-glow);
   border: 2px solid var(--accent);
 }
 
@@ -57,7 +57,7 @@
 }
 
 .month-day.has-events {
-  background: rgba(20, 28, 52, 0.6);
+  background: var(--bg-secondary);
 }
 
 .day-number {
