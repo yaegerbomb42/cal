@@ -76,23 +76,10 @@ const YearView = ({ onYearChange }) => {
           window.dispatchEvent(new CustomEvent('calai-open'));
         }}
         centerContent={
-          <div className="year-title-group" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span className="year-label" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>Year Selector</span>
-            <NavigationDropdown
-              label=""
-              value={selectedYear}
-              options={[...Array(5)].map((_, i) => {
-                const y = new Date().getFullYear() - 2 + i;
-                return { label: y.toString(), value: y };
-              })}
-              onChange={(val) => {
-                const newDate = new Date(currentDate);
-                newDate.setFullYear(val);
-                setCurrentDate(newDate);
-                onYearChange?.(newDate);
-              }}
-              type="list"
-            />
+          <div className="year-title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="year-label" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {selectedYear}
+            </span>
           </div>
         }
         rightContent={

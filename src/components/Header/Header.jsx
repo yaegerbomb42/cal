@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight, MousePointerClick, Moon, Sun } from 'lucide-react';
-import { useTheme } from '../../contexts/useTheme';
+import { Settings, ChevronLeft, ChevronRight, MousePointerClick, Download } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
@@ -9,10 +8,28 @@ import './Header.css';
 
 const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
   const { view, setView, goToToday, openEventModal, navigateDate } = useCalendar();
-  const { toggleTheme, isDark } = useTheme();
   const MotionHeader = motion.header;
-  const MotionDiv = motion.div;
   const MotionButton = motion.button;
+
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const viewButtons = [
     { key: CALENDAR_VIEWS.DAY, label: 'Day' },
@@ -52,25 +69,52 @@ const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
               className="logo-section"
               onClick={goToToday}
               title="Return to Today"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              <Calendar className="logo-icon" size={20} />
+              <img src="/logo.png" alt="CalAI" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
               <div className="logo-text">
-                <h1>CalAI</h1>
+                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px' }}>CalAI</h1>
               </div>
             </MotionButton>
           </div>
 
           {/* Center: Navigation Controls */}
           <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className="nav-arrows" style={{ display: 'flex', gap: '2px' }}>
-              <button className="nav-btn icon-only" onClick={() => navigateDate(-1)}><ChevronLeft size={16} /></button>
-              <button className="nav-btn icon-only" onClick={() => navigateDate(1)}><ChevronRight size={16} /></button>
+            <div className="nav-arrows" style={{ display: 'flex', gap: '4px' }}>
+              <button className="nav-btn icon-only" onClick={() => navigateDate(-1)} style={{ borderRadius: '8px' }}><ChevronLeft size={18} /></button>
+              <button className="nav-btn today-btn" onClick={goToToday} style={{ padding: '4px 12px', fontSize: '0.85rem', fontWeight: '500' }}>Today</button>
+              <button className="nav-btn icon-only" onClick={() => navigateDate(1)} style={{ borderRadius: '8px' }}><ChevronRight size={18} /></button>
             </div>
           </div>
 
           {/* Right: View Selector & Settings */}
           <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Download/Install Button */}
+            {deferredPrompt && (
+              <MotionButton
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleInstallClick}
+                className="btn glass-btn"
+                title="Download Standalone App"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(255, 59, 48, 0.15)',
+                  border: '1px solid rgba(255, 59, 48, 0.3)',
+                  color: '#FF3B30',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}
+              >
+                <Download size={16} />
+                <span>Download App</span>
+              </MotionButton>
+            )}
+
             {/* Zoom Nav Toggle */}
             <MotionButton
               whileHover={{ scale: 1.05 }}
@@ -91,45 +135,32 @@ const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
               <MousePointerClick size={16} />
             </MotionButton>
 
-            <div className="view-selector glass-panel">
+            <div className="view-selector glass-panel" style={{ background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '10px' }}>
               {viewButtons.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setView(key)}
                   className={`view-btn ${view === key ? 'active' : ''}`}
+                  style={{ padding: '4px 12px', fontSize: '0.85rem' }}
                 >
                   {label}
                 </button>
               ))}
             </div>
 
-            {/* Theme Toggle */}
             <MotionButton
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={toggleTheme}
-              className="btn icon-only glass-btn"
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              onClick={onOpenSettings}
+              className="btn settings-btn icon-only"
               style={{
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid var(--glass-border)',
-                color: isDark ? '#fbbf24' : '#64748b'
+                justifyContent: 'center'
               }}
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </MotionButton>
-
-            <MotionButton
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={onOpenSettings}
-              className="btn settings-btn"
               title="Settings"
             >
               <Settings size={18} />

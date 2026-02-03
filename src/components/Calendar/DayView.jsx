@@ -124,21 +124,9 @@ const DayView = () => {
           }
         }}
         centerContent={
-          <div className="day-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-            <NavigationDropdown
-              label="Day of Year"
-              value={getDayOfYear(currentDate)}
-              range={{ start: 1, end: 366 }}
-              onChange={(dayNum) => {
-                const newDate = setDayOfYear(currentDate, dayNum);
-                setCurrentDate(newDate);
-              }}
-              type="grid"
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <div className="day-name" style={{ fontSize: '0.9rem', fontWeight: 600 }}>{getRelativeDayLabel(currentDate)}</div>
-              <div className="day-date" style={{ fontSize: '0.8rem', opacity: 0.7 }}>{formatFullDate(currentDate)}</div>
-            </div>
+          <div className="day-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="day-name" style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{getRelativeDayLabel(currentDate)}</div>
+            <div className="day-date" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{formatFullDate(currentDate)}</div>
           </div>
         }
         rightContent={

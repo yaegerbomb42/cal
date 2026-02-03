@@ -49,35 +49,10 @@ const MonthView = () => {
           }
         }}
         centerContent={
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <NavigationDropdown
-              label="Month"
-              value={format(currentDate, 'MMMM')}
-              options={[
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-              ].map((m, i) => ({ label: m, value: i }))}
-              onChange={(val) => {
-                const newDate = new Date(currentDate);
-                newDate.setMonth(val);
-                setCurrentDate(newDate);
-              }}
-              type="list"
-            />
-            <NavigationDropdown
-              label="Year"
-              value={currentDate.getFullYear()}
-              options={[...Array(5)].map((_, i) => {
-                const y = new Date().getFullYear() - 2 + i;
-                return { label: y.toString(), value: y };
-              })}
-              onChange={(val) => {
-                const newDate = new Date(currentDate);
-                newDate.setFullYear(val);
-                setCurrentDate(newDate);
-              }}
-              type="list"
-            />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+              {format(currentDate, 'MMMM yyyy')}
+            </span>
           </div>
         }
         rightContent={

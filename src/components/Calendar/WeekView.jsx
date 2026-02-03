@@ -142,19 +142,12 @@ const WeekView = () => {
           window.dispatchEvent(new CustomEvent('calai-open'));
         }}
         centerContent={
-          <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-            <NavigationDropdown
-              label="Week"
-              value={getWeek(currentDate)}
-              range={{ start: 1, end: 52 }}
-              onChange={(weekNum) => {
-                const newDate = setWeek(currentDate, weekNum);
-                setCurrentDate(newDate);
-              }}
-              type="grid"
-            />
+          <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span className="week-range" style={{ fontSize: '1rem', fontWeight: '500', color: 'var(--text-primary)' }}>
+              {format(weekStart, 'MMMM yyyy')}
+            </span>
             <span className="week-range" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
+              (Week {getWeek(currentDate)})
             </span>
           </div>
         }
