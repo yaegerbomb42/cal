@@ -317,8 +317,7 @@
   width: 100%;
   height: 2px;
   background: #ef4444;
-  /* Red Line */
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.9), 0 0 4px rgba(239, 68, 68, 0.7);
 }
 
 .week-current-time {
@@ -335,24 +334,26 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 1px;
-  background: rgba(239, 68, 68, 0.6);
+  height: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.9), 0 0 4px rgba(239, 68, 68, 0.7);
 }
 
 .week-current-time .current-time-label {
   position: absolute;
-  left: -65px;
+  left: -60px;
   top: -10px;
   transform: translateY(0);
   background: transparent;
   color: #facc15;
-  /* Yellow text */
-  padding: 2px 6px;
+  padding: 2px 4px;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
   border: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  z-index: 40;
+  white-space: nowrap;
 }
 
 .week-empty-state {

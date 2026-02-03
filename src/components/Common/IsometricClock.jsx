@@ -3,75 +3,70 @@ import React, { useRef, useEffect, useState } from 'react';
 import './IsometricClock.css';
 
 const IsometricClock = ({ value, onChange, label }) => {
-    // Value is date object or string? Usually time string "HH:mm" or Date.
-    // Let's assume input is a Date object for ease, or we parse it.
     const [time, setTime] = useState(value instanceof Date ? value : new Date());
 
-    // Update local state when prop changes
     useEffect(() => {
         if (value) setTime(value instanceof Date ? value : new Date(value));
     }, [value]);
 
     const clockRef = useRef(null);
-    const [isDragging, setIsDragging] = useState(null); // 'hour' | 'minute' | null
+    const [isDragging, setIsDragging] = useState(null);
 
-    // Calculate angles
     const getAngles = (date) => {
         const hours = date.getHours();
         const minutes = date.getMinutes();
-        const minuteAngle = minutes * 6; // 360 / 60 = 6
-        const hourAngle = (hours % 12) * 30 + minutes * 0.5; // 360 / 12 = 30
+        const minuteAngle = minutes * 6;
+        // Hour Hand: Independent logic? No, usually follows minutes, but user requested independent setting?
+        // Actually smooth movement is fine, but dragging logic should be separated.
+        const hourAngle = (hours % 12) * 30 + (minutes * 0.5);
         return { hourAngle, minuteAngle };
     };
 
     const { hourAngle, minuteAngle } = getAngles(time);
 
-    // Mouse/Touch handlers
-    const onMouseDown = (hand, e) => {
+    const toggleAmPm = (e) => {
         e.stopPropagation();
-        setIsDragging(hand);
+        const newDate = new Date(time);
+        const hours = newDate.getHours();
+        newDate.setHours(hours >= 12 ? hours - 12 : hours + 12);
+        setTime(newDate);
+        onChange?.(newDate);
     };
 
     useEffect(() => {
         const handleInteraction = (e) => {
             if (!clockRef.current) return;
-
-            // Get mouse/touch position
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
             const rect = clockRef.current.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-
-            // Calculate angle from center
             const dx = clientX - centerX;
             const dy = clientY - centerY;
-            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90; // Convert to degrees, adjust 0 to top
+            let angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
 
             const newDate = new Date(time);
 
             if (isDragging === 'minute') {
-                // Snap to 5 minutes
-                let minute = Math.round(angle / 6); // 0-60
-                minute = Math.round(minute / 5) * 5; // Snap to nearest 5
+                let minute = Math.round(angle / 6);
+                minute = Math.round(minute / 5) * 5; // 5-min snap
                 if (minute === 60) minute = 0;
                 newDate.setMinutes(minute);
+                // Do NOT change hours automatically when crossing 12 (independent feeling)
             } else if (isDragging === 'hour') {
-                // Logic for hours is tricky because of AM/PM and 12h wrap.
-                // We'll keep the current AM/PM.
-                let hour = Math.round(angle / 30); // 0-12
-                if (hour === 0) hour = 12; // 12 at top
+                let hour = Math.round(angle / 30);
+                if (hour === 0) hour = 12;
 
-                // Preserve current AM/PM
+                // Preserve AM/PM
                 const currentHours = time.getHours();
                 const isPM = currentHours >= 12;
-
                 if (isPM && hour !== 12) hour += 12;
                 else if (!isPM && hour === 12) hour = 0;
 
                 newDate.setHours(hour);
+                // Preserve minutes (independent)
+                newDate.setMinutes(time.getMinutes());
             }
 
             setTime(newDate);
@@ -81,7 +76,7 @@ const IsometricClock = ({ value, onChange, label }) => {
         const handleUp = () => setIsDragging(null);
         const handleMove = (e) => {
             if (isDragging) {
-                e.preventDefault(); // Prevent scroll on touch
+                e.preventDefault();
                 handleInteraction(e);
             }
         };
@@ -101,54 +96,53 @@ const IsometricClock = ({ value, onChange, label }) => {
         };
     }, [isDragging, time, onChange]);
 
-    // Generate numbers
     const numbers = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    const isPM = time.getHours() >= 12;
 
     return (
         <div className="iso-clock-wrapper">
             <div className="iso-clock-label">{label}</div>
             <div className="iso-clock-container" ref={clockRef}>
                 <div className="iso-clock-face">
-                    {/* Numbers */}
                     {numbers.map((num, i) => (
                         <div
                             key={num}
-                            className="iso-clock-number"
+                            className={`iso-clock-number ${Math.abs((time.getHours() % 12 || 12) - num) < 0.5 ? 'active-num' : ''}`}
                             style={{
-                                transform: `rotate(${i * 30}deg) translate(0, -38px) rotate(-${i * 30}deg)`
+                                transform: `rotate(${i * 30}deg) translate(0, -48px) rotate(-${i * 30}deg)`
                             }}
                         >
                             {num}
                         </div>
                     ))}
-
-                    {/* Center Pin */}
                     <div className="iso-clock-pin" />
 
-                    {/* Hour Hand */}
+                    {/* AM/PM Toggle */}
+                    <div
+                        className={`iso-clock-ampm ${isPM ? 'is-pm' : 'is-am'}`}
+                        onClick={toggleAmPm}
+                        onMouseDown={(e) => e.stopPropagation()}
+                    >
+                        {isPM ? 'PM' : 'AM'}
+                    </div>
+
                     <div
                         className={`iso-clock-hand hour-hand ${isDragging === 'hour' ? 'dragging' : ''}`}
                         style={{ transform: `rotate(${hourAngle}deg)` }}
-                        onMouseDown={(e) => onMouseDown('hour', e)}
-                        onTouchStart={(e) => onMouseDown('hour', e)}
+                        onMouseDown={(e) => { e.stopPropagation(); setIsDragging('hour'); }}
+                        onTouchStart={(e) => { e.stopPropagation(); setIsDragging('hour'); }}
                     >
                         <div className="hand-visual" />
                     </div>
 
-                    {/* Minute Hand */}
                     <div
                         className={`iso-clock-hand minute-hand ${isDragging === 'minute' ? 'dragging' : ''}`}
                         style={{ transform: `rotate(${minuteAngle}deg)` }}
-                        onMouseDown={(e) => onMouseDown('minute', e)}
-                        onTouchStart={(e) => onMouseDown('minute', e)}
+                        onMouseDown={(e) => { e.stopPropagation(); setIsDragging('minute'); }}
+                        onTouchStart={(e) => { e.stopPropagation(); setIsDragging('minute'); }}
                     >
                         <div className="hand-visual" />
                     </div>
-                </div>
-
-                {/* Helper visual for current time text */}
-                <div className="iso-clock-digital">
-                    {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
             </div>
         </div>

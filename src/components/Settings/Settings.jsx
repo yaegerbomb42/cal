@@ -4,6 +4,7 @@ import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as Calendar
 import { CloudDownloadOutlined, EventNoteOutlined } from '@mui/icons-material';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
+import { checkOllamaConnection, chatOllama } from '../../services/ollamaService';
 import { firebaseService } from '../../services/firebaseService';
 import { googleCalendarService } from '../../services/googleCalendarService';
 import { useEvents } from '../../contexts/useEvents';
@@ -25,12 +26,18 @@ const Settings = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('account');
 
   // AI State
-  const [aiProvider, setAiProvider] = useState('gemini'); // 'gemini' | 'local'
+  const [aiProvider, setAiProvider] = useState('gemini'); // 'gemini' | 'local' | 'ollama'
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [hasSavedApiKey, setHasSavedApiKey] = useState(false);
   const savedApiKeyRef = useRef(null);
+
+  // Ollama State
+  const [ollamaConfig, setOllamaConfig] = useState({
+    model: 'llama3',
+    baseUrl: 'http://localhost:11434'
+  });
 
   // AI Personality
   const [aiPersonality, setAiPersonalityState] = useState('professional');
@@ -307,6 +314,12 @@ const Settings = ({ isOpen, onClose }) => {
             response = "Gemini service could not be initialized. Please check API Key.";
           }
         }
+      }
+      else if (aiProvider === 'ollama') {
+        response = await chatOllama(
+          [{ role: 'system', content: `You are a helpful calendar assistant. Your personality is: ${aiPersonality}` }, ...testChatHistory, userMsg],
+          { baseUrl: ollamaConfig.baseUrl, model: ollamaConfig.model }
+        );
       } else {
         if (!isLocalBrainLoaded) throw new Error("Local Brain not loaded");
         response = await localBrainService.chat(message, "You are a helpful assistant.");
@@ -488,17 +501,23 @@ const Settings = ({ isOpen, onClose }) => {
             className={cn("provider-btn", aiProvider === 'gemini' && "active")}
             onClick={() => handleProviderChange('gemini')}
           >
-            <Zap size={16} /> Gemini 3.0 Flash
+            <Zap size={16} /> Gemini
+          </button>
+          <button
+            className={cn("provider-btn", aiProvider === 'ollama' && "active")}
+            onClick={() => handleProviderChange('ollama')}
+          >
+            <Cpu size={16} /> Ollama (Local)
           </button>
           <button
             className={cn("provider-btn", aiProvider === 'local' && "active")}
             onClick={() => handleProviderChange('local')}
           >
-            <Cpu size={16} /> Local Brain
+            <Cpu size={16} /> Browser Model
           </button>
         </div>
 
-        {aiProvider === 'gemini' ? (
+        {aiProvider === 'gemini' && (
           <div className="config-body">
             <div className="api-input-row">
               <div className="input-wrapper">
@@ -525,7 +544,48 @@ const Settings = ({ isOpen, onClose }) => {
               <a href="https://aistudio.google.com/app/apikey" target="_blank" className="link-text">Get Key</a>
             </div>
           </div>
-        ) : (
+        )}
+
+        {aiProvider === 'ollama' && (
+          <div className="config-body">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="input-group">
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Model Name</label>
+                <input
+                  className="ai-input"
+                  value={ollamaConfig.model}
+                  onChange={(e) => setOllamaConfig(prev => ({ ...prev, model: e.target.value }))}
+                  placeholder="e.g. llama3, mistral"
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <div className="input-group">
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Base URL</label>
+                <input
+                  className="ai-input"
+                  value={ollamaConfig.baseUrl}
+                  onChange={(e) => setOllamaConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
+                  placeholder="http://localhost:11434"
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <div className="status-row">
+                <button
+                  onClick={async () => {
+                    const connected = await checkOllamaConnection(ollamaConfig.baseUrl);
+                    toastService[connected ? 'success' : 'error'](connected ? 'Ollama Connected!' : 'Connection Failed');
+                  }}
+                  className="feature-btn small"
+                  style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                >
+                  Test Connection
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {aiProvider === 'local' && (
           <div className="config-body">
             <div className="model-select-row">
               <div className="select-wrapper">
@@ -945,7 +1005,9 @@ const Settings = ({ isOpen, onClose }) => {
                           <label className="quick-setting-row">
                             <div className="setting-info">
                               <span className="setting-name">Smart reschedule</span>
-                              <span className="setting-desc">Move events when conflicts happen</span>
+                              <span className="setting-desc" style={{ maxWidth: '280px', display: 'block', lineHeight: '1.2' }}>
+                                Requires user approval via chat w/ diff view, or manual placement
+                              </span>
                             </div>
                             <div className="toggle-switch-wrapper">
                               <input

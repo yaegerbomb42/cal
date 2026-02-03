@@ -39,11 +39,12 @@ const buildEventSnippet = (event) => {
 
 const DayView = () => {
   const { currentDate, openEventModal, setCurrentDate } = useCalendar();
-  const { getEventsForDate } = useEvents();
+  const { getEventsForDate, updateEvent } = useEvents();
 
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
   const dayGridRef = useRef(null);
+  const [draggedEvent, setDraggedEvent] = useState(null);
 
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
@@ -68,6 +69,42 @@ const DayView = () => {
     startTime.setHours(9, 0, 0, 0);
     const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
     openEventModal({ start: startTime, end: endTime });
+  };
+
+  const handleDragStart = (event, e) => {
+    setDraggedEvent(event);
+    e.dataTransfer.setData('text/plain', event.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDropOnCell = (hour, e) => {
+    e.preventDefault();
+    if (!draggedEvent) return;
+
+    try {
+      const originalEvent = draggedEvent;
+      const originalStart = new Date(originalEvent.start);
+      const originalEnd = new Date(originalEvent.end);
+      const duration = originalEnd.getTime() - originalStart.getTime();
+
+      const newStart = new Date(currentDate);
+      newStart.setHours(hour.getHours(), originalStart.getMinutes(), 0, 0);
+      const newEnd = new Date(newStart.getTime() + duration);
+
+      updateEvent(originalEvent.id, {
+        start: newStart.toISOString(),
+        end: newEnd.toISOString()
+      });
+    } catch (err) {
+      console.error('Failed to drop event:', err);
+    } finally {
+      setDraggedEvent(null);
+    }
   };
 
   return (
@@ -138,8 +175,10 @@ const DayView = () => {
             return (
               <div
                 key={`hour-${hour.getHours()}`}
-                className="day-hour-cell"
+                className={cn('day-hour-cell', draggedEvent && 'drop-target')}
                 onClick={handleSlotClick}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDropOnCell(hour, e)}
                 title={`Add event at ${format(hour, 'h a')}`}
               />
             );
@@ -162,9 +201,12 @@ const DayView = () => {
                     gridColumnEnd: column + 2,
                     gridRow: `${rowStart} / span ${rowSpan}`,
                     zIndex: 5 + column,
-                    backgroundColor: event.color || getEventColor(event.category)
+                    backgroundColor: event.color || getEventColor(event.category),
+                    cursor: 'grab'
                   }}
                   onClick={() => openEventModal(event)}
+                  draggable
+                  onDragStart={(e) => handleDragStart(event, e)}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.04 }}

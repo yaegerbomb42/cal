@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Settings, ChevronLeft, ChevronRight, MousePointerClick } from 'lucide-react';
+import { Calendar, Settings, ChevronLeft, ChevronRight, MousePointerClick, Moon, Sun } from 'lucide-react';
+import { useTheme } from '../../contexts/useTheme';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
@@ -8,6 +9,7 @@ import './Header.css';
 
 const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
   const { view, setView, goToToday, openEventModal, navigateDate } = useCalendar();
+  const { toggleTheme, isDark } = useTheme();
   const MotionHeader = motion.header;
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
@@ -101,6 +103,28 @@ const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
                 </button>
               ))}
             </div>
+
+            {/* Theme Toggle */}
+            <MotionButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleTheme}
+              className="btn icon-only glass-btn"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--glass-border)',
+                color: isDark ? '#fbbf24' : '#64748b'
+              }}
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </MotionButton>
 
             <MotionButton
               whileHover={{ scale: 1.05 }}

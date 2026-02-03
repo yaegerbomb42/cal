@@ -12,13 +12,13 @@ import { ValidationError } from '../../utils/errors';
 import './EventModal.css';
 
 import SmartDateInput from '../Common/SmartDateInput';
-import ClockPicker from '../Common/ClockPicker';
-import SmartSchedulePortal from './SmartSchedulePortal';
+import ConflictResolutionModal from './ConflictResolutionModal';
+import { geminiService } from '../../services/geminiService';
 
 const padTime = (value) => String(value).padStart(2, '0');
 
 const toLocalInputValue = (date) => {
-  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
+  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getMinutes())}`;
 };
 
 const roundToNearestFiveMinutes = (date) => {
@@ -118,7 +118,7 @@ const EventModal = () => {
   // ... useEffects ... (Keep existing logic)
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
-  const [showSmartSchedule, setShowSmartSchedule] = useState(false);
+  const [isSmartScheduleOpen, setIsSmartScheduleOpen] = useState(false);
 
   useEffect(() => {
     if (!isEventModalOpen) return;
@@ -145,7 +145,7 @@ const EventModal = () => {
       : ensureValidStartTime(isDefaultToday ? roundToNearestFiveMinutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
     const endTime = selectedEvent?.end
       ? new Date(selectedEvent.end)
-      : new Date(startTime.getTime() + 60 * 60 * 1000);
+      : new Date(startTime.getTime() + 60 * 60 * 1000); // Default: Start + 1 hour
 
     setFormData({
       title: '',
@@ -277,12 +277,12 @@ const EventModal = () => {
           <div className="modal-header compact">
             <h3>{isEditing ? 'Edit' : 'New Event'}</h3>
             <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-              <button type="button" onClick={() => setShowSmartSchedule(!showSmartSchedule)} className="icon-btn" title="AI Schedule">
+              <button type="button" onClick={() => setIsSmartScheduleOpen(!isSmartScheduleOpen)} className="icon-btn" title="AI Schedule">
                 <Sparkles size={16} className="text-accent" />
               </button>
               <SmartSchedulePortal
-                isOpen={showSmartSchedule}
-                onClose={() => setShowSmartSchedule(false)}
+                isOpen={isSmartScheduleOpen}
+                onClose={() => setIsSmartScheduleOpen(false)}
                 onSelectSlot={(start, end) => {
                   setFormData(prev => ({
                     ...prev,

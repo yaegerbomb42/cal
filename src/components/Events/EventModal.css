@@ -218,22 +218,33 @@
     overflow-y: auto;
   }
 
+  .modal-col {
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  .modal-col.left-col {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
   .modal-col.right-col {
     background: transparent;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-bottom: 2rem;
+    border-top: none;
+    padding-bottom: 1.5rem;
   }
 
   .iso-clocks-container {
     flex-direction: row;
     gap: 1rem;
     justify-content: center;
+    padding: 0.5rem 0;
   }
 
   .event-modal {
-    height: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+    height: auto;
+    max-height: 95vh;
+    border-radius: 16px;
   }
 }
 
@@ -317,7 +328,7 @@
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   overflow: hidden;
-  z-index: 50;
+  z-index: 100;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   max-height: 200px;
   overflow-y: auto;

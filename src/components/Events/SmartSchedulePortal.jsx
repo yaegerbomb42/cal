@@ -65,10 +65,18 @@ const MiniTimeline = ({ events, suggestions, preferredDate, onSelectSlot, select
                     const top = getY(slot.start);
                     const height = getHeight(slot.start, slot.end);
                     const isSelected = selectedSuggestionIndex === idx;
+
+                    // Determine confidence class
+                    const confidenceClass = slot.confidence >= 0.8
+                        ? 'confidence-high'
+                        : slot.confidence >= 0.5
+                            ? 'confidence-medium'
+                            : 'confidence-low';
+
                     return (
                         <motion.div
                             key={`suggest-${idx}`}
-                            className={`timeline-event suggestion ${isSelected ? 'selected' : ''}`}
+                            className={`timeline-event suggestion ${confidenceClass} ${isSelected ? 'selected' : ''}`}
                             style={{ top: `${top}%`, height: `${height}%` }}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 0.6, scale: 1 }}
@@ -152,78 +160,87 @@ const SmartSchedulePortal = ({
     return (
         <AnimatePresence>
             <MotionDiv
-                className="smart-schedule-portal"
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
+                className="smart-schedule-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
             >
-                <div className="portal-header">
-                    <div className="portal-title">
-                        <Sparkles size={16} className="sparkle-icon" />
-                        <span>Smart Suggestions</span>
+                <MotionDiv
+                    className="smart-schedule-portal"
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="portal-header">
+                        <div className="portal-title">
+                            <Sparkles size={16} className="sparkle-icon" />
+                            <span>Smart Suggestions</span>
+                        </div>
+                        <button className="portal-close" onClick={onClose}>
+                            <X size={14} />
+                        </button>
                     </div>
-                    <button className="portal-close" onClick={onClose}>
-                        <X size={14} />
-                    </button>
-                </div>
 
-                <div className="portal-content">
-                    {isLoading ? (
-                        <div className="portal-loading">
-                            <div className="loading-spinner" />
-                            <span>Analyzing schedule...</span>
-                        </div>
-                    ) : suggestions.length === 0 ? (
-                        <div className="portal-empty">
-                            <Calendar size={24} />
-                            <span>No available slots found</span>
-                        </div>
-                    ) : (
-                        <div className="portal-layout">
-                            <div className="suggestions-list">
-                                {suggestions.map((slot, index) => (
-                                    <MotionButton
-                                        key={index}
-                                        className={`suggestion-card ${selectedIndex === index ? 'selected' : ''}`}
-                                        onClick={() => handleSelectSlot(slot, index)}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        <div className="suggestion-time">
-                                            <Clock size={14} />
-                                            <span>{format(slot.start, 'h:mm a')} - {format(slot.end, 'h:mm a')}</span>
-                                        </div>
-                                        <div className="suggestion-reason">{slot.reason}</div>
-                                        <div className="suggestion-confidence">
-                                            <div className="confidence-bar" style={{ width: `${slot.confidence * 100}%` }} />
-                                            <Zap size={10} />
-                                            <span>{Math.round(slot.confidence * 100)}%</span>
-                                        </div>
-                                        {selectedIndex === index && (
-                                            <div className="selected-check">
-                                                <Check size={12} />
+                    <div className="portal-content">
+                        {isLoading ? (
+                            <div className="portal-loading">
+                                <div className="loading-spinner" />
+                                <span>Analyzing schedule...</span>
+                            </div>
+                        ) : suggestions.length === 0 ? (
+                            <div className="portal-empty">
+                                <Calendar size={24} />
+                                <span>No available slots found</span>
+                            </div>
+                        ) : (
+                            <div className="portal-layout">
+                                <div className="suggestions-list">
+                                    {suggestions.map((slot, index) => (
+                                        <MotionButton
+                                            key={index}
+                                            className={`suggestion-card ${selectedIndex === index ? 'selected' : ''}`}
+                                            onClick={() => handleSelectSlot(slot, index)}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <div className="suggestion-time">
+                                                <Clock size={14} />
+                                                <span>{format(slot.start, 'h:mm a')} - {format(slot.end, 'h:mm a')}</span>
                                             </div>
-                                        )}
-                                    </MotionButton>
-                                ))}
-                            </div>
+                                            <div className="suggestion-reason">{slot.reason}</div>
+                                            <div className="suggestion-confidence">
+                                                <div className="confidence-bar" style={{ width: `${slot.confidence * 100}%` }} />
+                                                <Zap size={10} />
+                                                <span>{Math.round(slot.confidence * 100)}%</span>
+                                            </div>
+                                            {selectedIndex === index && (
+                                                <div className="selected-check">
+                                                    <Check size={12} />
+                                                </div>
+                                            )}
+                                        </MotionButton>
+                                    ))}
+                                </div>
 
-                            <div className="portal-visualizer">
-                                <MiniTimeline
-                                    events={existingEvents}
-                                    suggestions={suggestions}
-                                    preferredDate={preferredDate}
-                                    onSelectSlot={handleSelectSlot}
-                                    selectedSuggestionIndex={selectedIndex}
-                                />
+                                <div className="portal-visualizer">
+                                    <MiniTimeline
+                                        events={existingEvents}
+                                        suggestions={suggestions}
+                                        preferredDate={preferredDate}
+                                        onSelectSlot={handleSelectSlot}
+                                        selectedSuggestionIndex={selectedIndex}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                </MotionDiv>
             </MotionDiv>
         </AnimatePresence>
     );
