@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { getMonthDays, isSameMonth, isToday, formatTime24 } from '../../utils/dateUtils';
+import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
@@ -15,7 +16,6 @@ const MonthView = () => {
   const now = new Date();
 
   const monthDays = getMonthDays(currentDate);
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const monthEventsCount = monthDays.reduce((total, day) => {
     return isSameMonth(day, currentDate) ? total + getEventsForDate(day).length : total;
   }, 0);

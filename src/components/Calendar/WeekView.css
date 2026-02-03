@@ -357,7 +357,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   pointer-events: auto;
   overflow: hidden;
+  overflow: hidden;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   font-size: 0.75rem;
   line-height: 1.1;
