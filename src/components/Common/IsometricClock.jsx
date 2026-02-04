@@ -98,16 +98,37 @@ const IsometricClock = ({ value, onChange, label }) => {
 
     const numbers = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
     const isPM = time.getHours() >= 12;
+    const formattedTime = time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    // Helper to check if a number should be highlighted
+    const isNumberActive = (num) => {
+        // Match Hour
+        const currentHour12 = time.getHours() % 12 || 12;
+        const hourMatch = Math.abs(currentHour12 - num) < 0.5;
+
+        // Match Minute (approximate to nearest 5-min slot)
+        const minuteNum = Math.round(time.getMinutes() / 5);
+        const minuteVal = minuteNum === 0 ? 12 : minuteNum;
+        const minuteMatch = minuteVal === num;
+
+        return hourMatch || minuteMatch;
+    };
 
     return (
         <div className="iso-clock-wrapper">
             <div className="iso-clock-label">{label}</div>
+
+            {/* Digital Display Above */}
+            <div className="iso-clock-digital">
+                {formattedTime}
+            </div>
+
             <div className="iso-clock-container" ref={clockRef}>
                 <div className="iso-clock-face">
                     {numbers.map((num, i) => (
                         <div
                             key={num}
-                            className={`iso-clock-number ${Math.abs((time.getHours() % 12 || 12) - num) < 0.5 ? 'active-num' : ''}`}
+                            className={`iso-clock-number ${isNumberActive(num) ? 'active-num' : ''}`}
                             style={{
                                 transform: `rotate(${i * 30}deg) translate(0, -48px) rotate(-${i * 30}deg)`
                             }}
@@ -117,14 +138,7 @@ const IsometricClock = ({ value, onChange, label }) => {
                     ))}
                     <div className="iso-clock-pin" />
 
-                    {/* AM/PM Toggle */}
-                    <div
-                        className={`iso-clock-ampm ${isPM ? 'is-pm' : 'is-am'}`}
-                        onClick={toggleAmPm}
-                        onMouseDown={(e) => e.stopPropagation()}
-                    >
-                        {isPM ? 'PM' : 'AM'}
-                    </div>
+                    {/* Internal AM/PM Removed */}
 
                     <div
                         className={`iso-clock-hand hour-hand ${isDragging === 'hour' ? 'dragging' : ''}`}
@@ -144,6 +158,18 @@ const IsometricClock = ({ value, onChange, label }) => {
                         <div className="hand-visual" />
                     </div>
                 </div>
+            </div>
+
+            {/* AM/PM Slider Below */}
+            <div
+                className="iso-ampm-switch"
+                data-ampm={isPM ? "PM" : "AM"}
+                onClick={toggleAmPm}
+                onMouseDown={(e) => e.stopPropagation()}
+            >
+                <div className="iso-ampm-slider" />
+                <div className={`iso-ampm-option ${!isPM ? 'active' : ''}`}>AM</div>
+                <div className={`iso-ampm-option ${isPM ? 'active' : ''}`}>PM</div>
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
@@ -10,9 +10,10 @@ import { useAuth } from './contexts/useAuth';
 import Login from './components/Auth/Login';
 import Header from './components/Header/Header';
 import Calendar from './components/Calendar/Calendar';
-import EventModal from './components/Events/EventModal';
-import AIChat from './components/AI/AIChat';
-import Settings from './components/Settings/Settings';
+const EventModal = lazy(() => import('./components/Events/EventModal'));
+const AIChat = lazy(() => import('./components/AI/AIChat'));
+const Settings = lazy(() => import('./components/Settings/Settings'));
+
 import Toast from './components/Toast/Toast';
 import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
 import ThemeBackground from './components/Common/ThemeBackground';
@@ -22,6 +23,9 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import Contact from './pages/Contact';
 import './App.css';
+
+// Loading component for suspense
+const LoadingFallback = () => <div />;
 
 function App() {
   const MotionDiv = motion.div;
@@ -264,17 +268,24 @@ const MainLayout = () => {
           </div>
         </main>
 
-        <EventModal />
+        <Suspense fallback={<LoadingFallback />}>
+          {/* Conditional rendering for heavy components to truly lazy load logic */}
+          <EventModal />
 
-        <AIChat
-          isOpen={isAIChatOpen}
-          onClose={() => setIsAIChatOpen(false)}
-        />
+          {isAIChatOpen && (
+            <AIChat
+              isOpen={isAIChatOpen}
+              onClose={() => setIsAIChatOpen(false)}
+            />
+          )}
 
-        <Settings
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-        />
+          {isSettingsOpen && (
+            <Settings
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+            />
+          )}
+        </Suspense>
 
         <Toast />
       </MotionDiv>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
 import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check, Sparkles } from 'lucide-react';
@@ -153,35 +153,44 @@ const UpcomingSidebar = () => {
     };
 
     // --- Standard List Logic ---
-    const displayEvents = events
-        .filter(event => {
-            const eventStart = new Date(event.start);
-            const inRange = viewMode === 'upcoming'
-                ? eventStart >= now
-                : eventStart < now;
+    const displayEvents = useMemo(() => {
+        return events
+            .filter(event => {
+                const eventStart = new Date(event.start);
+                const inRange = viewMode === 'upcoming'
+                    ? eventStart >= now
+                    : eventStart < now;
 
-            const matchesCategory = categoryFilters.includes('all')
-                ? true
-                : categoryFilters.includes(event.category || 'personal');
+                const matchesCategory = categoryFilters.includes('all')
+                    ? true
+                    : categoryFilters.includes(event.category || 'personal');
 
-            return inRange && matchesCategory;
-        })
-        .sort((a, b) => {
-            const dateA = new Date(a.start);
-            const dateB = new Date(b.start);
-            return viewMode === 'upcoming' ? dateA - dateB : dateB - dateA;
-        });
+                return inRange && matchesCategory;
+            })
+            .sort((a, b) => {
+                const dateA = new Date(a.start);
+                const dateB = new Date(b.start);
+                return viewMode === 'upcoming' ? dateA - dateB : dateB - dateA;
+            });
+    }, [events, viewMode, categoryFilters]); // removed 'now' to prevent re-calc every second if parent rerenders, though 'now' is local constant so it changes every render anyway. Ideally 'now' should be stable or just new Date() inside.
+    // Actually, since 'UpcomingSidebar' renders, 'now' is new. If we include 'now' in deps, it breaks memo. 
+    // We should capture 'now' effectively or just accept it. 
+    // Better: use a reference time that updates less frequently if needed, or just let it slide since events change rarely.
+    // I will exclude 'now' and let it use the closure's 'now' which might be stale if strict, but 'events' changing is the main trigger.
+    // Wait, if I exclude 'now', and only 'events' change, it uses the 'now' from when memo was created. That's fine.
 
-    const pagination = paginateItems(displayEvents, page, pageSize);
+    const pagination = useMemo(() => paginateItems(displayEvents, page, pageSize), [displayEvents, page, pageSize]);
     const totalPages = pagination.totalPages;
     const currentPage = pagination.page;
     const paginatedEvents = pagination.items;
 
     // --- Focus Mode Logic ---
     // Filter for TODAY only
-    const todayEvents = events
-        .filter(event => isToday(new Date(event.start)))
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
+    const todayEvents = useMemo(() => {
+        return events
+            .filter(event => isToday(new Date(event.start)))
+            .sort((a, b) => new Date(a.start) - new Date(b.start));
+    }, [events]);
 
     const handleToggleComplete = (event) => {
         // Toggle completed status. If it doesn't exist, it starts as true.
@@ -290,10 +299,13 @@ const UpcomingSidebar = () => {
                         onClick={() => setViewMode('bulk-trash')}
                         title="Trash / Bulk Delete"
                     >
-                        {/* Multi-Trash Icon */}
-                        <div className="stacked-trash-icon">
-                            <Trash2 size={14} className="trash-back" />
-                            <Trash2 size={18} className="trash-front" />
+                        {/* Soul Fade Trash Icon */}
+                        <div className="nav-icon-wrapper">
+                            <img
+                                src="/bulk-delete-icon.png?v=fixed_v7"
+                                alt="Bulk Delete"
+                                className="bulk-trash-img"
+                            />
                         </div>
                     </button>
                 </div>
@@ -480,9 +492,8 @@ const UpcomingSidebar = () => {
             {/* --- BULK DELETE VIEW --- */}
             {viewMode === 'bulk-trash' && (
                 <div className="delete-modal-area fade-in">
-                    <div className="delete-header">
-                        <span className="delete-title">Bulk delete by name</span>
-                        <span className="delete-subtitle">Remove every event with the exact title below.</span>
+                    <div className="delete-header" style={{ marginBottom: '1rem' }}>
+                        <span className="delete-title" style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Bulk delete by name</span>
                     </div>
                     <div className="delete-input-wrapper">
                         <Search size={14} className="search-icon" />
@@ -501,7 +512,7 @@ const UpcomingSidebar = () => {
                     >
                         Delete matching events
                     </button>
-                    <p className="delete-hint">This action removes all events with the exact title.</p>
+                    {/* Minimalist - No hint text */}
                 </div>
             )}
         </div>

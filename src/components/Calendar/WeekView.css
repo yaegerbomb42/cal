@@ -176,129 +176,82 @@
   -webkit-backdrop-filter: var(--backdrop-blur);
   backdrop-filter: var(--backdrop-blur);
   z-index: 10;
-  flex-shrink: 0;
+  padding-right: 8px;
+  /* Standard scrollbar width */
 }
 
-.header-cell {
-  padding: 0.5rem 0.25rem;
-  text-align: center;
-  display: flex;
-  flex-direction: Column;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.header-date-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.header-cell.today .day-num {
-  background: var(--accent);
-  color: white;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
-}
-
-.day-name {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-.day-num {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--text-primary);
-  transition: all 0.2s;
-}
-
-.quick-add-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.05);
-  /* Slightly more visible by default */
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 1;
-  /* Always visible */
-  transform: translateY(0);
-  /* Always in place */
-  transition: all 0.2s ease;
-}
-
-/* Hover effect for the button itself, not dependent on parent hover */
-.quick-add-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-  transform: scale(1.1);
-}
-
+/* Main Grid - Ensure Time Column is Left */
+/* Main Grid - Fixed Time Column, Fluid Days */
 .week-grid {
   display: grid;
   grid-template-columns: 70px 1fr;
-  border: 1px solid var(--glass-border);
-  border-top: none;
-  border-radius: 0 0 16px 16px;
-  background: var(--glass-bg);
+  /* Time Column fixed at 70px, Days take rest */
   flex: 1;
-  min-height: 0;
-  height: auto;
-  /* Fill container */
   overflow-y: auto;
-  /* Enable vertical scolling */
+  overflow-x: hidden;
   position: relative;
+  /* Custom Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.week-time-column {
-  display: grid;
-  grid-template-rows: repeat(24, var(--hour-height));
-  border-right: 1px solid var(--glass-border);
-  background: rgba(15, 23, 42, 0.35);
+.week-grid::-webkit-scrollbar {
+  width: 8px;
 }
 
-.week-time-slot {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 0.75rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.week-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.week-grid::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 
 .week-days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  position: relative;
+  /* 7 days equal width */
+  width: 100%;
+}
+
+.week-time-slot {
+  display: flex;
+  align-items: flex-start;
+  /* Align numbers to top */
+  justify-content: flex-end;
+  padding: 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* Subtler border */
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  /* Divider */
+  height: var(--hour-height);
+  padding-top: 6px;
+  /* Offset text slightly */
 }
 
 .week-day-column {
   position: relative;
   display: grid;
   grid-template-rows: repeat(24, var(--hour-height));
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
   overflow: hidden;
-  /* Prevent event overlap spill */
+}
+
+.week-day-column:last-child {
+  border-right: none;
 }
 
 .week-day-column.today {
-  background: rgba(99, 102, 241, 0.03);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.week-hour-cell {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* Re-add horizontal lines */
+  box-sizing: border-box;
 }
 
 /* Current Time Indicator */
@@ -307,8 +260,6 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: transparent;
-  /* Line itself handled below */
   pointer-events: none;
   z-index: 20;
 }

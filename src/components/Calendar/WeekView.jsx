@@ -165,7 +165,6 @@ const WeekView = () => {
           <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')}>
             <div className="header-date-group">
               <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-              <span className="day-num">{day.getDate()}</span>
             </div>
             <button
               className="quick-add-btn"

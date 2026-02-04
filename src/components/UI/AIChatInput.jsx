@@ -42,7 +42,7 @@ const AIChatInput = ({
                     type="text"
                     value={inputInternal}
                     onChange={(e) => setInputInternal(e.target.value)}
-                    placeholder={placeholder}
+                    placeholder="Hey I'm Cal, ready to schedule or chat."
                     className="ai-text-input"
                     disabled={disabled}
                 />

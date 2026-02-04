@@ -135,193 +135,81 @@
   height: 100%;
   /* Ensure it fills parent */
   flex: 1;
-  padding-bottom: 60px;
-  /* Add safety padding for bottom scroll */
-  --hour-height: 48px;
-  /* Increased for better visibility */
+  padding-bottom: 20px;
+  /* Add safety padding */
+  --hour-height: 40px;
+  /* Reduced from 48px to fit more in viewport */
 }
 
+/* Day View Fixes */
 .day-time-column {
   display: grid;
   grid-template-rows: repeat(24, var(--hour-height));
   border-right: 1px solid var(--glass-border);
   background: rgba(15, 23, 42, 0.35);
+  min-height: max-content;
 }
 
 .day-time-slot {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-end;
-  padding: 0 0.75rem;
+  padding: 6px 0.75rem 0;
   font-size: 0.75rem;
   color: var(--text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* Horizontal line */
 }
 
 .day-grid-body {
   position: relative;
   display: grid;
   grid-template-rows: repeat(24, var(--hour-height));
+  min-height: max-content;
 }
 
 .day-hour-cell {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  /* Horizontal line */
+  width: 100%;
 }
 
-.day-hour-cell:hover {
-  background: rgba(99, 102, 241, 0.08);
-}
-
-.day-hour-cell.drop-target {
-  background: rgba(99, 102, 241, 0.12);
-  border: 2px dashed var(--accent);
-  border-radius: 4px;
-}
-
-.day-events-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  display: grid;
-  grid-template-columns: repeat(var(--overlap-count, 1), 1fr);
-  grid-auto-rows: 1px;
-  column-gap: 6px;
-}
-
-.day-event-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  color: var(--text-primary);
-  text-align: left;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
-  transition: transform 0.2s ease, background 0.2s ease;
-  overflow: hidden;
-}
-
-.day-event-card:hover,
-.day-event-card:focus-visible {
-  transform: translateY(-1px);
-}
-
-.day-event-card.past {
-  opacity: 0.75;
-  filter: grayscale(70%);
-}
-
-.day-event-card .event-time {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.day-event-card .event-duration {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-.day-event-card .event-snippet {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.day-empty-state {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 0.35rem;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.day-empty-state .empty-title {
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-@media (max-width: 900px) {
-  .day-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .day-stats {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 600px) {
-  .day-event-card .event-snippet {
-    white-space: normal;
-  }
-
-  .day-grid {
-    grid-template-columns: 55px 1fr;
-  }
-}
-
+/* Current Time Indicator */
 .day-current-time {
   position: absolute;
   left: 0;
   right: 0;
-  height: 0;
+  height: 2px;
   pointer-events: none;
-  z-index: 20;
+  z-index: 50;
 }
 
 .day-current-time .current-time-line {
-  height: 1px;
-  /* Thinner line */
-  background: #facc15;
-  /* Yellow */
-  box-shadow: none;
-  opacity: 0.8;
+  height: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  width: 100%;
 }
 
-.day-current-time .current-time-circle {
-  display: none;
-}
-
+/* Label on the Left Side (Time Column Area) */
 .day-current-time .current-time-label {
   position: absolute;
   left: -65px;
-  top: -9px;
-  background: transparent;
-  color: #facc15;
-  /* Yellow text */
-  border: none;
+  /* Push into time column */
+  top: -10px;
+  background: #ef4444;
+  color: white;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
   white-space: nowrap;
-  z-index: 999;
-  box-shadow: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+
+/* Week View Fixes from DayView.css context? No these are in separate files. 
+   Wait, I am editing DayView.css. */
+
 
 @keyframes pulse-dot {
   0% {

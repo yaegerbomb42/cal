@@ -20,7 +20,7 @@ import { geminiService } from '../../services/geminiService';
 const padTime = (value) => String(value).padStart(2, '0');
 
 const toLocalInputValue = (date) => {
-  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getMinutes())}`;
+  return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
 };
 
 const roundToNearestFiveMinutes = (date) => {
@@ -214,7 +214,7 @@ const EventModal = () => {
     const end = new Date(start.getTime() + minutes * 60 * 1000);
     setFormData(prev => ({
       ...prev,
-      end: end.toISOString().slice(0, 16)
+      end: toLocalInputValue(end)
     }));
   };
 
@@ -273,129 +273,140 @@ const EventModal = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           onClick={(e) => e.stopPropagation()}
-          className="event-modal glass-card single-screen"
+          className={`event-modal glass-card single-screen ${isSmartScheduleOpen ? 'expanded' : ''}`}
         >
           {/* Header */}
           <div className="modal-header compact">
             <h3>{isEditing ? 'Edit' : 'New Event'}</h3>
             <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-              <button type="button" onClick={() => setIsSmartScheduleOpen(!isSmartScheduleOpen)} className="icon-btn" title="AI Schedule">
-                <Sparkles size={16} className="text-accent" />
+              <button
+                type="button"
+                onClick={() => setIsSmartScheduleOpen(!isSmartScheduleOpen)}
+                className={`icon-btn ${isSmartScheduleOpen ? 'active' : ''}`}
+                title="AI Schedule"
+                style={{ color: isSmartScheduleOpen ? 'var(--accent)' : 'inherit' }}
+              >
+                <Sparkles size={16} />
               </button>
-              <SmartSchedulePortal
-                isOpen={isSmartScheduleOpen}
-                onClose={() => setIsSmartScheduleOpen(false)}
-                onSelectSlot={(start, end) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    start: toLocalInputValue(start),
-                    end: toLocalInputValue(end)
-                  }));
-                }}
-                eventTitle={formData.title}
-                existingEvents={events}
-                preferredDate={formData.start ? new Date(formData.start) : new Date()}
-              />
+
               <button onClick={closeEventModal} className="close-btn"><X size={18} /></button>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="modal-content-grid">
+          <div className="modal-body-wrapper" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <form onSubmit={handleSubmit} className="modal-content-grid" style={{ flex: 1 }}>
 
-            {/* Left Column: Details */}
-            <div className="modal-col left-col">
-              <input
-                id="title"
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-                className="title-input"
-                placeholder="Event Title"
-                autoFocus
-              />
+              {/* Left Column: Details */}
+              <div className="modal-col left-col">
+                <input
+                  id="title"
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  className="title-input"
+                  placeholder="Event Title"
+                  autoFocus
+                />
 
-              <div className="form-row">
+                <div className="form-row">
+                  <div className="form-group flex-1">
+                    <label><Tag size={12} /> Category</label>
+                    <CustomSelect
+                      options={categories}
+                      value={formData.category}
+                      onChange={(val) => {
+                        const category = val;
+                        const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
+                        handleChange('category', category);
+                        handleChange('color', color);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <span className="flex-center gap-2"><MapPin size={12} /> Location</span>
+                    {formData.location && <a href={`https://www.google.com/maps?q=${formData.location}`} target="_blank" rel="noreferrer" className="link-icon"><ExternalLink size={10} /></a>}
+                  </label>
+                  <input value={formData.location} onChange={(e) => handleChange('location', e.target.value)} className="input compact" placeholder="Add location..." />
+                </div>
+
                 <div className="form-group flex-1">
-                  <label><Tag size={12} /> Category</label>
-                  <CustomSelect
-                    options={categories}
-                    value={formData.category}
-                    onChange={(val) => {
-                      const category = val;
-                      const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
-                      handleChange('category', category);
-                      handleChange('color', color);
-                    }}
+                  <label><MessageSquare size={12} /> Description</label>
+                  <textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} className="textarea compact" placeholder="Notes..." />
+                </div>
+
+                <div className="recurrence-compact">
+                  <label><Repeat size={12} /> Repeat</label>
+                  <select value={formData.recurring?.type} onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} className="select compact">
+                    {Object.values(RECURRENCE_TYPES).map(t => <option key={t} value={t}>{formatRecurrenceText({ type: t })}</option>)}
+                  </select>
+                </div>
+
+                {validationErrors.length > 0 && (
+                  <div className="validation-errors" role="alert" style={{ marginTop: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
+                    {validationErrors.map((error, idx) => (
+                      <div key={idx} className="error-message" style={{ color: '#fca5a5', fontSize: '0.8rem' }}>{error}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Time & Clocks */}
+              <div className="modal-col right-col">
+                <div className="date-pickers-row">
+                  <SmartDateInput
+                    value={formData.start ? new Date(formData.start) : new Date()}
+                    onChange={(date) => updateDateTime('start', 'date', date)}
+                    compact
+                  />
+                  <span className="arrow-sep">→</span>
+                  <SmartDateInput
+                    value={formData.end ? new Date(formData.end) : new Date()}
+                    onChange={(date) => updateDateTime('end', 'date', date)}
+                    compact
                   />
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label>
-                  <span className="flex-center gap-2"><MapPin size={12} /> Location</span>
-                  {formData.location && <a href={`https://www.google.com/maps?q=${formData.location}`} target="_blank" rel="noreferrer" className="link-icon"><ExternalLink size={10} /></a>}
-                </label>
-                <input value={formData.location} onChange={(e) => handleChange('location', e.target.value)} className="input compact" placeholder="Add location..." />
-              </div>
+                <div className="iso-clocks-container">
+                  <IsometricClock
+                    label="Start Time"
+                    value={formData.start ? new Date(formData.start) : new Date()}
+                    onChange={(d) => updateDateTime('start', 'time', d)}
+                  />
+                  <IsometricClock
+                    label="End Time"
+                    value={formData.end ? new Date(formData.end) : new Date()}
+                    onChange={(d) => updateDateTime('end', 'time', d)}
+                  />
+                </div>
 
-              <div className="form-group flex-1">
-                <label><MessageSquare size={12} /> Description</label>
-                <textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} className="textarea compact" placeholder="Notes..." />
-              </div>
-
-              <div className="recurrence-compact">
-                <label><Repeat size={12} /> Repeat</label>
-                <select value={formData.recurring?.type} onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} className="select compact">
-                  {Object.values(RECURRENCE_TYPES).map(t => <option key={t} value={t}>{formatRecurrenceText({ type: t })}</option>)}
-                </select>
-              </div>
-
-              {validationErrors.length > 0 && (
-                <div className="validation-errors" role="alert" style={{ marginTop: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
-                  {validationErrors.map((error, idx) => (
-                    <div key={idx} className="error-message" style={{ color: '#fca5a5', fontSize: '0.8rem' }}>{error}</div>
+                <div className="duration-pills">
+                  {[15, 30, 60, 90].map(m => (
+                    <button key={m} type="button" onClick={() => handleDurationChange(m)} className="pill-btn">+{m}m</button>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Right Column: Time & Clocks */}
-            <div className="modal-col right-col">
-              <div className="date-pickers-row">
-                <SmartDateInput
-                  value={formData.start ? new Date(formData.start) : new Date()}
-                  onChange={(date) => updateDateTime('start', 'date', date)}
-                  compact
-                />
-                <span className="arrow-sep">→</span>
-                <SmartDateInput
-                  value={formData.end ? new Date(formData.end) : new Date()}
-                  onChange={(date) => updateDateTime('end', 'date', date)}
-                  compact
-                />
               </div>
 
-              <div className="iso-clocks-container">
-                <IsometricClock
-                  label="Start Time"
-                  value={formData.start ? new Date(formData.start) : new Date()}
-                  onChange={(d) => updateDateTime('start', 'time', d)}
-                />
-                <IsometricClock
-                  label="End Time"
-                  value={formData.end ? new Date(formData.end) : new Date()}
-                  onChange={(d) => updateDateTime('end', 'time', d)}
-                />
-              </div>
+            </form>
 
-              <div className="duration-pills">
-                {[15, 30, 60, 90].map(m => (
-                  <button key={m} type="button" onClick={() => handleDurationChange(m)} className="pill-btn">+{m}m</button>
-                ))}
-              </div>
-            </div>
-
-          </form>
+            {/* Smart Schedule Panel */}
+            <SmartSchedulePortal
+              isOpen={isSmartScheduleOpen}
+              onClose={() => setIsSmartScheduleOpen(false)}
+              onSelectSlot={(start, end) => {
+                setFormData(prev => ({
+                  ...prev,
+                  start: toLocalInputValue(start),
+                  end: toLocalInputValue(end)
+                }));
+              }}
+              eventTitle={formData.title}
+              existingEvents={events}
+              preferredDate={formData.start ? new Date(formData.start) : new Date()}
+            />
+          </div>
 
           {/* Footer Actions */}
           <div className="modal-footer">

@@ -56,6 +56,12 @@ export const localBrainService = {
     async initialize(progressCallback) {
         if (this.isLoaded) return;
 
+        // Respect user preference - do not load if not enabled
+        if (!this.preferLocal) {
+            logger.info('Local Brain: Skipped initialization (user preference is OFF)');
+            return;
+        }
+
         // 1. Try Chrome Built-in AI (window.ai) - Zero Download
         // Note: As of early 2025, usage is `await window.ai.languageModel.create()`
         if (window.ai && window.ai.languageModel) {

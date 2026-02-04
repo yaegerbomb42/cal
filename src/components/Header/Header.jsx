@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, ChevronLeft, ChevronRight, MousePointerClick, Download } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
@@ -11,25 +11,8 @@ const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
   const MotionHeader = motion.header;
   const MotionButton = motion.button;
 
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  /* Installation logic removed per user request */
 
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
-  };
 
   const viewButtons = [
     { key: CALENDAR_VIEWS.DAY, label: 'Day' },
@@ -71,9 +54,9 @@ const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
               title="Return to Today"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              <img src="/logo.png" alt="CalAI" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
+              <img src="/logo.png?v=fixed" alt="CalAI" style={{ width: '36px', height: '36px', borderRadius: '8px' }} />
               <div className="logo-text">
-                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px' }}>CalAI</h1>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '-0.5px' }}>CalAI</h1>
               </div>
             </MotionButton>
           </div>
@@ -90,31 +73,6 @@ const Header = ({ onOpenSettings, isZoomNavEnabled, onToggleZoomNav }) => {
           {/* Right: View Selector & Settings */}
           <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {/* Download/Install Button */}
-            {deferredPrompt && (
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleInstallClick}
-                className="btn glass-btn"
-                title="Download Standalone App"
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'rgba(255, 59, 48, 0.15)',
-                  border: '1px solid rgba(255, 59, 48, 0.3)',
-                  color: '#FF3B30',
-                  fontSize: '0.85rem',
-                  fontWeight: '600'
-                }}
-              >
-                <Download size={16} />
-                <span>Download App</span>
-              </MotionButton>
-            )}
-
             {/* Zoom Nav Toggle */}
             <MotionButton
               whileHover={{ scale: 1.05 }}

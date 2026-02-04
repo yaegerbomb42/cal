@@ -134,41 +134,70 @@
 }
 
 /* AM/PM Toggle on Face */
-.iso-clock-ampm {
-    position: absolute;
-    bottom: 25%;
-    font-size: 0.75rem;
-    font-weight: 800;
-    color: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    padding: 2px 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    transition: all 0.2s;
-    z-index: 15;
-}
-
-.iso-clock-ampm:hover {
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.iso-clock-ampm.is-pm {
-    color: #f472b6;
-    /* Pinkish for PM */
-    text-shadow: 0 0 8px rgba(244, 114, 182, 0.6);
-    border-color: rgba(244, 114, 182, 0.4);
-}
-
-.iso-clock-ampm.is-am {
-    color: #00ffff;
-    /* Cyan for AM */
-    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
-    border-color: rgba(0, 255, 255, 0.4);
-}
-
-/* Digital Display (Optional/Removed for cleaner face if needed, keeping for utility) */
+/* Digital Time Display (Above Clock) */
 .iso-clock-digital {
-    display: none;
-    /* Hidden requested "simple numbered" */
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    margin-bottom: 0.5rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* AM/PM Switch (Slider Style Below Clock) */
+.iso-ampm-switch {
+    display: flex;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    padding: 3px;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    width: 80px;
+    height: 32px;
+}
+
+.iso-ampm-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    z-index: 2;
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s;
+}
+
+.iso-ampm-option.active {
+    color: #000;
+    /* text-shadow: 0 0 5px rgba(255,255,255,0.5); */
+}
+
+/* Sliding Pill */
+.iso-ampm-slider {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    width: calc(50% - 3px);
+    background: #00ffff;
+    border-radius: 99px;
+    transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+}
+
+.iso-ampm-switch[data-ampm="AM"] .iso-ampm-slider {
+    left: 3px;
+}
+
+.iso-ampm-switch[data-ampm="PM"] .iso-ampm-slider {
+    left: calc(50%);
+    background: #f472b6;
+    /* Pink for PM */
+    box-shadow: 0 0 10px rgba(244, 114, 182, 0.6);
 }
