@@ -61,17 +61,33 @@ const MainLayout = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isZoomNavEnabled, setIsZoomNavEnabled] = useState(false); // Zoom Nav Toggle
+  const [initialChatMessage, setInitialChatMessage] = useState(null);
   const MotionDiv = motion.div;
 
   // Sidebar Resize Logic (Percentage Based)
   // Sidebar Resize Logic (Direct DOM Manipulation for Performance)
-  const [sidebarPercent, setSidebarPercent] = useState(30);
+  const [sidebarPercent, setSidebarPercent] = useState(20);
   const isResizingRef = useRef(false);
 
   // ... (keeping existing resize logic refs)
   const sidebarRef = useRef(null);
   const calendarRef = useRef(null);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handlePing = (e) => {
+      if (e.detail?.text) {
+        // Fix: Only set initialChatMessage if chat is NOT already open.
+        // If it IS open, AIChat.jsx listener will handle it directly.
+        if (!isAIChatOpen) {
+          setInitialChatMessage(e.detail.text);
+          setIsAIChatOpen(true);
+        }
+      }
+    };
+    window.addEventListener('calai-ping', handlePing);
+    return () => window.removeEventListener('calai-ping', handlePing);
+  }, []);
 
   const startResizing = useCallback((e) => {
     e.preventDefault();
@@ -272,10 +288,14 @@ const MainLayout = () => {
           {/* Conditional rendering for heavy components to truly lazy load logic */}
           <EventModal />
 
+          {/* ... existing code ... */}
+
           {isAIChatOpen && (
             <AIChat
               isOpen={isAIChatOpen}
               onClose={() => setIsAIChatOpen(false)}
+              initialMessage={initialChatMessage}
+              onClearInitialMessage={() => setInitialChatMessage(null)}
             />
           )}
 

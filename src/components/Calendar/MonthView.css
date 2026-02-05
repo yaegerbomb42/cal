@@ -29,23 +29,30 @@
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--glass-border);
-  border-bottom: 1px solid var(--glass-border);
+  /* Distinct borders for each day */
+  /* High-Contrast borders per user request */
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  /* Ensure borders don't break layout */
 }
 
 .month-day:hover {
   background: var(--glass-bg);
   transform: none;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .month-day.other-month {
   opacity: 0.4;
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .month-day.today {
-  background: var(--accent-glow);
+  background: rgba(var(--accent-rgb), 0.1);
   border: 2px solid var(--accent);
+  box-shadow: inset 0 0 20px rgba(var(--accent-rgb), 0.2);
+  z-index: 2;
 }
 
 .month-day.today .day-number {
@@ -197,10 +204,11 @@
 
 .event-title {
   display: block;
+  display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 

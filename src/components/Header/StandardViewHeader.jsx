@@ -52,7 +52,11 @@ const StandardViewHeader = ({
             <div className="header-section right">
                 {rightContent}
                 {onAddEvent && (
-                    <button className="btn btn-primary header-add-btn" onClick={onAddEvent}>
+                    <button
+                        className="btn btn-primary header-add-btn"
+                        onClick={onAddEvent}
+                        title="Create New Event"
+                    >
                         <Plus size={16} />
                         <span>{addEventLabel}</span>
                     </button>

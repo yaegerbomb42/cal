@@ -60,6 +60,64 @@ export const generateRecurringEvents = (baseEvent, recurrence, count = 10) => {
           break;
         }
 
+      case RECURRENCE_TYPES.CUSTOM:
+        {
+          const interval = recurrence.interval || 1;
+          const freq = recurrence.frequency || 'weekly';
+          const daysOfWeek = recurrence.daysOfWeek || [];
+
+          if (freq === 'daily') {
+            newStart.setDate(newStart.getDate() + (i * interval));
+            newEnd.setDate(newEnd.getDate() + (i * interval));
+          } else if (freq === 'weekly') {
+            if (daysOfWeek.length > 0) {
+              // Find the next valid day of week
+              let occurrences = 0;
+              let currentDate = new Date(startDate);
+              currentDate.setDate(currentDate.getDate() + 1); // Start from tomorrow
+
+              while (occurrences < i) {
+                if (daysOfWeek.includes(currentDate.getDay())) {
+                  occurrences++;
+                  if (occurrences === i) break;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+
+                // Check if we crossed a week boundary with interval > 1
+                const weeksDiff = Math.floor((currentDate - startDate) / (7 * 24 * 60 * 60 * 1000));
+                if (weeksDiff > 0 && weeksDiff % interval !== 0) {
+                  // Skip to next valid week
+                  const daysToSkip = (interval - (weeksDiff % interval)) * 7;
+                  currentDate.setDate(currentDate.getDate() + daysToSkip);
+                }
+              }
+
+              newStart.setTime(currentDate.getTime());
+              newStart.setHours(startDate.getHours(), startDate.getMinutes(), 0, 0);
+              newEnd.setTime(newStart.getTime() + duration);
+            } else {
+              // No specific days, just every N weeks
+              newStart.setDate(newStart.getDate() + (i * 7 * interval));
+              newEnd.setDate(newEnd.getDate() + (i * 7 * interval));
+            }
+          } else if (freq === 'monthly') {
+            newStart.setMonth(newStart.getMonth() + (i * interval));
+            newEnd.setMonth(newEnd.getMonth() + (i * interval));
+          } else if (freq === 'yearly') {
+            newStart.setFullYear(newStart.getFullYear() + (i * interval));
+            newEnd.setFullYear(newEnd.getFullYear() + (i * interval));
+          }
+
+          // Check end conditions
+          if (recurrence.endType === 'count' && i >= recurrence.endCount) {
+            return events;
+          }
+          if (recurrence.endType === 'date' && newStart > new Date(recurrence.endDate)) {
+            return events;
+          }
+          break;
+        }
+
       default:
         return events;
     }
@@ -96,6 +154,27 @@ export const formatRecurrenceText = (recurrence) => {
       return 'Yearly';
     case RECURRENCE_TYPES.WEEKDAYS:
       return 'Weekdays';
+    case RECURRENCE_TYPES.CUSTOM:
+      {
+        const interval = recurrence.interval || 1;
+        const freq = recurrence.frequency || 'weekly';
+        const days = recurrence.daysOfWeek || [];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        let text = `Every ${interval > 1 ? interval + ' ' : ''}${freq.replace('ly', '')}${interval > 1 ? 's' : ''}`;
+
+        if (freq === 'weekly' && days.length > 0) {
+          text += ` on ${days.map(d => dayNames[d]).join(', ')}`;
+        }
+
+        if (recurrence.endType === 'count') {
+          text += ` (${recurrence.endCount}x)`;
+        } else if (recurrence.endType === 'date' && recurrence.endDate) {
+          text += ` until ${new Date(recurrence.endDate).toLocaleDateString()}`;
+        }
+
+        return text;
+      }
     default:
       return 'Custom';
   }

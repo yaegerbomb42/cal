@@ -2,8 +2,23 @@ import { logger } from '../utils/logger';
 
 class NotificationService {
   constructor() {
-    this.ntfyTopic = 'cal';
+    this.loadTopic(); // Load custom topic from localStorage
+  }
+
+  loadTopic() {
+    const stored = localStorage.getItem('calai-ntfy-room');
+    if (stored) {
+      this.ntfyTopic = stored;
+    } else {
+      this.ntfyTopic = 'cal'; // Default topic
+    }
     this.ntfyUrl = `https://ntfy.sh/${this.ntfyTopic}`;
+  }
+
+  setTopic(topic) {
+    this.ntfyTopic = topic;
+    this.ntfyUrl = `https://ntfy.sh/${this.ntfyTopic}`;
+    localStorage.setItem('calai-ntfy-room', topic);
   }
 
   async sendPhoneNotification(title, message, priority = 'default') {
@@ -11,6 +26,7 @@ class NotificationService {
       const response = await fetch(this.ntfyUrl, {
         method: 'POST',
         headers: {
+          'Content-Type': 'text/plain',
           'Title': title,
           'Priority': priority,
           'Tags': 'calendar,event'
@@ -19,12 +35,14 @@ class NotificationService {
       });
 
       if (!response.ok) {
-        throw new Error(`Notification failed: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Notification failed: ${response.statusText} - ${errorText}`);
       }
 
+      logger.info('Phone notification sent successfully', { title });
       return true;
     } catch (error) {
-      logger.error('Error sending phone notification', { error });
+      logger.error('Error sending phone notification', { error: error.message });
       return false;
     }
   }
@@ -33,7 +51,7 @@ class NotificationService {
     const title = `📅 New Event: ${event.title}`;
     const startDate = new Date(event.start);
     const endDate = new Date(event.end);
-    
+
     const message = `${event.description || 'No description'}\n\n` +
       `⏰ ${startDate.toLocaleString()} - ${endDate.toLocaleString()}\n` +
       (event.location ? `📍 ${event.location}\n` : '') +
@@ -45,7 +63,7 @@ class NotificationService {
   async sendEventReminder(event, minutesBefore = 15) {
     const title = `⏰ Reminder: ${event.title}`;
     const startDate = new Date(event.start);
-    
+
     const message = `Your event "${event.title}" starts in ${minutesBefore} minutes!\n\n` +
       `⏰ ${startDate.toLocaleString()}\n` +
       (event.location ? `📍 ${event.location}\n` : '');

@@ -1,20 +1,17 @@
 import { motion } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
-import { format, getDayOfYear, setDayOfYear } from 'date-fns';
+import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor, formatDuration } from '../../utils/helpers';
 import {
-  formatFullDate,
   formatTime,
   getDayHours,
   getEventPosition,
-  getRelativeDayLabel,
   sortEventsByStart,
-  isToday,
   getCurrentTimePosition
 } from '../../utils/dateUtils';
-import { Clock, Plus } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import AIChatInput from '../UI/AIChatInput';
@@ -49,7 +46,7 @@ const DayView = () => {
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
   const dayHours = getDayHours();
-  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: false });
+  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
   const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
 
   const [currentTick, setCurrentTick] = useState(Date.now());
@@ -61,8 +58,8 @@ const DayView = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const showCurrentTime = isToday(currentDate);
-  const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+  // Always show current time bar regardless of which day is displayed
+  const currentTimePosition = getCurrentTimePosition(pixelsPerHour);
 
   const handleAddEvent = () => {
     const startTime = new Date(currentDate);
@@ -116,7 +113,8 @@ const DayView = () => {
       <StandardViewHeader
         onAIChatSubmit={({ text, files }) => {
           if (text) {
-            window.dispatchEvent(new CustomEvent('calai-navigate', { detail: { view: 'day', query: text } }));
+            window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+            window.dispatchEvent(new CustomEvent('calai-open'));
           }
           if (files && files.length > 0) {
             window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
@@ -124,13 +122,57 @@ const DayView = () => {
           }
         }}
         centerContent={
-          <div className="day-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="day-name" style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{getRelativeDayLabel(currentDate)}</div>
-            <div className="day-date" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{formatFullDate(currentDate)}</div>
+          <div className="day-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <select
+                value={currentDate.getDate()}
+                onChange={(e) => {
+                  const newDate = new Date(currentDate);
+                  newDate.setDate(parseInt(e.target.value));
+                  setCurrentDate(newDate);
+                }}
+                className="view-select-dropdown"
+                style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
+              >
+                {[...Array(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate())].map((_, i) => {
+                  const dayNum = i + 1;
+                  return <option key={dayNum} value={dayNum}>{dayNum}</option>;
+                })}
+              </select>
+              <select
+                value={currentDate.getMonth()}
+                onChange={(e) => {
+                  const newDate = new Date(currentDate);
+                  newDate.setMonth(parseInt(e.target.value));
+                  setCurrentDate(newDate);
+                }}
+                className="view-select-dropdown"
+                style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
+              >
+                {[...Array(12)].map((_, i) => (
+                  <option key={i} value={i}>{format(new Date(currentDate.getFullYear(), i, 1), 'MMM')}</option>
+                ))}
+              </select>
+              <select
+                value={currentDate.getFullYear()}
+                onChange={(e) => {
+                  const newDate = new Date(currentDate);
+                  newDate.setFullYear(parseInt(e.target.value));
+                  setCurrentDate(newDate);
+                }}
+                className="view-select-dropdown"
+                style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
+              >
+                {[...Array(10)].map((_, i) => {
+                  const year = new Date().getFullYear() - 2 + i;
+                  return <option key={year} value={year}>{year}</option>;
+                })}
+              </select>
+            </div>
           </div>
         }
         rightContent={
-          <span className="day-stat-pill" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          <span className="day-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
             {dayEvents.length} events
           </span>
         }
@@ -212,7 +254,7 @@ const DayView = () => {
             })}
           </div>
 
-          {showCurrentTime && currentTimePosition !== null && (
+          {currentTimePosition !== null && (
             <div className="day-current-time" style={{ top: `${currentTimePosition}px` }}>
               <div className="current-time-line"></div>
 

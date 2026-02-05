@@ -1,0 +1,72 @@
+.day-hover-panel {
+    position: absolute;
+    z-index: 100;
+    min-width: 180px;
+    max-width: 260px;
+    background: var(--bg-elevated, #1e1e2e);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    padding: 8px 10px;
+    pointer-events: none;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.day-hover-panel.flip-above {
+    transform-origin: bottom center;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hover-panel-header {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.hover-panel-events {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hover-event-item {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 0.75rem;
+}
+
+.hover-event-time {
+    color: var(--accent, #6366f1);
+    font-weight: 500;
+    white-space: nowrap;
+    min-width: 70px;
+}
+
+.hover-event-title {
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.hover-more {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 2px;
+}

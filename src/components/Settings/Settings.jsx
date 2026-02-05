@@ -610,31 +610,35 @@ const Settings = ({ isOpen, onClose }) => {
         <div className="personality-config" style={{ marginTop: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
           <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ASSISTANT PERSONALITY</label>
           <div className="personality-selector" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-            {['professional', 'friendly', 'surfer', 'sassy'].map((p) => (
+            {[
+              { id: 'professional', label: 'Professional' },
+              { id: 'your-bff', label: 'Your BFF' },
+              { id: 'creative', label: 'Creative' },
+              { id: 'spicy', label: 'Spicy' }
+            ].map((p) => (
               <button
-                key={p}
-                className={cn('personality-btn', aiPersonality === p && 'active')}
+                key={p.id}
+                className={cn('personality-btn', aiPersonality === p.id && 'active')}
                 style={{
                   padding: '0.5rem',
                   borderRadius: '8px',
-                  background: aiPersonality === p ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                  background: aiPersonality === p.id ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
                   border: '1px solid var(--glass-border)',
-                  color: aiPersonality === p ? '#fff' : 'var(--text-secondary)',
+                  color: aiPersonality === p.id ? '#fff' : 'var(--text-secondary)',
                   cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  textTransform: 'capitalize'
+                  fontSize: '0.85rem'
                 }}
-                onClick={() => setAiPersonality(p)}
+                onClick={() => setAiPersonality(p.id)}
               >
-                {p}
+                {p.label}
               </button>
             ))}
           </div>
           <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            {aiPersonality === 'professional' && "Concise, helpful, and standard."}
-            {aiPersonality === 'friendly' && "Warm, approachable, uses emojis 😊"}
-            {aiPersonality === 'surfer' && "Chill vibes, uses slang like 'dude' 🤙"}
-            {aiPersonality === 'sassy' && "Witty, sarcastic, keeps it real 💅"}
+            {aiPersonality === 'professional' && "Straight to the point. High logic. Talks like everything is a business meeting."}
+            {aiPersonality === 'your-bff' && "Super friendly and gossip-like. 'Ooo I love that place, so exciting!' 💕"}
+            {aiPersonality === 'creative' && "Socrates meets Carl Marx meets Chris Rock. Jokes and connections everywhere. 🎭"}
+            {aiPersonality === 'spicy' && "Makes everything sexual. Late night bar? Trying to get lucky? 😏🔥"}
           </div>
         </div>
       </div>

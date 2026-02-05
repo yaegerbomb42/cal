@@ -8,7 +8,6 @@ import { isToday } from 'date-fns';
 import './UpcomingSidebar.css';
 
 import { firebaseService } from '../../services/firebaseService';
-import { geminiService } from '../../services/geminiService';
 import { useAuth } from '../../contexts/useAuth';
 
 const CustomMultiSelect = ({ options, selectedValues, onChange }) => {
@@ -311,7 +310,9 @@ const UpcomingSidebar = () => {
                 </div>
 
                 {viewMode !== 'bulk-trash' && viewMode !== 'focus' && (
-                    <span className="event-count">{displayEvents.length} events</span>
+                    <span className="event-count" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
+                        {displayEvents.length} events
+                    </span>
                 )}
             </div>
 

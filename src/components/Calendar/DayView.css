@@ -129,15 +129,15 @@
   display: grid;
   grid-template-columns: 70px 1fr;
   border-radius: 16px;
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
   min-height: 0;
   height: 100%;
   /* Ensure it fills parent */
   flex: 1;
-  padding-bottom: 20px;
+  padding-bottom: 0;
   /* Add safety padding */
-  --hour-height: 40px;
+  --hour-height: auto;
   /* Reduced from 48px to fit more in viewport */
 }
 

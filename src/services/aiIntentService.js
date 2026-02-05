@@ -13,7 +13,12 @@ const EVENT_CREATE_KEYWORDS = [
   'meeting',
   'call',
   'appointment',
-  'reserve'
+  'reserve',
+  'every',
+  'recurring',
+  'daily',
+  'weekly',
+  'monthly'
 ];
 
 const EVENT_QUERY_KEYWORDS = [

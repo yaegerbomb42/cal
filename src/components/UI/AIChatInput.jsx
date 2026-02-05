@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
-import { Sparkles, Send, ImagePlus, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Send, ImagePlus, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import CalCharacter from '../AI/CalCharacter';
 import './AIChatInput.css';
 
 const AIChatInput = ({
     onSubmit,
-    placeholder = "Chat with Cal...",
     disabled = false,
     compact = false
 }) => {
@@ -36,13 +36,15 @@ const AIChatInput = ({
     return (
         <form onSubmit={handleSubmit} className={`ai-chat-input-wrapper ${compact ? 'compact' : ''}`}>
             <div className="ai-input-container glass-card">
-                <Sparkles size={16} className="ai-sparkle-icon" />
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
+                    <CalCharacter size="mini" />
+                </div>
 
                 <input
                     type="text"
                     value={inputInternal}
                     onChange={(e) => setInputInternal(e.target.value)}
-                    placeholder="Hey I'm Cal, ready to schedule or chat."
+                    placeholder="Ask Cal anything..."
                     className="ai-text-input"
                     disabled={disabled}
                 />

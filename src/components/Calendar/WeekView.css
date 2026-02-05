@@ -374,3 +374,30 @@
     left: -50px;
   }
 }
+
+/* Draft event blinking indicator */
+.draft-event-indicator {
+  position: absolute;
+  border: 2px dashed var(--accent);
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  animation: blink-draft 1s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+}
+
+@keyframes blink-draft {
+
+  0%,
+  100% {
+    opacity: 1;
+    border-color: var(--accent);
+  }
+
+  50% {
+    opacity: 0.4;
+    border-color: transparent;
+  }
+}

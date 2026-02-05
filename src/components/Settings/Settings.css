@@ -14,7 +14,7 @@
 .settings-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--modal-overlay, rgba(0, 0, 0, 0.6));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -36,7 +36,7 @@
   width: 100%;
   max-width: 1000px;
   height: min(100vh - 60px, 800px);
-  background: var(--settings-bg);
+  background: var(--modal-bg, var(--settings-bg));
   border: 1px solid var(--settings-border);
   border-radius: 24px;
   display: flex;
@@ -85,7 +85,7 @@
 /* Sidebar Styling */
 .settings-sidebar {
   width: 260px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--settings-sidebar-bg, rgba(0, 0, 0, 0.2));
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--settings-border);
@@ -297,9 +297,9 @@
 /* Buttons & Inputs */
 input,
 select {
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid var(--settings-border) !important;
-  color: white !important;
+  background: var(--input-bg, rgba(0, 0, 0, 0.3)) !important;
+  border: 1px solid var(--input-border, var(--settings-border)) !important;
+  color: var(--text-primary, white) !important;
   font-family: inherit;
   border-radius: 10px !important;
   transition: 0.2s;
@@ -320,7 +320,7 @@ button {
 .feature-btn,
 .theme-toggle-large,
 .btn-connect {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--button-bg, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--settings-border);
   color: white;
   padding: 10px 20px;
@@ -336,7 +336,7 @@ button {
 .feature-btn:hover,
 .theme-toggle-large:hover,
 .btn-connect:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--button-hover, rgba(255, 255, 255, 0.1));
   transform: translateY(-1px);
 }
 

@@ -4,7 +4,12 @@
 
 /**
  * @typedef {Object} Recurrence
- * @property {'none'|'daily'|'weekly'|'monthly'|'yearly'} type
+ * @property {'none'|'daily'|'weekly'|'monthly'|'yearly'|'weekdays'|'custom'} type
+ * @property {number} [interval] - Every N (days/weeks/months/years)
+ * @property {number[]} [daysOfWeek] - 0=Sun, 1=Mon, ..., 6=Sat (for weekly)
+ * @property {'never'|'date'|'count'} [endType] - When to stop recurring
+ * @property {string} [endDate] - ISO date string (if endType='date')
+ * @property {number} [endCount] - Number of occurrences (if endType='count')
  */
 
 /**
@@ -53,4 +58,4 @@
  * @property {string} source
  */
 
-export {}; // Ensures this file is treated as a module.
+export { }; // Ensures this file is treated as a module.

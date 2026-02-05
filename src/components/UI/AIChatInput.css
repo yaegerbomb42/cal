@@ -1,20 +1,22 @@
 .ai-chat-input-wrapper {
     position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 900px;
+    /* Expanded from 800px for even more room */
     z-index: 20;
 }
 
 .ai-input-container {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    gap: 12px;
+    padding: 10px 16px;
+    /* More padding for comfort */
+    gap: 14px;
     border-radius: 99px;
     /* Pill shape */
     background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease;

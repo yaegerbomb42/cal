@@ -47,6 +47,28 @@
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modal-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.modal-header-left h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.modal-header-date {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .modal-content-grid {
@@ -84,6 +106,52 @@
 .textarea.compact {
   min-height: 60px;
   /* Reduced min-height */
+}
+
+.description-textarea {
+  min-height: 80px !important;
+  resize: vertical;
+}
+
+/* Location Input with Map Link */
+.location-group {
+  position: relative;
+}
+
+.location-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.location-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 0.375rem 0.75rem;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 6px;
+  width: fit-content;
+  transition: all 0.2s ease;
+}
+
+.location-map-link:hover {
+  background: rgba(99, 102, 241, 0.2);
+  transform: translateX(2px);
+}
+
+/* Description Group */
+.description-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.description-group .textarea {
+  flex: 1;
 }
 
 /* Right Col: Time */

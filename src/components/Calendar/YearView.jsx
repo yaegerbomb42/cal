@@ -8,7 +8,7 @@ import NavigationDropdown from '../UI/NavigationDropdown';
 import StandardViewHeader from '../Header/StandardViewHeader';
 import './YearView.css';
 
-const YearView = ({ onYearChange }) => {
+const YearView = () => {
   const { currentDate, openEventModal, setCurrentDate } = useCalendar();
   const { getEventsForDate } = useEvents();
   const selectedYear = currentDate.getFullYear();
@@ -77,13 +77,27 @@ const YearView = ({ onYearChange }) => {
         }}
         centerContent={
           <div className="year-title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="year-label" style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {selectedYear}
-            </span>
+            <select
+              value={selectedYear}
+              onChange={(e) => {
+                const newDate = new Date(currentDate);
+                newDate.setFullYear(parseInt(e.target.value));
+                setCurrentDate(newDate);
+              }}
+              className="view-select-dropdown"
+              style={{ padding: '2px 24px 2px 8px', fontSize: '1rem', fontWeight: 600 }}
+            >
+              {[...Array(10)].map((_, i) => {
+                const year = new Date().getFullYear() - 2 + i;
+                return <option key={year} value={year}>{year}</option>;
+              })}
+            </select>
           </div>
         }
         rightContent={
-          <span className="header-stat-pill">{yearEventsCount} Events</span>
+          <span className="year-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
+            {yearEventsCount} events
+          </span>
         }
         onAddEvent={handleCreateEvent}
       />

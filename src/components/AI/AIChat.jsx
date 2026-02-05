@@ -14,9 +14,10 @@ import { sanitizeAIOutput } from '../../ai/OutputSanitizer';
 import { AIParseError, AIServiceError, ValidationError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 import JarvisParticles from '../VoiceAI/JarvisParticles';
+import CalCharacter from './CalCharacter';
 import './AIChat.css';
 
-const AIChat = ({ isOpen, onClose }) => {
+const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -35,7 +36,10 @@ const AIChat = ({ isOpen, onClose }) => {
   const [isLocalMode] = useState(localBrainService.getPreferLocal());
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [, setIsSpeaking] = useState(false);
-
+  const [speakResponse, setSpeakResponse] = useState(false); // TTS Toggle
+  const [lastProcessedInput, setLastProcessedInput] = useState(null);
+  const [calEmotion, setCalEmotion] = useState('idle');
+  const [calSpeech, setCalSpeech] = useState(null);
 
   const MotionDiv = motion.div;
   const messagesEndRef = useRef(null);
@@ -43,24 +47,44 @@ const AIChat = ({ isOpen, onClose }) => {
   const { events, addEvent, deleteEventsByCategory } = useEvents();
   const { openEventModal } = useCalendar();
 
+  // Process initial message from prop (race condition fix)
+  useEffect(() => {
+    if (initialMessage && !isLoading) {
+      const msg = initialMessage;
+      if (onClearInitialMessage) onClearInitialMessage(); // Clear FIRST
+      addMessage('user', msg);
+      processInput(msg);
+    }
+  }, [initialMessage, isLoading]);
+
   useEffect(() => {
     if (geminiService.isInitialized) {
       setIsConnected(true);
     }
 
     const handlePing = (e) => {
+      // Only handle if already open; App.jsx handles the wake-up case
+      if (!isOpen) return;
+
       const { text, response } = e.detail;
+      if (!text || text === lastProcessedInput) return;
+
+      setLastProcessedInput(text);
       addMessage('user', text);
       if (response) {
         handleAIResponse(response);
         return;
       }
       processInput(text);
+
+      // Reset last input after a delay to allow same query later
+      setTimeout(() => setLastProcessedInput(null), 2000);
     };
 
     window.addEventListener('calai-ping', handlePing);
     return () => window.removeEventListener('calai-ping', handlePing);
-  }, [events]); // Kept [events] as requested, though linter suggests adding handleAIResponse/processInput. Suppressing or assuming stable refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [processInput, lastProcessedInput, events, isOpen]);
 
   useEffect(() => {
     scrollToBottom();
@@ -115,7 +139,53 @@ const AIChat = ({ isOpen, onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const addMessage = (type, content) => {
+  const lastProcessedRef = useRef(null); // Fix duplication
+
+  // Gesture parsing helper
+  const parseGesture = useCallback((content, type, context = {}) => {
+    if (type !== 'ai' && type !== 'status') return;
+
+    const text = content.toLowerCase();
+
+    // Check for explicit gesture in AI response
+    if (context.gesture) {
+      setCalEmotion(context.gesture);
+      if (context.speech) setCalSpeech(context.speech);
+      return;
+    }
+
+    // Analyze content for contextual gestures
+    if (text.includes('already have') || text.includes('duplicate')) {
+      setCalEmotion('pointing-left');
+      setCalSpeech('You already have that!');
+    } else if (text.includes('created') || text.includes('added') || text.includes('scheduled')) {
+      setCalEmotion('celebrating');
+      setCalSpeech('Done!');
+    } else if (text.includes('?') || text.includes('not sure') || text.includes('clarif')) {
+      setCalEmotion('confused');
+      setCalSpeech('Hmm...');
+    } else if (text.includes('!') && (text.includes('great') || text.includes('perfect') || text.includes('nice'))) {
+      setCalEmotion('excited');
+      setCalSpeech('Awesome!');
+    } else if (text.includes('error') || text.includes('problem') || text.includes('failed')) {
+      setCalEmotion('surprised');
+      setCalSpeech('Whoa!');
+    } else if (text.includes('let me') || text.includes('checking') || text.includes('thinking')) {
+      setCalEmotion('thinking');
+    } else {
+      // Idle with occasional bored state
+      if (Math.random() < 0.1) {
+        setCalEmotion('bored');
+      }
+    }
+  }, []);
+
+  const addMessage = (type, content, context = {}) => {
+    // Prevent strict identical duplicates within 500ms
+    if (lastProcessedRef.current === content) return;
+    lastProcessedRef.current = content;
+    setTimeout(() => { lastProcessedRef.current = null; }, 1000);
+
     const newMessage = {
       id: Date.now(),
       type,
@@ -123,6 +193,10 @@ const AIChat = ({ isOpen, onClose }) => {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
+
+    // Trigger gesture based on message
+    parseGesture(content, type, context);
+
     return newMessage;
   };
 
@@ -173,7 +247,7 @@ const AIChat = ({ isOpen, onClose }) => {
     }
   };
 
-  const processInput = async (text) => {
+  async function processInput(text) {
     setIsLoading(true);
     setStatus(null, null);
 
@@ -197,7 +271,18 @@ const AIChat = ({ isOpen, onClose }) => {
 
         if (draftResult.status === 'needs_clarification') {
           setClarificationState({ draft: draftResult.draft, missingFields: draftResult.missingFields });
-          addMessage('ai', getClarificationPrompt(draftResult.missingFields[0], { draft: draftResult.draft }));
+
+          // Smarter Prompting: Don't just say "What is the start time?"
+          const field = draftResult.missingFields[0];
+          let prompt = getClarificationPrompt(field, { draft: draftResult.draft });
+
+          if (field === 'start') {
+            prompt = "I need a date and time for this event. When should I schedule it?";
+          }
+
+          addMessage('ai', prompt);
+          // Auto-speak if TTS enabled
+          if (speakResponse) voiceAIService.speak(prompt);
           return;
         }
 
@@ -229,72 +314,51 @@ const AIChat = ({ isOpen, onClose }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
-  const handleAIResponse = async (response) => {
+  async function handleAIResponse(response) {
     try {
       const cleanedResponse = sanitizeAIOutput(response);
+
+      // Voice Output
+      if (speakResponse) {
+        voiceAIService.speak(cleanedResponse);
+      }
+
       const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const data = JSON.parse(jsonMatch[0]);
-        if (data.type === 'action' && data.intent === 'delete_category' && data.category) {
-          addMessage('ai', data.answer || `Checking for ${data.category} events to delete...`);
-          setTimeout(() => deleteEventsByCategory(data.category), 500);
-          return;
-        }
+        try {
+          const data = JSON.parse(jsonMatch[0]);
 
-        if (data.type === 'query' && data.intent === 'next_appointment') {
-          const upcoming = [...events]
-            .filter(e => new Date(e.start) > new Date())
-            .sort((a, b) => new Date(a.start) - new Date(b.start));
-
-          if (upcoming.length > 0) {
-            const next = upcoming[0];
-            const timeStr = new Date(next.start).toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' });
-            addMessage('ai', `Your next appointment is "${next.title}" on ${timeStr}.`);
-          } else {
-            addMessage('ai', "You don't have any upcoming appointments scheduled.");
+          // Memory/Learning handling
+          if (data.type === 'learn' || data.intent === 'set_memory') {
+            const { memoryService } = await import('../../services/memoryService');
+            if (data.fact) memoryService.addFact(data.fact);
           }
-          return;
-        }
 
-        if (data.intent === 'find_slots') {
-          addMessage('ai', data.answer || "Searching for optimal slots...");
-
-          // Fetch suggestions
-          const range = await geminiService.parseFuzzyDateRange(data.context || 'next month');
-          const suggestions = await geminiService.suggestOptimalSlot({
-            title: 'Suggested Event',
-            rangeStart: range?.start,
-            rangeEnd: range?.end,
-            context: data.context
-          }, events);
-
-          if (suggestions && suggestions.length > 0) {
-            // Dispatch highlight event
-            window.dispatchEvent(new CustomEvent('CALAI_HIGHLIGHT_SLOTS', {
-              detail: {
-                slots: suggestions,
-                context: data.context
-              }
-            }));
-            addMessage('ai', `I found ${suggestions.length} optimal slots. I've highlighted them on your calendar.`);
-          } else {
-            addMessage('ai', "I couldn't find any specific slots matching that range.");
+          if (data.type === 'action' && (data.intent === 'create_event' || data.intent === 'schedule_event')) {
+            if (data.draft) {
+              setPendingEvent(data.draft);
+              if (data.answer) addMessage('ai', data.answer);
+              return;
+            }
           }
-          return;
-        }
 
-        if (data.answer) {
-          addMessage('ai', data.answer);
-          return;
+          if (data.answer) {
+            addMessage('ai', data.answer);
+            return;
+          }
+        } catch (e) {
+          console.error("JSON parse error in AI response", e);
         }
       }
-      addMessage('ai', cleanedResponse);
-    } catch {
+
       addMessage('ai', response);
+    } catch (error) {
+      console.error('Chat processing error:', error);
+      addMessage('ai', "I had trouble processing that response.");
     }
-  };
+  }
 
   const handleConfirmEvent = async () => {
     if (!pendingEvent) return;
@@ -479,6 +543,22 @@ const AIChat = ({ isOpen, onClose }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* Cal character floating outside drawer */}
+        <MotionDiv
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          style={{
+            position: 'absolute',
+            right: '440px',
+            bottom: '2rem',
+            zIndex: 999,
+            pointerEvents: 'none'
+          }}
+        >
+          <CalCharacter isTalking={isLoading} emotion={isLoading ? 'thinking' : 'idle'} />
+        </MotionDiv>
+
         <MotionDiv
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -498,10 +578,18 @@ const AIChat = ({ isOpen, onClose }) => {
 
           <div className="chat-header">
             <div className="chat-title">
-              <Sparkles className="ai-icon" size={18} />
+
               <h3>Cal</h3>
               <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
             </div>
+            <button
+              onClick={() => setSpeakResponse(!speakResponse)}
+              className={`action-btn ${speakResponse ? 'active' : ''}`}
+              title={speakResponse ? "Mute Voice" : "Enable Voice"}
+              style={{ marginRight: '8px', color: speakResponse ? 'var(--accent)' : 'var(--text-muted)' }}
+            >
+              {speakResponse ? <Volume2 size={18} /> : <MicOff size={18} />}
+            </button>
             <button onClick={onClose} className="close-btn" aria-label="Close Cal chat">
               <X size={18} />
             </button>
@@ -543,9 +631,137 @@ const AIChat = ({ isOpen, onClose }) => {
                   <span>New Event</span>
                 </div>
                 <h4>{pendingEvent.title}</h4>
-                <p className="event-time">
-                  {new Date(pendingEvent.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                </p>
+                <div className="event-details-block" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Line 1: Date */}
+                  <div className="detail-row" style={{ display: 'flex', alignItems: 'center', fontWeight: '600', color: 'var(--text-primary)' }}>
+                    <Calendar size={14} style={{ marginRight: 8, opacity: 0.7 }} />
+                    {new Date(pendingEvent.start).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  </div>
+
+                  {/* Line 2: Start Time */}
+                  <div className="detail-row" style={{ marginLeft: '22px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
+                    <span style={{ opacity: 0.7, marginRight: 4 }}>Start:</span>
+                    <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
+                      {new Date(pendingEvent.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                  </div>
+
+                  {/* Line 3: End Time */}
+                  <div className="detail-row" style={{ marginLeft: '22px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
+                    <span style={{ opacity: 0.7, marginRight: 8 }}>End:</span>
+                    <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
+                      {new Date(pendingEvent.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                  </div>
+
+                  {/* Recurrence Block */}
+                  {pendingEvent.recurring && pendingEvent.recurring.type !== 'none' && (
+                    <div className="recurrence-section" style={{
+                      marginTop: '12px',
+                      marginInline: '12px',
+                      padding: '10px',
+                      background: 'rgba(99, 102, 241, 0.05)',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(99, 102, 241, 0.1)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ background: 'var(--accent)', padding: '4px', borderRadius: '6px' }}>
+                            <Sparkles size={10} style={{ color: 'white' }} />
+                          </div>
+                          <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.5px', color: 'var(--accent)' }}>
+                            REPEATS {pendingEvent.recurring.type.toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '3px' }}>
+                          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => {
+                            const eventDay = new Date(pendingEvent.start).getDay();
+                            const isActive = idx === eventDay;
+                            return (
+                              <div key={idx} style={{
+                                width: '18px', height: '18px', fontSize: '9px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                borderRadius: '4px',
+                                background: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                                color: isActive ? '#fff' : 'rgba(255,255,255,0.3)',
+                                fontWeight: 'bold'
+                              }}>
+                                {day}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Location Row */}
+                  <div className="location-section" style={{ marginTop: '12px', marginInline: '12px' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(255,255,255,0.03)',
+                      padding: '4px 8px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                      <span style={{ fontSize: '14px' }}>📍</span>
+                      <input
+                        type="text"
+                        value={pendingEvent.location || ''}
+                        onChange={(e) => setPendingEvent({ ...pendingEvent, location: e.target.value })}
+                        placeholder="Add location..."
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          padding: '4px 0',
+                          fontSize: '0.85rem',
+                          flex: 1,
+                          outline: 'none'
+                        }}
+                      />
+                      <button
+                        onClick={async () => {
+                          try {
+                            const controller = new AbortController();
+                            const timeout = setTimeout(() => controller.abort(), 5000);
+                            setStatus('info', 'Searching map...');
+                            const result = await Promise.race([
+                              geminiService.chatResponse(`Find a map link or full address for "${pendingEvent.location || pendingEvent.title}". Return ONLY the link or address. If not found, say NOT_FOUND.`, []),
+                              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                            ]);
+                            clearTimeout(timeout);
+                            if (result && result.trim() !== 'NOT_FOUND' && !result.includes('503')) {
+                              setPendingEvent({ ...pendingEvent, location: result.trim() });
+                              setStatus('success', 'Location found!');
+                            } else {
+                              setStatus('error', 'Location not found.');
+                            }
+                            setTimeout(() => setStatus(null, null), 2000);
+                          } catch (err) {
+                            setStatus('error', 'Lookup failed (Timeout).');
+                            setTimeout(() => setStatus(null, null), 3000);
+                          }
+                        }}
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: '800',
+                          color: 'var(--accent)',
+                          padding: '4px 8px',
+                          background: 'rgba(99, 102, 241, 0.1)',
+                          borderRadius: '6px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        Lookup
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 {pendingEvent.description && <p className="event-desc">{pendingEvent.description}</p>}
 
                 {pendingEvent.conflicts && pendingEvent.conflicts.length > 0 && (
@@ -670,19 +886,33 @@ const AIChat = ({ isOpen, onClose }) => {
             >
               {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
             </button>
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                // Auto-expand logic
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (inputValue.trim() && !isLoading) {
+                    handleSubmit(e);
+                  }
+                }
+              }}
               placeholder="Chat with Cal..."
               className="chat-input-field"
               autoFocus
+              rows={1}
             />
             <button type="submit" disabled={!inputValue.trim() || isLoading} className="chat-send-btn">
               <Send size={16} />
             </button>
           </form>
+
         </MotionDiv>
       </MotionDiv>
     </AnimatePresence>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit2, Copy, Trash2 } from 'lucide-react';
-import { format, getWeek, setWeek, getYear } from 'date-fns';
+import { Edit2, Copy, Trash2 } from 'lucide-react';
+import { format, getWeek } from 'date-fns';
 import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
@@ -15,7 +15,7 @@ import StandardViewHeader from '../Header/StandardViewHeader';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal, setCurrentDate } = useCalendar();
+  const { currentDate, openEventModal, setCurrentDate, draftEvent } = useCalendar();
   const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
@@ -78,14 +78,6 @@ const WeekView = () => {
     openEventModal(event);
   };
 
-  const handleDayAddEvent = (day) => {
-    const startTime = new Date(day);
-    startTime.setHours(9, 0, 0, 0);
-    const endTime = new Date(startTime);
-    endTime.setHours(10, 0, 0, 0);
-    openEventModal({ start: startTime, end: endTime });
-  };
-
   const handleDragStart = (event, e) => {
     setDraggedEvent(event);
     e.dataTransfer.setData('text/plain', event.id);
@@ -123,8 +115,8 @@ const WeekView = () => {
     }
   };
 
-  const showCurrentTime = weekDays.some(day => isToday(day));
-  const currentTimePosition = showCurrentTime ? getCurrentTimePosition(pixelsPerHour) : null;
+  // Always show current time bar regardless of which week is displayed
+  const currentTimePosition = getCurrentTimePosition(pixelsPerHour);
   const now = new Date();
 
   return (
@@ -143,11 +135,26 @@ const WeekView = () => {
         }}
         centerContent={
           <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <span className="week-range" style={{ fontSize: '1rem', fontWeight: '500', color: 'var(--text-primary)' }}>
-              {format(weekStart, 'MMMM yyyy')}
-            </span>
-            <span className="week-range" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-              (Week {getWeek(currentDate)})
+            <select
+              value={getWeek(currentDate)}
+              onChange={(e) => {
+                const newWeekNum = parseInt(e.target.value);
+                const currentWeekNum = getWeek(currentDate);
+                const diff = newWeekNum - currentWeekNum;
+                const newDate = new Date(currentDate);
+                newDate.setDate(newDate.getDate() + diff * 7);
+                setCurrentDate(newDate);
+              }}
+              className="view-select-dropdown"
+              style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
+            >
+              {[...Array(53)].map((_, i) => {
+                const weekNum = i + 1;
+                return <option key={weekNum} value={weekNum}>Week {weekNum}</option>;
+              })}
+            </select>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {format(weekDays[0], 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
             </span>
           </div>
         }
@@ -162,17 +169,10 @@ const WeekView = () => {
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>
         {weekDays.map((day) => (
-          <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')}>
-            <div className="header-date-group">
+          <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')} style={{ textAlign: 'center' }}>
+            <div className="header-date-group" style={{ justifyContent: 'center' }}>
               <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
             </div>
-            <button
-              className="quick-add-btn"
-              onClick={() => handleDayAddEvent(day)}
-              title="Add event"
-            >
-              <Plus size={14} />
-            </button>
           </div>
         ))}
       </div>
@@ -266,12 +266,42 @@ const WeekView = () => {
                     <div className="week-time-indicator-line" />
                   </div>
                 )}
+
+                {/* Draft event blinking indicator */}
+                {draftEvent && draftEvent.start && (() => {
+                  const draftStart = new Date(draftEvent.start);
+                  const draftEnd = draftEvent.end ? new Date(draftEvent.end) : new Date(draftStart.getTime() + 60 * 60 * 1000);
+                  const isSameDay = draftStart.toDateString() === day.toDateString();
+                  if (!isSameDay) return null;
+
+                  const hour = draftStart.getHours();
+                  const minutes = draftStart.getMinutes();
+                  const durationMinutes = (draftEnd - draftStart) / (1000 * 60);
+                  const top = (hour + minutes / 60) * pixelsPerHour;
+                  const height = Math.max((durationMinutes / 60) * pixelsPerHour, 30);
+
+                  return (
+                    <div
+                      className="draft-event-indicator"
+                      style={{
+                        top: `${top}px`,
+                        height: `${height}px`,
+                        left: '4px',
+                        right: '4px'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.7rem', color: 'var(--accent)', padding: '4px' }}>
+                        {draftEvent.title || 'New Event'}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}
         </div>
 
-        {showCurrentTime && currentTimePosition !== null && (
+        {currentTimePosition !== null && (
           <div className="week-current-time" style={{ top: `${currentTimePosition}px` }}>
             <div className="current-time-line"></div>
 

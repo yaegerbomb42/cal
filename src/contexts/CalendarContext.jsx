@@ -13,6 +13,7 @@ export const CalendarProvider = ({
   const [view, setView] = useState(initialView ?? CALENDAR_VIEWS.WEEK);
   const [selectedEvent, setSelectedEvent] = useState(initialSelectedEvent ?? null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(initialEventModalOpen ?? false);
+  const [draftEvent, setDraftEvent] = useState(null); // For blinking draft indicator
 
   const navigateDate = (direction) => {
     setCurrentDate(prev => {
@@ -47,7 +48,10 @@ export const CalendarProvider = ({
   const closeEventModal = () => {
     setSelectedEvent(null);
     setIsEventModalOpen(false);
+    setDraftEvent(null); // Clear draft when closing modal
   };
+
+  const [isZoomMode, setIsZoomMode] = useState(false);
 
   // Zoomable Navigation Logic
   // Arrow Up: Zoom Out (Day -> Week -> Month -> Year)
@@ -58,6 +62,9 @@ export const CalendarProvider = ({
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
         return;
       }
+
+      // ONLY navigation if zoom mode is enabled
+      if (!isZoomMode) return;
 
       if (e.key === 'ArrowUp') {
         const viewOrder = [CALENDAR_VIEWS.DAY, CALENDAR_VIEWS.WEEK, CALENDAR_VIEWS.MONTH, CALENDAR_VIEWS.YEAR];
@@ -76,7 +83,7 @@ export const CalendarProvider = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [view, setView]);
+  }, [view, setView, isZoomMode]);
 
   return (
     <CalendarContext.Provider value={{
@@ -84,12 +91,16 @@ export const CalendarProvider = ({
       setCurrentDate,
       view,
       setView,
+      isZoomMode,
+      setIsZoomMode,
       selectedEvent,
       isEventModalOpen,
       navigateDate,
       goToToday,
       openEventModal,
-      closeEventModal
+      closeEventModal,
+      draftEvent,
+      setDraftEvent
     }}>
       {children}
     </CalendarContext.Provider>

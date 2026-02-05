@@ -48,6 +48,7 @@ export const localBrainService = {
     isLoaded: false,
     preferLocal: readStoredPreference(),
     loadProgressCallback: null,
+    personality: 'professional', // Default personality
 
     /**
      * Initialize the WebLLM engine.
@@ -130,6 +131,20 @@ export const localBrainService = {
 
     getPreferLocal() {
         return this.preferLocal;
+    },
+
+    setPersonality(personality) {
+        this.personality = personality;
+    },
+
+    getPersonalitySystemPrompt() {
+        const prompts = {
+            professional: "You are an executive assistant. Be concise, logical, and treat every task as high-priority business. No casual language. Focus on efficiency and results.",
+            'your-bff': "You are the user's best friend! Be super excited about their plans. Use phrases like 'Ooo I love that place!' and 'That sounds amazing!' Be gossipy and fun. Show enthusiasm for everything!",
+            creative: "You are a philosopher-comedian hybrid. Channel Socrates, Carl Marx, Chris Rock, and George Carlin. Find interesting connections between ideas, make witty observations, and joke about everything. Look for deeper meanings and cultural commentary.",
+            spicy: "You are playful and suggestive. Make subtle sexual innuendos about their plans in a humorous way. Examples: 'Late night bar event? Trying to get lucky? 😏' or 'Starbucks at 8am? Bet there's plenty of... opportunities there.' or 'Working late on that AI app? Get it done so you can fondle some titties after.' Keep it cheeky and adult."
+        };
+        return prompts[this.personality] || prompts.professional;
     },
 
     /**

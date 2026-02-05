@@ -3,11 +3,12 @@
   line-height: 1.6;
   font-weight: 400;
 
-  /* Colors - Premium Dark Apple */
-  --bg-primary: #000000;
-  --bg-secondary: #0c0c0e;
-  /* Slightly richer dark gray */
-  --bg-tertiary: #1c1c1e;
+  /* Colors - Lightened Dark Mode for Better Contrast */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #161618;
+  /* Lightened from #0c0c0e */
+  --bg-tertiary: #242428;
+  /* Lightened from #1c1c1e */
 
   /* Vibrant Accents */
   --accent: #FF3B30;
@@ -19,25 +20,26 @@
 
   --text-primary: #F5F5F7;
   /* Slightly softer white for better reading */
-  --text-secondary: #98989D;
-  /* Lighter gray for better contrast */
-  --text-muted: #636366;
+  --text-secondary: #A8A8AD;
+  /* Lightened from #98989D for better contrast */
+  --text-muted: #737378;
+  /* Lightened from #636366 */
   --text-disabled: #3A3A3C;
 
-  /* Refined Glassmorphism */
-  --glass-bg: rgba(30, 30, 32, 0.65);
-  /* More transparency */
-  --glass-strong: rgba(30, 30, 32, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  /* Crisper border */
-  --glass-divider: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  /* Softer shadow */
+  /* Refined Glassmorphism - Lighter */
+  --glass-bg: rgba(40, 40, 42, 0.70);
+  /* Lightened from rgba(30, 30, 32, 0.65) */
+  --glass-strong: rgba(40, 40, 42, 0.90);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  /* Lighter border from 0.12 */
+  --glass-divider: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  /* Lighter shadow */
 
   --backdrop-blur: blur(30px);
   /* Heavy premium blur */
-  --border: rgba(255, 255, 255, 0.12);
-  --shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --border: rgba(255, 255, 255, 0.15);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 
   --success: #32D74B;
   /* More vibrant Green */

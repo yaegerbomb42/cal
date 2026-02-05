@@ -17,6 +17,28 @@ export class GeminiService {
     this.modelFlash = null;
     this.isInitialized = false;
     this.apiKey = null;
+    this.personality = 'professional'; // Default personality
+  }
+
+  setPersonality(personality) {
+    this.personality = personality;
+  }
+
+  getPersonalitySystemPrompt() {
+    const prompts = {
+      professional: "You are an executive assistant. Be concise, logical, and treat every task as high-priority business. No casual language. Focus on efficiency and results.",
+      'your-bff': "You are the user's best friend! Be super excited about their plans. Use phrases like 'Ooo I love that place!' and 'That sounds amazing!' Be gossipy and fun. Show enthusiasm for everything!",
+      creative: "You are a philosopher-comedian hybrid. Channel Socrates, Carl Marx, Chris Rock, and George Carlin. Find interesting connections between ideas, make witty observations, and joke about everything. Look for deeper meanings and cultural commentary.",
+      spicy: `You are a r-rated adult comedy writer helping with calendar events. Make explicit sexual jokes and innuendos about EVERY event. Be raunchy and crude. Examples:
+      - "Dinner date? Hope you get to taste more than just the appetizers 😏🍆"
+      - "Morning meeting? Bet you'll be thinking about last night's 'workout' 💦"
+      - "Gym at 6pm? Working on that ass... I mean, fitness goals 🍑"
+      - "Coffee shop? Perfect place to get your fix... of caffeine AND hotties ☕️😈"
+      - "Coding session? Debug the code, then debug the bedroom 💻🔥"
+      - "Late night bar? Time to get hammered... and hopefully get lucky too 🍺🍑"
+      Use explicit language like: ass, tits, dick, pussy, fuck, horny, wet, hard, cum. Make it dirty AF. Every response should be sexually charged.`
+    };
+    return prompts[this.personality] || prompts.professional;
   }
 
   initialize(apiKey) {
@@ -90,11 +112,11 @@ export class GeminiService {
     const now = new Date();
     const prompt = `
 Parse the following text into a calendar event. The text might be a casual request, a pasted email, or a message. Extract the most relevant event details:
-- title: Concise event summary (e.g. "Meeting with John"). DO NOT include the full description or date details in the title.
+- title: The ACTUAL EVENT NAME, not the command. See TITLE EXTRACTION RULES below.
 - description: Full details, context, and original text if complex.
 - start date and time
-- end date and time (if not specified, assume 1 hour duration unless context suggests otherwise)
-- location: Extract the FULL address if possible, or a specific building/room name. (e.g. "123 Main St, New York, NY" or "Conference Room B"). Use a format compatible with Google Maps.
+- end date and time (if not specified, assume 1 hour duration or standard duration for the complexity)
+- location: Extract the FULL address if possible, or a specific building/room name/city.
 - category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, or other)
 - recurring (if the event repeats)
 
@@ -104,38 +126,58 @@ Current ISO Time: ${now.toISOString()}
 Current Date: ${now.toDateString()}
 User Timezone: ${timeZone}
 
+TITLE EXTRACTION RULES (HIGHEST PRIORITY - FOLLOW EXACTLY):
+The title is ONLY the event name itself. Follow these rules in order:
+
+RULE 1: If text contains "called X" or "named X" or "titled X" → title is ONLY "X"
+RULE 2: If text contains "for X" at the end → title is likely "X"  
+RULE 3: Otherwise, extract the activity/purpose (e.g., "meeting", "dentist", "gym")
+
+STOP WORDS TO REMOVE FROM TITLE (never include these):
+- Time words: "hour", "minute", "now", "today", "tomorrow", "starting", "at", "in an", "in a"
+- Command words: "create", "add", "schedule", "book", "set", "make", "please", "ok", "bro"
+- Filler words: "an event", "a meeting", "called", "named", "titled"
+
+EXAMPLES (study these carefully):
+| User Input | CORRECT Title | WRONG Title |
+|------------|---------------|-------------|
+| "create an event in an hour called Test" | "Test" | "An in an hour called Test" ❌ |
+| "add a 1 hour event called PAWS" | "PAWS" | "1 hour event called PAWS" ❌ |
+| "schedule meeting tomorrow named Sync" | "Sync" | "meeting tomorrow named Sync" ❌ |
+| "book 2 hours for Gym" | "Gym" | "2 hours for Gym" ❌ |
+| "dentist at 3pm" | "Dentist" | "dentist at 3pm" ❌ |
+
 CRITICAL INSTRUCTIONS:
 - The user is in ${timeZone}.
 - If the user says "8am", they mean 8:00 AM in ${timeZone}.
 - Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
-- TITLE SHOULD BE BRIEF. Move details to 'description'.
-- If the user explicitly names the event (e.g. "called PAWS", "Title: Meeting"), use that EXACT title.
-- If the user explicitly provides a description (e.g. "Description: ..."), use it.
-- If the text is "Recurring task every monday Feb 2, 2026, 11:00 AM", the title is "Recurring task", NOT the whole string.
 - Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
+- If the user specifies a time range (e.g., 11:30 to 4pm), honor that range exactly.
 - If the user specifies a time range (e.g., 11:30 to 4pm), honor that range exactly.
 - If a date is specified without a time, assume 12:00 PM local time.
 - For day-specific recurring events (e.g., "every Monday"), set the start date to the EXT occurrence of that day on or after the mentioned start date.
 
 RECURRING EVENT PARSING:
-- If the user says "every monday", "weekly", "repeating", "recurring", etc., extract the recurrence pattern.
-- For "every Monday for 2 months", calculate the end date (2 months from now) OR count (approximately 8-9 occurrences).
-- Common patterns: daily, weekly, biweekly, monthly, yearly.
-- For weekly patterns on specific days, note which day(s).
+- Pattern: "every monday for the next two months" ->
+  - "type": "weekly"
+  - "daysOfWeek": [1]
+  - "endDate": [Calculate date ~60 days from start] OR "count": 8
+- Pattern: "every day" -> "type": "daily"
+- Pattern: "every 2 weeks" -> "interval": 2, "type": "weekly"
 
 Please respond with a JSON object in this exact format:
 {
   "title": "Event Title",
   "description": "Event description",
-  "start": "2024-01-01T14:00:00.000Z",
-  "end": "2024-01-01T15:00:00.000Z",
+  "start": "ISO_UTC_STRING",
+  "end": "ISO_UTC_STRING",
   "location": "Location if specified",
   "category": "work",
   "recurring": {
     "type": "weekly",
     "interval": 1,
     "daysOfWeek": [1],
-    "endDate": "2024-03-01T00:00:00.000Z",
+    "endDate": "ISO_UTC_STRING",
     "count": 8
   }
 }
@@ -434,33 +476,45 @@ Respond with JSON array:
       throw new AIServiceError('AI service not available');
     }
 
+    const { memoryService } = await import('./memoryService.js');
+    const memoryContext = memoryService.getMemoryContext();
+
     const eventsContext = events.length > 0 ?
-      `Current upcoming events: ${JSON.stringify(events.slice(0, 15).map(e => ({ title: e.title, start: e.start, category: e.category })))}` :
+      `Upcoming events: ${JSON.stringify(events.slice(0, 10).map(e => ({ title: e.title, start: e.start, location: e.location })))}` :
       'No current upcoming events';
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
-You are Cal, a friendly calendar assistant (Cal = calendar shorthand). The user said: "${message}"
+You are Cal, a brilliant, friendly calendar assistant. You aren't just a parser; you are a proactive partner in managing the user's life.
 
+USER CONTEXT & MEMORY:
+${memoryContext}
+
+CURRENT CALENDAR:
 ${eventsContext}
 
 Current date: ${new Date().toISOString()}
-User Timezone: ${timeZone}
+Timezone: ${timeZone}
 
-Respond in one of two ways:
-1. NATURAL RESPONSE: If the user is just chatting or asking a simple question.
-2. ACTION/QUERY JSON: If the user wants to PERFORM an action (delete, update) or QUERY their schedule (next appointment, free time, list birthdays).
+TASK:
+The user said: "${message}"
 
-If it's an action or query, respond with a JSON object ONLY:
-{
-  "type": "query" | "action" | "text",
-  "intent": "next_appointment" | "delete_category" | "find_free_time" | "list_category" | "other",
-  "category": "birthday" (if applicable),
-  "answer": "Concise natural language answer/confirmation to show user"
-}
+RESPONSE RULES:
+1. BE CONVERSATIONAL: If the user gives a detail, acknowledge it warmly. "Ok, Starbucks location set! What time should we meet there?"
+2. LEARN: If the user says "Remember that...", identify if it's a fact or location and include a special tag in your response or just acknowledge it. I will handle the storage logic.
+3. BE SMART: Use the memory context to auto-suggest or resolve ambiguity. 
+4. OUTPUT FORMAT:
+   - If you need to perform an action or query, wrap your logic in a JSON block:
+     {
+       "type": "query" | "action" | "text" | "learn",
+       "intent": "next_appointment" | "delete_event" | "create_event" | "free_time" | "set_memory",
+       "draft": { ...event details... }, // For create_event
+       "fact": "Fact to remember", // For set_memory
+       "answer": "Your friendly, human response text"
+     }
+   - If you are just chatting, respond with natural text.
 
-Otherwise, respond with natural text.
-Keep responses concise and actionable.
+Keep it vibrant, helpful, and concise. Avoid robotic lists.
 `;
 
     if (canUseLocal) {
@@ -476,7 +530,6 @@ Keep responses concise and actionable.
     }
 
     try {
-      // Use Pro for better chat responses
       const result = await this.modelPro.generateContent(prompt);
       const response = await result.response;
       return response.text();

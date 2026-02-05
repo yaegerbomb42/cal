@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink, ChevronRight, Sparkles, MessageSquare } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink, ChevronRight, Sparkles, MessageSquare, AlertTriangle } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { getEventColor } from '../../utils/helpers';
@@ -9,13 +9,14 @@ import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEve
 import { toastService } from '../../utils/toast';
 import { isToday } from '../../utils/dateUtils';
 import { ValidationError } from '../../utils/errors';
+import { roundToNearest5Minutes, roundUpTo5Minutes } from '../../utils/timeUtils';
 import './EventModal.css';
 
 import SmartDateInput from '../Common/SmartDateInput';
 import ClockPicker from '../Common/ClockPicker';
 import SmartSchedulePortal from './SmartSchedulePortal';
 import ConflictResolutionModal from './ConflictResolutionModal';
-import { geminiService } from '../../services/geminiService';
+import CustomRecurrenceEditor from './CustomRecurrenceEditor';
 
 const padTime = (value) => String(value).padStart(2, '0');
 
@@ -23,15 +24,7 @@ const toLocalInputValue = (date) => {
   return `${date.getFullYear()}-${padTime(date.getMonth() + 1)}-${padTime(date.getDate())}T${padTime(date.getHours())}:${padTime(date.getMinutes())}`;
 };
 
-const roundToNearestFiveMinutes = (date) => {
-  const rounded = new Date(date);
-  const minutes = Math.round(rounded.getMinutes() / 5) * 5;
-  rounded.setMinutes(minutes === 60 ? 0 : minutes, 0, 0);
-  if (minutes === 60) {
-    rounded.setHours(rounded.getHours() + 1);
-  }
-  return rounded;
-};
+// Now using imported roundToNearest5Minutes from timeUtils.js
 
 const ensureValidStartTime = (date) => {
   const normalized = new Date(date);
@@ -101,7 +94,7 @@ import IsometricClock from '../Common/IsometricClock'; // NEW IMPORT
 
 const EventModal = () => {
   // ... hooks and state ...
-  const { selectedEvent, isEventModalOpen, closeEventModal } = useCalendar();
+  const { selectedEvent, isEventModalOpen, closeEventModal, setDraftEvent } = useCalendar();
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
 
@@ -121,6 +114,37 @@ const EventModal = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [isSmartScheduleOpen, setIsSmartScheduleOpen] = useState(false);
+
+  // Live overlap detection
+  const overlappingEvents = useMemo(() => {
+    if (!formData.start || !formData.end) return [];
+    const newStart = new Date(formData.start).getTime();
+    const newEnd = new Date(formData.end).getTime();
+    if (isNaN(newStart) || isNaN(newEnd)) return [];
+
+    return events.filter(event => {
+      // Skip the event being edited
+      if (selectedEvent?.id && event.id === selectedEvent.id) return false;
+
+      const eventStart = new Date(event.start).getTime();
+      const eventEnd = new Date(event.end).getTime();
+
+      // Check overlap: events overlap if one starts before the other ends
+      return newStart < eventEnd && newEnd > eventStart;
+    });
+  }, [formData.start, formData.end, events, selectedEvent?.id]);
+
+  // Update draftEvent for blinking indicator in week view
+  useEffect(() => {
+    if (isEventModalOpen && formData.start) {
+      setDraftEvent({
+        title: formData.title,
+        start: formData.start,
+        end: formData.end
+      });
+    }
+    return () => setDraftEvent(null);
+  }, [isEventModalOpen, formData.title, formData.start, formData.end, setDraftEvent]);
 
   useEffect(() => {
     if (!isEventModalOpen) return;
@@ -144,10 +168,10 @@ const EventModal = () => {
     const isDefaultToday = selectedEvent?.start ? isToday(baseDate) : true;
     const startTime = selectedEvent?.start
       ? ensureValidStartTime(baseDate)
-      : ensureValidStartTime(isDefaultToday ? roundToNearestFiveMinutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
+      : ensureValidStartTime(isDefaultToday ? roundUpTo5Minutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
     const endTime = selectedEvent?.end
-      ? new Date(selectedEvent.end)
-      : new Date(startTime.getTime() + 60 * 60 * 1000); // Default: Start + 1 hour
+      ? roundToNearest5Minutes(new Date(selectedEvent.end))
+      : roundToNearest5Minutes(new Date(startTime.getTime() + 60 * 60 * 1000)); // Default: Start + 1 hour, snapped
 
     setFormData({
       title: '',
@@ -277,7 +301,19 @@ const EventModal = () => {
         >
           {/* Header */}
           <div className="modal-header compact">
-            <h3>{isEditing ? 'Edit' : 'New Event'}</h3>
+            <div className="modal-header-left">
+              <h3>{isEditing ? 'Edit' : 'New Event'}</h3>
+              {formData.start && (
+                <span className="modal-header-date">
+                  {new Date(formData.start).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </span>
+              )}
+            </div>
             <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
               <button
                 type="button"
@@ -324,17 +360,41 @@ const EventModal = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group location-group">
                   <label>
                     <span className="flex-center gap-2"><MapPin size={12} /> Location</span>
-                    {formData.location && <a href={`https://www.google.com/maps?q=${formData.location}`} target="_blank" rel="noreferrer" className="link-icon"><ExternalLink size={10} /></a>}
                   </label>
-                  <input value={formData.location} onChange={(e) => handleChange('location', e.target.value)} className="input compact" placeholder="Add location..." />
+                  <div className="location-input-wrapper">
+                    <input
+                      value={formData.location}
+                      onChange={(e) => handleChange('location', e.target.value)}
+                      className="input compact"
+                      placeholder="Add location..."
+                      autoComplete="off"
+                    />
+                    {formData.location && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="location-map-link"
+                      >
+                        <ExternalLink size={12} />
+                        Open in Maps
+                      </a>
+                    )}
+                  </div>
                 </div>
 
-                <div className="form-group flex-1">
+                <div className="form-group description-group">
                   <label><MessageSquare size={12} /> Description</label>
-                  <textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)} className="textarea compact" placeholder="Notes..." />
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    className="textarea compact description-textarea"
+                    placeholder="Add notes, links, or details..."
+                    rows={3}
+                  />
                 </div>
 
                 <div className="recurrence-compact">
@@ -342,7 +402,37 @@ const EventModal = () => {
                   <select value={formData.recurring?.type} onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} className="select compact">
                     {Object.values(RECURRENCE_TYPES).map(t => <option key={t} value={t}>{formatRecurrenceText({ type: t })}</option>)}
                   </select>
+
+                  {formData.recurring?.type === 'custom' && (
+                    <CustomRecurrenceEditor
+                      value={formData.recurring}
+                      onChange={(rec) => handleChange('recurring', rec)}
+                    />
+                  )}
                 </div>
+
+                {/* Overlap Warning */}
+                {overlappingEvents.length > 0 && (
+                  <div className="overlap-warning" style={{
+                    marginTop: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    background: 'rgba(251, 191, 36, 0.1)',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8rem',
+                    color: '#fbbf24'
+                  }}>
+                    <AlertTriangle size={14} />
+                    <span>
+                      Overlaps with {overlappingEvents.length === 1
+                        ? `"${overlappingEvents[0].title || 'Untitled'}"`
+                        : `${overlappingEvents.length} events`}
+                    </span>
+                  </div>
+                )}
 
                 {validationErrors.length > 0 && (
                   <div className="validation-errors" role="alert" style={{ marginTop: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
