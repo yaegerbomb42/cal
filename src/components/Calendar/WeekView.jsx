@@ -1,16 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Edit2, Copy, Trash2 } from 'lucide-react';
+import { Edit2, Copy, Trash2, Clock, MapPin, AlertCircle } from 'lucide-react';
 import { format, getWeek } from 'date-fns';
-import { endOfDay, getCurrentTimePosition, getDayHours, getEventPosition, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
+import { endOfDay, getDayHours, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
-import { cn, formatDuration, getEventColor } from '../../utils/helpers';
+import { cn, getEventColor } from '../../utils/helpers';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import ContextMenu from '../UI/ContextMenu';
-import AIChatInput from '../UI/AIChatInput';
-import NavigationDropdown from '../UI/NavigationDropdown';
 import StandardViewHeader from '../Header/StandardViewHeader';
 import './WeekView.css';
 
@@ -23,7 +21,6 @@ const WeekView = () => {
   const weekStart = startOfDay(weekDays[0]);
   const weekEnd = endOfDay(weekDays[weekDays.length - 1]);
 
-  // Context Menu State
   const [contextMenu, setContextMenu] = useState(null);
 
   const handleContextMenu = (e, event) => {
@@ -54,7 +51,7 @@ const WeekView = () => {
 
   const weekGridRef = useRef(null);
   const [draggedEvent, setDraggedEvent] = useState(null);
-  const { pixelsPerHour, magnifyHour } = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
+  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
 
@@ -115,8 +112,6 @@ const WeekView = () => {
     }
   };
 
-  // Always show current time bar regardless of which week is displayed
-  const currentTimePosition = getCurrentTimePosition(pixelsPerHour);
   const now = new Date();
 
   return (
@@ -124,7 +119,6 @@ const WeekView = () => {
       className="week-view"
       style={{
         '--hour-height': `${pixelsPerHour}px`,
-        '--magnify-index': magnifyHour ?? -1
       }}
     >
       <StandardViewHeader
@@ -180,7 +174,7 @@ const WeekView = () => {
       <div
         className="week-grid"
         ref={weekGridRef}
-      // Mouse handlers for magnification (removed for cleaner logic if needed, but keeping scaling)
+        style={{ '--hour-height': `${pixelsPerHour}px` }}
       >
         <div className="week-time-column">
           {dayHours.map((hour) => (
@@ -211,13 +205,13 @@ const WeekView = () => {
 
                 <div className="week-events-layer" style={{ '--overlap-count': maxOverlap }}>
                   {dayLayout.map(({ event, column }, index) => {
-                    const { top, height: rawHeight } = getEventPosition(event, day, pixelsPerHour);
-                    const height = Math.max(rawHeight * 0.7, 18);
                     const isPastEvent = new Date(event.end || event.start) < now;
-                    const rowStart = Math.max(1, Math.floor(top) + 1);
-                    const rowSpan = Math.max(18, Math.ceil(height));
-                    const showLocation = height > 42;
-                    const durationMinutes = (new Date(event.end) - new Date(event.start)) / (1000 * 60);
+                    const eventStart = new Date(event.start);
+                    const minutesFromDayStart = (eventStart.getHours() * 60) + eventStart.getMinutes();
+                    const durationMinutes = (new Date(event.end) - eventStart) / (1000 * 60);
+                    const rowStart = minutesFromDayStart + 1;
+                    const rowSpan = Math.max(15, durationMinutes);
+                    const showLocation = durationMinutes >= 45;
                     const isLongEvent = durationMinutes > 60;
                     const eventColor = event.color || getEventColor(event.category);
 
@@ -226,9 +220,8 @@ const WeekView = () => {
                         key={event.id}
                         className={cn('week-event', isPastEvent && 'past', isLongEvent && 'long-event')}
                         style={{
-                          backgroundColor: isLongEvent ? 'transparent' : eventColor,
                           '--event-color': eventColor,
-                          borderLeft: event.priority === 'high' ? '3px solid #ef4444' : event.priority === 'medium' ? '3px solid #f97316' : undefined,
+                          borderLeft: event.priority === 'high' ? '4px solid #ef4444' : event.priority === 'medium' ? '4px solid #f97316' : `4px solid ${eventColor}`,
                           gridColumnStart: column + 1,
                           gridColumnEnd: column + 2,
                           gridRow: `${rowStart} / span ${rowSpan}`,
@@ -245,27 +238,41 @@ const WeekView = () => {
                       >
                         <div className="week-event-title">{event.title || 'Untitled'}</div>
                         <div className="week-event-time">
-                          {formatTime24(new Date(event.start))} - {formatTime24(new Date(event.end))}
-                          <span className="week-event-duration">· {formatDuration(event.start, event.end)}</span>
+                          <Clock size={10} />
+                          {format(new Date(event.start), 'h:mm a')}
                         </div>
                         {showLocation && event.location && (
-                          <div className="week-event-location">{event.location}</div>
+                          <div className="week-event-location">
+                            <MapPin size={10} />
+                            {event.location}
+                          </div>
+                        )}
+                        {event.priority === 'high' && (
+                          <div style={{ position: 'absolute', top: 4, right: 4, color: 'white' }}>
+                            <AlertCircle size={10} />
+                          </div>
                         )}
                       </MotionDiv>
                     );
                   })}
                 </div>
 
-                {/* Live time indicator for today */}
-                {isToday(day) && (
-                  <div
-                    className="week-time-indicator"
-                    style={{ top: `${getCurrentTimePosition(pixelsPerHour)}px` }}
-                  >
-
-                    <div className="week-time-indicator-line" />
-                  </div>
-                )}
+                {/* Live time indicator with absolute accuracy */}
+                {isToday(day) && (() => {
+                  const nowTick = new Date(currentTick);
+                  const minutes = nowTick.getHours() * 60 + nowTick.getMinutes();
+                  const percent = (minutes / 1440) * 100;
+                  return (
+                    <div className="week-time-indicator-grid-container">
+                      <div
+                        className="week-time-indicator"
+                        style={{ top: `${percent}%` }}
+                      >
+                        <div className="week-time-indicator-line" />
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Draft event blinking indicator */}
                 {draftEvent && draftEvent.start && (() => {
@@ -277,15 +284,15 @@ const WeekView = () => {
                   const hour = draftStart.getHours();
                   const minutes = draftStart.getMinutes();
                   const durationMinutes = (draftEnd - draftStart) / (1000 * 60);
-                  const top = (hour + minutes / 60) * pixelsPerHour;
-                  const height = Math.max((durationMinutes / 60) * pixelsPerHour, 30);
+                  const topPercent = ((hour * 60 + minutes) / 1440) * 100;
+                  const heightPercent = (durationMinutes / 1440) * 100;
 
                   return (
                     <div
                       className="draft-event-indicator"
                       style={{
-                        top: `${top}px`,
-                        height: `${height}px`,
+                        top: `${topPercent}%`,
+                        height: `${heightPercent}%`,
                         left: '4px',
                         right: '4px'
                       }}
@@ -300,14 +307,6 @@ const WeekView = () => {
             );
           })}
         </div>
-
-        {currentTimePosition !== null && (
-          <div className="week-current-time" style={{ top: `${currentTimePosition}px` }}>
-            <div className="current-time-line"></div>
-
-            <div className="current-time-label">{formatTime24(new Date(currentTick))}</div>
-          </div>
-        )}
 
         {weekEventsCount === 0 && (
           <div className="week-empty-state">

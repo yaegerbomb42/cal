@@ -16,6 +16,7 @@ import { logger } from '../../utils/logger';
 import JarvisParticles from '../VoiceAI/JarvisParticles';
 import CalCharacter from './CalCharacter';
 import './AIChat.css';
+import SentenceGraph from './SentenceGraph';
 
 const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [messages, setMessages] = useState([
@@ -39,12 +40,12 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [speakResponse, setSpeakResponse] = useState(false); // TTS Toggle
   const [lastProcessedInput, setLastProcessedInput] = useState(null);
   const [calEmotion, setCalEmotion] = useState('idle');
-  const [calSpeech, setCalSpeech] = useState(null);
+  const [showProof, setShowProof] = useState(false);
 
-  const MotionDiv = motion.div;
+
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
-  const { events, addEvent, deleteEventsByCategory } = useEvents();
+  const { events, addEvent } = useEvents();
   const { openEventModal } = useCalendar();
 
   // Process initial message from prop (race condition fix)
@@ -55,7 +56,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       addMessage('user', msg);
       processInput(msg);
     }
-  }, [initialMessage, isLoading]);
+  }, [initialMessage, isLoading, onClearInitialMessage, processInput, addMessage]);
 
   useEffect(() => {
     if (geminiService.isInitialized) {
@@ -84,7 +85,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     window.addEventListener('calai-ping', handlePing);
     return () => window.removeEventListener('calai-ping', handlePing);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processInput, lastProcessedInput, events, isOpen]);
+  }, [processInput, lastProcessedInput, events, isOpen, handleAIResponse, addMessage]);
 
   useEffect(() => {
     scrollToBottom();
@@ -150,26 +151,20 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     // Check for explicit gesture in AI response
     if (context.gesture) {
       setCalEmotion(context.gesture);
-      if (context.speech) setCalSpeech(context.speech);
       return;
     }
 
     // Analyze content for contextual gestures
     if (text.includes('already have') || text.includes('duplicate')) {
       setCalEmotion('pointing-left');
-      setCalSpeech('You already have that!');
     } else if (text.includes('created') || text.includes('added') || text.includes('scheduled')) {
       setCalEmotion('celebrating');
-      setCalSpeech('Done!');
     } else if (text.includes('?') || text.includes('not sure') || text.includes('clarif')) {
       setCalEmotion('confused');
-      setCalSpeech('Hmm...');
     } else if (text.includes('!') && (text.includes('great') || text.includes('perfect') || text.includes('nice'))) {
       setCalEmotion('excited');
-      setCalSpeech('Awesome!');
     } else if (text.includes('error') || text.includes('problem') || text.includes('failed')) {
       setCalEmotion('surprised');
-      setCalSpeech('Whoa!');
     } else if (text.includes('let me') || text.includes('checking') || text.includes('thinking')) {
       setCalEmotion('thinking');
     } else {
@@ -180,14 +175,14 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     }
   }, []);
 
-  const addMessage = (type, content, context = {}) => {
+  const addMessage = useCallback((type, content, context = {}) => {
     // Prevent strict identical duplicates within 500ms
     if (lastProcessedRef.current === content) return;
     lastProcessedRef.current = content;
     setTimeout(() => { lastProcessedRef.current = null; }, 1000);
 
     const newMessage = {
-      id: Date.now(),
+      id: `${Date.now()}-${Math.random()}`,
       type,
       content,
       timestamp: new Date()
@@ -198,7 +193,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     parseGesture(content, type, context);
 
     return newMessage;
-  };
+  }, [parseGesture]);
 
   const setStatus = (type, message) => {
     if (!type) {
@@ -208,7 +203,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     setStatusMessage({ type, message });
   };
 
-  const processClarification = async (text) => {
+  const processClarification = useCallback(async (text) => {
     if (!clarificationState) return;
     const { draft, missingFields } = clarificationState;
     const currentField = missingFields[0];
@@ -229,12 +224,12 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     // Auto Problematicness Detection
     await checkProblematicness(finalized, conflicts);
 
-    setPendingEvent({ ...finalized, conflicts, originalText: text });
+    setPendingEvent({ ...finalized, conflicts, originalText: text, graphData: updatedDraft.graphData || draft.graphData });
     setClarificationState(null);
     addMessage('ai', "I've got everything I need. Does this event look right?");
-  };
+  }, [clarificationState, events, addMessage, checkProblematicness]);
 
-  const checkProblematicness = async (event, conflicts) => {
+  const checkProblematicness = useCallback(async (event, conflicts) => {
     if (conflicts && conflicts.length > 0) {
       addMessage('ai', `⚠️ Heads up: This conflicts with ${conflicts.length} existing event(s). Shall I continue?`);
       voiceAIService.speakAsHal('conflict');
@@ -245,9 +240,9 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     if (hours >= 22 || hours <= 5) {
       addMessage('ai', "🌙 This is a bit late/early, Dave. Are you sure you want this on your schedule?");
     }
-  };
+  }, [addMessage]);
 
-  async function processInput(text) {
+  const processInput = useCallback(async (text) => {
     setIsLoading(true);
     setStatus(null, null);
 
@@ -288,7 +283,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
 
         const finalized = finalizeDraft(draftResult.draft);
         const conflicts = await geminiService.checkConflicts(finalized, events);
-        setPendingEvent({ ...finalized, conflicts, originalText: text });
+        setPendingEvent({ ...finalized, conflicts, originalText: text, graphData: draftResult.graphData });
         addMessage('ai', "I've drafted this event for you. Does it look correct?");
         return;
       }
@@ -314,9 +309,9 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [clarificationState, events, speakResponse, addMessage, handleAIResponse, processClarification]);
 
-  async function handleAIResponse(response) {
+  const handleAIResponse = useCallback(async (response) => {
     try {
       const cleanedResponse = sanitizeAIOutput(response);
 
@@ -358,7 +353,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       console.error('Chat processing error:', error);
       addMessage('ai', "I had trouble processing that response.");
     }
-  }
+  }, [speakResponse, addMessage]);
 
   const handleConfirmEvent = async () => {
     if (!pendingEvent) return;
@@ -492,7 +487,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       }
       setStatus(null, null);
     }
-  }, []); // Add dependencies if needed, but empty is safe for now as helpers are imported
+  }, [addMessage]); // Add dependencies if needed, but empty is safe for now as helpers are imported
 
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files || []);
@@ -533,7 +528,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
 
   return (
     <AnimatePresence>
-      <MotionDiv
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -544,7 +539,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
         onDrop={handleDrop}
       >
         {/* Cal character floating outside drawer */}
-        <MotionDiv
+        <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
@@ -556,10 +551,10 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
             pointerEvents: 'none'
           }}
         >
-          <CalCharacter isTalking={isLoading} emotion={isLoading ? 'thinking' : 'idle'} />
-        </MotionDiv>
+          <CalCharacter isTalking={isLoading} emotion={calEmotion} />
+        </motion.div>
 
-        <MotionDiv
+        <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 20 }}
@@ -604,7 +599,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
 
           <div className="chat-messages" aria-live="polite">
             {messages.map((message) => (
-              <MotionDiv
+              <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -617,11 +612,11 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                     <p>{message.content}</p>
                   )}
                 </div>
-              </MotionDiv>
+              </motion.div>
             ))}
 
             {pendingEvent && (
-              <MotionDiv
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="event-confirmation-card glass-card"
@@ -642,7 +637,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                   <div className="detail-row" style={{ marginLeft: '22px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
                     <span style={{ opacity: 0.7, marginRight: 4 }}>Start:</span>
                     <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
-                      {new Date(pendingEvent.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      {pendingEvent.start ? new Date(pendingEvent.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Anytime'}
                     </span>
                   </div>
 
@@ -650,7 +645,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                   <div className="detail-row" style={{ marginLeft: '22px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
                     <span style={{ opacity: 0.7, marginRight: 8 }}>End:</span>
                     <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
-                      {new Date(pendingEvent.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      {pendingEvent.end ? new Date(pendingEvent.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Anytime'}
                     </span>
                   </div>
 
@@ -740,7 +735,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                               setStatus('error', 'Location not found.');
                             }
                             setTimeout(() => setStatus(null, null), 2000);
-                          } catch (err) {
+                          } catch {
                             setStatus('error', 'Lookup failed (Timeout).');
                             setTimeout(() => setStatus(null, null), 3000);
                           }
@@ -770,6 +765,44 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                   </div>
                 )}
 
+                {pendingEvent.graphData && (
+                  <div className="calculation-proof-section" style={{ marginTop: '12px', padding: '0 12px' }}>
+                    <button
+                      onClick={() => setShowProof(!showProof)}
+                      className="proof-toggle-btn"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'rgba(99, 102, 241, 0.1)',
+                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: 'var(--accent)',
+                        cursor: 'pointer',
+                        width: '100%',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Sparkles size={12} />
+                      {showProof ? 'Hide Calculation Proof' : 'View Calculation Proof'}
+                    </button>
+
+                    {showProof && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <SentenceGraph data={pendingEvent.graphData} />
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
                 <div className="event-card-actions">
                   <button onClick={handleEditDraft} className="btn-icon" aria-label="Edit draft">
                     <Edit2 size={16} />
@@ -781,11 +814,11 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                     <Check size={16} /> Add Event
                   </button>
                 </div>
-              </MotionDiv>
+              </motion.div>
             )}
 
             {imageDrafts.length > 0 && (
-              <MotionDiv
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="event-confirmation-card glass-card image-event-batch"
@@ -800,11 +833,11 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                     <Check size={16} /> Add All
                   </button>
                 </div>
-              </MotionDiv>
+              </motion.div>
             )}
 
             {imageDrafts.map((draft, index) => (
-              <MotionDiv
+              <motion.div
                 key={`${draft.title}-${draft.start}-${index}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -838,7 +871,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                     <Check size={16} /> Add
                   </button>
                 </div>
-              </MotionDiv>
+              </motion.div>
             ))}
 
             {isLoading && (
@@ -913,8 +946,8 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
             </button>
           </form>
 
-        </MotionDiv>
-      </MotionDiv>
+        </motion.div>
+      </motion.div>
     </AnimatePresence>
   );
 };

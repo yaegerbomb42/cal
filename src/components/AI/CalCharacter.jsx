@@ -43,8 +43,6 @@ const CalCharacter = ({
 
     // Initialize controllers
     useEffect(() => {
-        if (isMini) return;
-
         animController.current = new ProceduralAnimationController();
         particleSystem.current = new ContinuousParticleSystem(8);
 
@@ -66,24 +64,24 @@ const CalCharacter = ({
             if (animController.current) animController.current.stop();
             if (particleAnimFrame.current) cancelAnimationFrame(particleAnimFrame.current);
         };
-    }, [isMini]);
+    }, []);
 
     // Handle talking state changes
     useEffect(() => {
-        if (!animController.current || isMini) return;
+        if (!animController.current) return;
 
         if (isTalking) {
             animController.current.startTalking();
         } else {
             animController.current.stopTalking();
         }
-    }, [isTalking, isMini]);
+    }, [isTalking]);
 
     // Handle emotion changes
     useEffect(() => {
-        if (!animController.current || isMini) return;
+        if (!animController.current) return;
         animController.current.setEmotion(emotion);
-    }, [emotion, isMini]);
+    }, [emotion]);
 
     // Eye rendering - fixed positioning inside head
     const renderEye = useCallback((state, offset, baseX, baseY) => {
@@ -108,10 +106,10 @@ const CalCharacter = ({
         if (state === 'squint') {
             return (
                 <motion.path
-                    d={`M${x},${baseY} Q${x + 9},${baseY - 4} ${x + 18},${baseY}`}
+                    d={`M${x},${baseY} Q${x + 9},${baseY - 2} ${x + 18},${baseY}` || ""}
                     fill="none"
                     stroke="#00e5ff"
-                    strokeWidth="3"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     filter="url(#eyeGlow)"
                 />
@@ -119,17 +117,17 @@ const CalCharacter = ({
         }
 
         // Default open or wide eyes
-        const curve = state === 'wide' ? -12 : -8;
+        const curve = state === 'wide' ? -10 : -6;
         return (
             <motion.path
-                d={`M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}`}
+                d={`M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}` || ""}
                 fill="none"
                 stroke="#00e5ff"
-                strokeWidth="3.5"
+                strokeWidth="3"
                 strokeLinecap="round"
                 filter="url(#eyeGlow)"
                 animate={{
-                    d: `M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}`
+                    d: (`M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}` || "")
                 }}
                 transition={{ duration: 0.15 }}
             />
@@ -182,7 +180,7 @@ const CalCharacter = ({
             case 'smile_wide':
                 return (
                     <motion.path
-                        d={`M${centerX - 12},${mouthY - 2} Q${centerX},${mouthY + 10} ${centerX + 12},${mouthY - 2}`}
+                        d={`M${centerX - 12},${mouthY - 2} Q${centerX},${mouthY + 8} ${centerX + 12},${mouthY - 2}` || ""}
                         fill="none"
                         stroke="#00e5ff"
                         strokeWidth="3"
@@ -219,7 +217,7 @@ const CalCharacter = ({
             case 'frown':
                 return (
                     <motion.path
-                        d={`M${centerX - 10},${mouthY + 2} Q${centerX},${mouthY - 6} ${centerX + 10},${mouthY + 2}`}
+                        d={`M${centerX - 10},${mouthY + 2} Q${centerX},${mouthY - 5} ${centerX + 10},${mouthY + 2}` || ""}
                         fill="none"
                         stroke="#00e5ff"
                         strokeWidth="2.5"
@@ -231,7 +229,7 @@ const CalCharacter = ({
             default:
                 return (
                     <motion.path
-                        d={`M${centerX - 10},${mouthY - 1} Q${centerX},${mouthY + 8} ${centerX + 10},${mouthY - 1}`}
+                        d={`M${centerX - 10},${mouthY - 1} Q${centerX},${mouthY + 5} ${centerX + 10},${mouthY - 1}` || ""}
                         fill="none"
                         stroke="#00e5ff"
                         strokeWidth="2.5"
@@ -257,7 +255,7 @@ const CalCharacter = ({
                 <defs>
                     {/* Glow filters */}
                     <filter id="eyeGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="2" result="glow" />
+                        <feGaussianBlur stdDeviation="1" result="glow" />
                         <feMerge>
                             <feMergeNode in="glow" />
                             <feMergeNode in="SourceGraphic" />
@@ -265,7 +263,7 @@ const CalCharacter = ({
                     </filter>
 
                     <filter id="bodyGlow" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="4" result="glow" />
+                        <feGaussianBlur stdDeviation="3" result="glow" />
                         <feMerge>
                             <feMergeNode in="glow" />
                             <feMergeNode in="SourceGraphic" />
@@ -286,14 +284,14 @@ const CalCharacter = ({
                     </linearGradient>
                 </defs>
 
-                {/* Continuous particles (normal size only) */}
-                {!isMini && particles.map(p => (
+                {/* Continuous particles */}
+                {particles.map(p => (
                     <motion.ellipse
                         key={p.id}
                         cx={p.x}
                         cy={p.y}
-                        rx={p.size * 0.6}
-                        ry={p.size}
+                        rx={p.size * (isMini ? 0.3 : 0.6)}
+                        ry={p.size * (isMini ? 0.5 : 1)}
                         fill={p.color}
                         opacity={p.opacity}
                         style={{ rotate: p.rotation }}

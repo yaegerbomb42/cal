@@ -2,6 +2,7 @@ import { addDays, isValid, nextDay, parse, setHours, setMinutes, startOfDay } fr
 import { sanitizeDraft } from '../utils/eventSchema';
 import { aiEventEmitter } from './aiEventEmitter';
 import { createWebLLMEvaluator } from './WebLLMEvaluator';
+import { buildGraphData, extractFields } from '../utils/graphParser';
 
 const DEFAULT_DURATION_MINUTES = 60;
 const CONFIDENCE_THRESHOLD = 0.8;
@@ -155,6 +156,9 @@ const extractLocation = (input) => {
 };
 
 const buildRuleBasedDraft = (input, now = new Date()) => {
+  // Use graphParser for enhanced extraction
+  const graphFields = extractFields(input);
+
   const baseDate = extractExplicitDate(input, now);
   const range = extractTimeRange(input);
   const timeToken = extractTime(input);
@@ -170,17 +174,23 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
   } else if (timeToken) {
     start = setMinutes(setHours(baseDate, timeToken.hours), timeToken.minutes);
     end = new Date(start.getTime() + DEFAULT_DURATION_MINUTES * 60 * 1000);
+  } else if (graphFields.time) {
+    // Fallback to graphParser time if regex-based extractTime missed it
+    const graphTime = parse(graphFields.time, 'h:mm a', now);
+    if (isValid(graphTime)) {
+      start = setMinutes(setHours(baseDate, graphTime.getHours()), graphTime.getMinutes());
+      end = new Date(start.getTime() + DEFAULT_DURATION_MINUTES * 60 * 1000);
+    }
   }
 
-  const title = inferTitle(input);
+  const title = graphFields.title || inferTitle(input);
+  const finalLocation = graphFields.location || location;
 
   // If we found a recurrence like "every monday", ensure start date matches that day
   if (recurrence?.type === 'weekly' && recurrence.daysOfWeek?.length > 0) {
     const targetDay = recurrence.daysOfWeek[0];
     const currentDay = baseDate.getDay();
     if (currentDay !== targetDay) {
-      // Adjust baseDate to the next instance of that day
-      // Note: This modifies 'start' if it was already set based on baseDate
       const daysToAdd = (targetDay - currentDay + 7) % 7;
       if (daysToAdd > 0 && start) {
         const newStart = addDays(start, daysToAdd);
@@ -194,8 +204,9 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
     title: title || undefined,
     start: start ? start.toISOString() : undefined,
     end: end ? end.toISOString() : undefined,
-    location: location || undefined,
-    recurring: recurrence || undefined
+    location: finalLocation || undefined,
+    recurring: recurrence || undefined,
+    attendees: graphFields.attendees?.length ? graphFields.attendees : undefined
   };
 };
 
@@ -395,12 +406,15 @@ export const processEventInput = async (
     ? 'needs_clarification'
     : 'draft';
 
+  const graphData = buildGraphData(input);
+
   aiEventEmitter.emit('calai-event-processed', {
     input,
     source,
     confidence,
     missingFields,
-    benchmark
+    benchmark,
+    graphData
   });
 
   return {
@@ -409,6 +423,7 @@ export const processEventInput = async (
     missingFields,
     confidence,
     source,
-    benchmark
+    benchmark,
+    graphData
   };
 };

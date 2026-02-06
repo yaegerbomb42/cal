@@ -2,402 +2,252 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden;
-  background: transparent;
-  --hour-height: 32px;
-}
-
-.week-control-bar {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.5rem 1rem;
-  margin-bottom: 0.5rem;
-  border-radius: 12px;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-}
-
-.week-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.week-add-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem;
-}
-
-.week-nav-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.nav-icon-btn {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.35rem;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-}
-
-.nav-icon-btn:hover {
-  background: var(--accent);
-  color: white;
-}
-
-.nav-today-btn {
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.nav-today-btn:hover {
-  filter: brightness(1.1);
-}
-
-.week-title-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.week-label {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.week-range {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.week-ai-form {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.6rem;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  flex: 1;
-  max-width: 400px;
-  margin-left: 20px;
-  /* Shifted right per request */
-  transition: all 0.2s ease;
-}
-
-.week-ai-form:focus-within {
-  background: rgba(0, 0, 0, 0.3);
-  border-color: rgba(92, 200, 255, 0.4);
-  box-shadow: 0 0 10px rgba(92, 200, 255, 0.15);
-}
-
-.ai-icon {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.ai-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  min-width: 100px;
-}
-
-.ai-input:focus {
-  outline: none;
-}
-
-.ai-input::placeholder {
-  color: var(--text-secondary);
-}
-
-.ai-action-btn,
-.ai-submit-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.ai-action-btn:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.ai-submit-btn {
-  color: var(--accent);
-}
-
-.ai-submit-btn:hover {
-  background: rgba(99, 102, 241, 0.1);
-  transform: scale(1.1);
-}
-
-.ai-submit-btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-  transform: none;
 }
 
 .week-header {
   display: grid;
   grid-template-columns: 70px repeat(7, 1fr);
   border-bottom: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--backdrop-blur);
-  backdrop-filter: var(--backdrop-blur);
+  background: rgba(15, 23, 42, 0.4);
   z-index: 10;
-  padding-right: 8px;
-  /* Standard scrollbar width */
 }
 
-/* Main Grid - Ensure Time Column is Left */
-/* Main Grid - Fixed Time Column, Fluid Days */
+.header-cell {
+  padding: 0.75rem 0.5rem;
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.header-cell.gutter {
+  border-right: 1px solid var(--glass-border);
+}
+
+.header-cell.today {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.header-cell .day-name {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.header-cell .day-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.header-cell.today .day-number {
+  color: var(--accent);
+}
+
 .week-grid {
+  flex: 1;
   display: grid;
   grid-template-columns: 70px 1fr;
-  /* Time Column fixed at 70px, Days take rest */
-  flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
   position: relative;
-  /* Custom Scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: var(--glass-border) transparent;
 }
 
-.week-grid::-webkit-scrollbar {
-  width: 8px;
+.week-time-column {
+  display: grid;
+  grid-template-rows: repeat(24, var(--hour-height));
+  border-right: 1px solid var(--glass-border);
+  background: rgba(15, 23, 42, 0.2);
 }
 
-.week-grid::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.week-grid::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+.week-time-slot {
+  height: var(--hour-height);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 6px 0.75rem 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .week-days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  /* 7 days equal width */
   width: 100%;
-}
-
-.week-time-slot {
-  display: flex;
-  align-items: flex-start;
-  /* Align numbers to top */
-  justify-content: flex-end;
-  padding: 0 0.75rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  /* Subtler border */
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
-  /* Divider */
-  height: var(--hour-height);
-  padding-top: 6px;
-  /* Offset text slightly */
 }
 
 .week-day-column {
   position: relative;
   display: grid;
   grid-template-rows: repeat(24, var(--hour-height));
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
-  overflow: hidden;
-}
-
-.week-day-column:last-child {
-  border-right: none;
+  border-right: 1px solid var(--glass-border);
 }
 
 .week-day-column.today {
-  background: rgba(99, 102, 241, 0.05);
+  background: rgba(var(--accent-rgb), 0.03);
 }
 
 .week-hour-cell {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  /* Re-add horizontal lines */
-  box-sizing: border-box;
+  height: var(--hour-height);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
 }
 
-/* Current Time Indicator */
-.week-time-indicator {
+.week-hour-cell:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.week-events-layer {
   position: absolute;
+  top: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  bottom: 0;
+  display: grid;
+  grid-template-rows: repeat(1440, 1fr);
+  grid-template-columns: repeat(var(--overlap-count, 1), 1fr);
   pointer-events: none;
   z-index: 20;
 }
 
-.week-time-indicator-line {
-  width: 100%;
-  height: 2px;
-  /* Moderate thickness */
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), 0 0 4px rgba(239, 68, 68, 0.6);
-  /* Moderate glow */
-  z-index: 40;
-}
-
-.week-current-time {
+.week-time-indicator-grid-container {
   position: absolute;
-  left: 70px;
-  /* Match grid offset */
+  top: 0;
+  left: 0;
   right: 0;
-  height: 0;
+  bottom: 0;
   pointer-events: none;
-  z-index: 30;
+  z-index: 50;
 }
 
-.week-current-time .current-time-line {
+.week-time-indicator {
   position: absolute;
   left: 0;
   right: 0;
-  height: 2px;
-  /* Moderate thickness */
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8), 0 0 4px rgba(239, 68, 68, 0.6);
-  /* Moderate glow */
-  z-index: 40;
+  height: 0;
+  pointer-events: none;
+  width: 100%;
 }
 
-.week-current-time .current-time-label {
+.week-time-indicator-line {
   position: absolute;
-  left: -60px;
-  top: -10px;
-  transform: translateY(0);
-  background: transparent;
-  color: #facc15;
-  padding: 2px 4px;
-  border-radius: 4px;
+  top: 0;
+  height: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  width: 100%;
+}
+
+.week-time-indicator-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 1);
+}
+
+.week-event {
+  margin: 1px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(var(--event-color-rgb, 99, 102, 241), 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
   font-size: 0.75rem;
+  overflow: hidden;
+  pointer-events: auto;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.week-event:hover {
+  transform: translateY(-1px) scale(1.02);
+  background: rgba(var(--event-color-rgb, 99, 102, 241), 0.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  z-index: 100 !important;
+}
+
+.week-event.past {
+  opacity: 0.6;
+  filter: grayscale(0.4);
+}
+
+.week-event-title {
   font-weight: 700;
-  border: none;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  z-index: 40;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.8rem;
+}
+
+.week-event-time {
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.8;
+}
+
+.week-event-location {
+  font-size: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-event-indicator {
+  position: absolute;
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  z-index: 10;
+  pointer-events: none;
+  animation: pulse-draft 2s infinite ease-in-out;
+}
+
+@keyframes pulse-draft {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
 }
 
 .week-empty-state {
   position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
-  color: var(--text-muted);
   pointer-events: none;
-  gap: 0.35rem;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.05));
-}
-
-.week-empty-state .empty-title {
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.week-empty-state .empty-subtitle {
-  font-size: 0.85rem;
-}
-
-@media (max-width: 1024px) {
-  .week-view {
-    --hour-height: 26px;
-  }
-}
-
-@media (max-width: 768px) {
-  .week-view {
-    --hour-height: 40px;
-    /* Taller on mobile for touch targets */
-  }
-
-  .week-control-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-
-  .week-ai-form {
-    max-width: none;
-  }
-
-  .week-header {
-    grid-template-columns: 55px repeat(7, 1fr);
-  }
-
-  .week-grid {
-    grid-template-columns: 55px 1fr;
-  }
-
-  .week-current-time {
-    left: 55px;
-  }
-
-  .week-current-time .current-time-label {
-    left: -50px;
-  }
-}
-
-/* Draft event blinking indicator */
-.draft-event-indicator {
-  position: absolute;
-  border: 2px dashed var(--accent);
-  border-radius: 6px;
-  background: rgba(99, 102, 241, 0.15);
-  animation: blink-draft 1s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 10;
-  display: flex;
-  align-items: flex-start;
-}
-
-@keyframes blink-draft {
-
-  0%,
-  100% {
-    opacity: 1;
-    border-color: var(--accent);
-  }
-
-  50% {
-    opacity: 0.4;
-    border-color: transparent;
-  }
+  opacity: 0.5;
 }

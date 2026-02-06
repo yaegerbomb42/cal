@@ -7,15 +7,11 @@ import { cn, getEventColor, formatDuration } from '../../utils/helpers';
 import {
   formatTime,
   getDayHours,
-  getEventPosition,
-  sortEventsByStart,
-  getCurrentTimePosition
+  sortEventsByStart
 } from '../../utils/dateUtils';
 import { Clock } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
-import AIChatInput from '../UI/AIChatInput';
-import NavigationDropdown from '../UI/NavigationDropdown';
 import StandardViewHeader from '../Header/StandardViewHeader';
 import './DayView.css';
 
@@ -57,9 +53,6 @@ const DayView = () => {
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  // Always show current time bar regardless of which day is displayed
-  const currentTimePosition = getCurrentTimePosition(pixelsPerHour);
 
   const handleAddEvent = () => {
     const startTime = new Date(currentDate);
@@ -216,11 +209,15 @@ const DayView = () => {
 
           <div className="day-events-layer" style={{ '--overlap-count': maxOverlap }}>
             {dayLayout.map(({ event, column }, index) => {
-              const { top, height: rawHeight } = getEventPosition(event, currentDate, pixelsPerHour);
-              const height = Math.max(rawHeight * 0.7, 18);
-              const isPastEvent = new Date(event.end || event.start) < now;
-              const rowStart = Math.max(1, Math.floor(top) + 1);
-              const rowSpan = Math.max(18, Math.ceil(height));
+              const start = new Date(event.start);
+              const end = new Date(event.end);
+              const minutesFromDayStart = start.getHours() * 60 + start.getMinutes();
+              const durationMinutes = Math.max(15, (end.getTime() - start.getTime()) / (1000 * 60));
+
+              const isPastEvent = end < now;
+              const rowStart = minutesFromDayStart + 1;
+              const rowSpan = Math.ceil(durationMinutes);
+
               return (
                 <MotionButton
                   key={event.id}
@@ -252,15 +249,23 @@ const DayView = () => {
                 </MotionButton>
               );
             })}
+
+            {/* Live time indicator with absolute accuracy */}
+            {(() => {
+              const nowTick = new Date(currentTick);
+              const minutes = nowTick.getHours() * 60 + nowTick.getMinutes();
+              const percent = (minutes / 1440) * 100;
+              return (
+                <div
+                  className="day-current-time-grid"
+                  style={{ top: `${percent}%` }}
+                >
+                  <div className="current-time-line"></div>
+                  <div className="current-time-label">{format(nowTick, 'h:mm a')}</div>
+                </div>
+              );
+            })()}
           </div>
-
-          {currentTimePosition !== null && (
-            <div className="day-current-time" style={{ top: `${currentTimePosition}px` }}>
-              <div className="current-time-line"></div>
-
-              <div className="current-time-label">{format(currentTick, 'h:mm a')}</div>
-            </div>
-          )}
 
           {dayEvents.length === 0 && (
             <div className="day-empty-state">
