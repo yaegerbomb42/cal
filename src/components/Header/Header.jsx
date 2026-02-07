@@ -6,10 +6,11 @@ import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
 import LiveClock from './LiveClock';
 import DateNavigator from './DateNavigator';
+import AIChatInput from '../UI/AIChatInput';
 import './Header.css';
 
 const Header = ({ onOpenSettings }) => {
-  const { view, setView, goToToday, openEventModal, navigateDate, isZoomMode, setIsZoomMode } = useCalendar();
+  const { view, setView, goToToday, openEventModal, isZoomMode, setIsZoomMode } = useCalendar();
   const MotionHeader = motion.header;
   const MotionButton = motion.button;
 
@@ -38,6 +39,12 @@ const Header = ({ onOpenSettings }) => {
     };
   }, [openEventModal, goToToday]);
 
+  const handleAIChatSubmit = ({ text, files }) => {
+    if (text) window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
+    if (files?.length) window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
+    window.dispatchEvent(new CustomEvent('calai-open'));
+  };
+
   return (
     <MotionHeader
       initial={{ y: -20, opacity: 0 }}
@@ -46,7 +53,7 @@ const Header = ({ onOpenSettings }) => {
     >
       <div className="container" style={{ maxWidth: '100%', padding: '0 16px' }}>
         <div className="header-content">
-          {/* Left: Logo (Home Button) */}
+          {/* Left: Logo (Home Button) & AI Chat */}
           <div className="header-left">
             <MotionButton
               whileHover={{ scale: 1.02 }}
@@ -54,7 +61,7 @@ const Header = ({ onOpenSettings }) => {
               className="logo-section"
               onClick={goToToday}
               title="Return to Today"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}
             >
               <img src="/logo.png?v=fixed" alt="CalAI" style={{ width: '36px', height: '36px', borderRadius: '8px' }} />
               <div className="logo-text">
@@ -62,6 +69,14 @@ const Header = ({ onOpenSettings }) => {
                 <span style={{ fontSize: '9px', opacity: 0.5, marginLeft: 4 }}>HOME / TODAY</span>
               </div>
             </MotionButton>
+
+            {/* AI Chat Input - Restored */}
+            <div style={{ width: '320px', marginLeft: '0px' }}>
+              <AIChatInput
+                onSubmit={handleAIChatSubmit}
+                compact={true}
+              />
+            </div>
           </div>
 
           <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -70,7 +85,7 @@ const Header = ({ onOpenSettings }) => {
 
           {/* Right: View Selector & Settings */}
           <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {/* Download/Install Button */}
+            {/* New Event Button */}
             <MotionButton
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
