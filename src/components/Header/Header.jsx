@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, ChevronLeft, ChevronRight, MousePointerClick, ArrowUp, ArrowDown } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, MousePointerClick, ArrowUp, ArrowDown, Plus } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
+import LiveClock from './LiveClock';
+import DateNavigator from './DateNavigator';
 import './Header.css';
 
 const Header = ({ onOpenSettings }) => {
@@ -62,18 +64,35 @@ const Header = ({ onOpenSettings }) => {
             </MotionButton>
           </div>
 
-          {/* Center: Navigation Controls */}
           <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className="nav-arrows" style={{ display: 'flex', gap: '4px' }}>
-              <button className="nav-btn icon-only" onClick={() => navigateDate(-1)} style={{ borderRadius: '8px' }}><ChevronLeft size={18} /></button>
-              <button className="nav-btn today-btn" onClick={goToToday} style={{ padding: '4px 12px', fontSize: '0.85rem', fontWeight: '500' }}>Today</button>
-              <button className="nav-btn icon-only" onClick={() => navigateDate(1)} style={{ borderRadius: '8px' }}><ChevronRight size={18} /></button>
-            </div>
+            <DateNavigator />
           </div>
 
           {/* Right: View Selector & Settings */}
           <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {/* Download/Install Button */}
+            <MotionButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => openEventModal({ start: new Date() })}
+              className="btn btn-primary glass-btn"
+              style={{
+                background: 'var(--accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '0 12px',
+                height: '32px',
+                display: 'flex', alignItems: 'center', gap: '6px',
+                fontWeight: '600',
+                fontSize: '0.85rem'
+              }}
+              title="Create New Event (Ctrl+N)"
+            >
+              <Plus size={16} />
+              <span>New</span>
+            </MotionButton>
+            <LiveClock />
             {/* Zoom Nav Toggle */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <MotionButton

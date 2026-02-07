@@ -12,7 +12,6 @@ import {
 import { Clock } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
-import StandardViewHeader from '../Header/StandardViewHeader';
 import './DayView.css';
 
 const buildEventSnippet = (event) => {
@@ -31,7 +30,7 @@ const buildEventSnippet = (event) => {
 };
 
 const DayView = () => {
-  const { currentDate, openEventModal, setCurrentDate } = useCalendar();
+  const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate, updateEvent } = useEvents();
 
   const MotionDiv = motion.div;
@@ -53,13 +52,6 @@ const DayView = () => {
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleAddEvent = () => {
-    const startTime = new Date(currentDate);
-    startTime.setHours(9, 0, 0, 0);
-    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
-    openEventModal({ start: startTime, end: endTime });
-  };
 
   const handleDragStart = (event, e) => {
     setDraggedEvent(event);
@@ -103,75 +95,6 @@ const DayView = () => {
       animate={{ opacity: 1, x: 0 }}
       className="day-view"
     >
-      <StandardViewHeader
-        onAIChatSubmit={({ text, files }) => {
-          if (text) {
-            window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
-            window.dispatchEvent(new CustomEvent('calai-open'));
-          }
-          if (files && files.length > 0) {
-            window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-            window.dispatchEvent(new CustomEvent('calai-open'));
-          }
-        }}
-        centerContent={
-          <div className="day-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-              <select
-                value={currentDate.getDate()}
-                onChange={(e) => {
-                  const newDate = new Date(currentDate);
-                  newDate.setDate(parseInt(e.target.value));
-                  setCurrentDate(newDate);
-                }}
-                className="view-select-dropdown"
-                style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
-              >
-                {[...Array(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate())].map((_, i) => {
-                  const dayNum = i + 1;
-                  return <option key={dayNum} value={dayNum}>{dayNum}</option>;
-                })}
-              </select>
-              <select
-                value={currentDate.getMonth()}
-                onChange={(e) => {
-                  const newDate = new Date(currentDate);
-                  newDate.setMonth(parseInt(e.target.value));
-                  setCurrentDate(newDate);
-                }}
-                className="view-select-dropdown"
-                style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
-              >
-                {[...Array(12)].map((_, i) => (
-                  <option key={i} value={i}>{format(new Date(currentDate.getFullYear(), i, 1), 'MMM')}</option>
-                ))}
-              </select>
-              <select
-                value={currentDate.getFullYear()}
-                onChange={(e) => {
-                  const newDate = new Date(currentDate);
-                  newDate.setFullYear(parseInt(e.target.value));
-                  setCurrentDate(newDate);
-                }}
-                className="view-select-dropdown"
-                style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
-              >
-                {[...Array(10)].map((_, i) => {
-                  const year = new Date().getFullYear() - 2 + i;
-                  return <option key={year} value={year}>{year}</option>;
-                })}
-              </select>
-            </div>
-          </div>
-        }
-        rightContent={
-          <span className="day-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
-            {dayEvents.length} events
-          </span>
-        }
-        onAddEvent={handleAddEvent}
-      />
-
       <div
         className="day-grid glass-card"
         ref={dayGridRef}

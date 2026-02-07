@@ -1,15 +1,11 @@
 import { useRef, useMemo } from 'react';
 import { eachDayOfInterval, format, startOfYear, endOfYear, getDay } from 'date-fns';
-import { Plus } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
-import AIChatInput from '../UI/AIChatInput';
-import NavigationDropdown from '../UI/NavigationDropdown';
-import StandardViewHeader from '../Header/StandardViewHeader';
 import './YearView.css';
 
 const YearView = () => {
-  const { currentDate, openEventModal, setCurrentDate } = useCalendar();
+  const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
   const selectedYear = currentDate.getFullYear();
   const scrollRef = useRef(null);
@@ -35,17 +31,11 @@ const YearView = () => {
     });
   }, [days, getEventsForDate]);
 
-  const yearEventsCount = dayData.reduce((acc, d) => acc + d.count, 0);
-
   // Handlers
   const handleDayClick = (day) => {
     const selectedDate = new Date(day);
     selectedDate.setHours(9, 0, 0, 0);
     openEventModal({ start: selectedDate.toISOString() });
-  };
-
-  const handleCreateEvent = () => {
-    openEventModal({ start: new Date().toISOString() });
   };
 
   // Month Labels Positioning
@@ -69,39 +59,6 @@ const YearView = () => {
 
   return (
     <div className="year-view">
-      <StandardViewHeader
-        onAIChatSubmit={({ text, files }) => {
-          if (text) window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
-          if (files?.length) window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-          window.dispatchEvent(new CustomEvent('calai-open'));
-        }}
-        centerContent={
-          <div className="year-title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <select
-              value={selectedYear}
-              onChange={(e) => {
-                const newDate = new Date(currentDate);
-                newDate.setFullYear(parseInt(e.target.value));
-                setCurrentDate(newDate);
-              }}
-              className="view-select-dropdown"
-              style={{ padding: '2px 24px 2px 8px', fontSize: '1rem', fontWeight: 600 }}
-            >
-              {[...Array(10)].map((_, i) => {
-                const year = new Date().getFullYear() - 2 + i;
-                return <option key={year} value={year}>{year}</option>;
-              })}
-            </select>
-          </div>
-        }
-        rightContent={
-          <span className="year-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
-            {yearEventsCount} events
-          </span>
-        }
-        onAddEvent={handleCreateEvent}
-      />
-
       <div className="year-content-scroll" ref={scrollRef}>
         <div className="github-year-grid">
 

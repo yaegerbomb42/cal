@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Edit2, Copy, Trash2, Clock, MapPin, AlertCircle } from 'lucide-react';
-import { format, getWeek } from 'date-fns';
-import { endOfDay, getDayHours, getWeekDays, isToday, startOfDay, formatTime24 } from '../../utils/dateUtils';
+import { format } from 'date-fns';
+import { endOfDay, getDayHours, getWeekDays, isToday, startOfDay } from '../../utils/dateUtils';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor } from '../../utils/helpers';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import ContextMenu from '../UI/ContextMenu';
-import StandardViewHeader from '../Header/StandardViewHeader';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal, setCurrentDate, draftEvent } = useCalendar();
+  const { currentDate, openEventModal, draftEvent } = useCalendar();
   const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
@@ -121,45 +120,6 @@ const WeekView = () => {
         '--hour-height': `${pixelsPerHour}px`,
       }}
     >
-      <StandardViewHeader
-        onAIChatSubmit={({ text, files }) => {
-          if (text) window.dispatchEvent(new CustomEvent('calai-ping', { detail: { text } }));
-          if (files?.length) window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: { files } }));
-          window.dispatchEvent(new CustomEvent('calai-open'));
-        }}
-        centerContent={
-          <div className="week-title-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-            <select
-              value={getWeek(currentDate)}
-              onChange={(e) => {
-                const newWeekNum = parseInt(e.target.value);
-                const currentWeekNum = getWeek(currentDate);
-                const diff = newWeekNum - currentWeekNum;
-                const newDate = new Date(currentDate);
-                newDate.setDate(newDate.getDate() + diff * 7);
-                setCurrentDate(newDate);
-              }}
-              className="view-select-dropdown"
-              style={{ padding: '2px 24px 2px 8px', fontSize: '0.9rem' }}
-            >
-              {[...Array(53)].map((_, i) => {
-                const weekNum = i + 1;
-                return <option key={weekNum} value={weekNum}>Week {weekNum}</option>;
-              })}
-            </select>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {format(weekDays[0], 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}
-            </span>
-          </div>
-        }
-        rightContent={
-          <span className="week-stat-pill" style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '12px', color: 'var(--text-muted)' }}>
-            {weekEventsCount} events
-          </span>
-        }
-        onAddEvent={() => openEventModal({ start: new Date() })}
-      />
-
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>
         {weekDays.map((day) => (

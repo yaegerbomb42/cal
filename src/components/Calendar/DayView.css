@@ -129,7 +129,7 @@
   display: grid;
   grid-template-columns: 70px 1fr;
   border-radius: 16px;
-  overflow-y: hidden;
+  overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
   height: 100%;

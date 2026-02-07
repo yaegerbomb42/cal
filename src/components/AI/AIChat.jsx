@@ -661,11 +661,11 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <div style={{ background: 'var(--accent)', padding: '4px', borderRadius: '6px' }}>
-                            <Sparkles size={10} style={{ color: 'white' }} />
+                          <div style={{ background: 'var(--accent)', padding: '2px 6px', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '10px', color: 'white', fontWeight: 'bold' }}>R</span>
                           </div>
                           <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.5px', color: 'var(--accent)' }}>
-                            REPEATS {pendingEvent.recurring.type.toUpperCase()}
+                            {pendingEvent.recurring.type.toUpperCase()}
                           </span>
                         </div>
                         <div style={{ display: 'flex', gap: '3px' }}>
