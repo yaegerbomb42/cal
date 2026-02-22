@@ -11,11 +11,11 @@
   /* Lightened from #1c1c1e */
 
   /* Vibrant Accents */
-  --accent: #FF3B30;
-  /* Keep classic Apple Red, it's iconic */
-  --accent-rgb: 255, 59, 48;
-  --accent-hover: #FF453A;
-  --accent-glow: rgba(255, 59, 48, 0.5);
+  --accent: #FF6B6B;
+  /* Lighter Red */
+  --accent-rgb: 255, 107, 107;
+  --accent-hover: #FF8787;
+  --accent-glow: rgba(255, 107, 107, 0.5);
   /* Stronger glow */
 
   --text-primary: #F5F5F7;
@@ -43,21 +43,21 @@
 
   --success: #32D74B;
   /* More vibrant Green */
-  --warning: #FF9F0A;
-  --error: #FF453A;
+  --warning: #FF8787;
+  --error: #FF6B6B;
 
   /* Vivid Pastels for Event Types */
-  --accent-work: #FFD60A;
-  --accent-personal: #FF2D55;
+  --accent-work: #FF8787;
+  --accent-personal: #FF4D4D;
   /* Punchier Red/Pink */
   --accent-fun: #BF5AF2;
   --accent-hobby: #64D2FF;
   --accent-task: #30D158;
   /* Bright Green */
-  --accent-todo: #FF9F0A;
+  --accent-todo: #FFA8A8;
   --accent-event: #0A84FF;
   /* Bright Blue */
-  --accent-appointment: #FF9F0A;
+  --accent-appointment: #FF8787;
   --accent-holiday: #32D74B;
 }
 

@@ -206,7 +206,8 @@
 .week-time-indicator-line::after {
   content: '';
   position: absolute;
-  left: 0;
+  left: -4px;
+  /* Move dot slightly left to align cleanly with the day grid line */
   top: -4px;
   width: 10px;
   height: 10px;

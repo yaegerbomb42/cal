@@ -1,5 +1,5 @@
 
-import { addMinutes, setHours, setMinutes, isBefore, startOfHour, addHours } from 'date-fns';
+import { addMinutes, setHours, isBefore, startOfHour, addHours } from 'date-fns';
 
 /**
  * Finds the next available time slot of a given duration.

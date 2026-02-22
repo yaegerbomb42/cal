@@ -19,7 +19,6 @@ const SmartSchedulePortal = ({
     isOpen,
     onClose,
     onSelectSlot,
-    onExpandView, // NEW PROP
     eventTitle = '',
     existingEvents = [],
     preferredDate
@@ -32,6 +31,7 @@ const SmartSchedulePortal = ({
 
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isExpandedView, setIsExpandedView] = useState(false);
 
     // Generate smart time suggestions
     useEffect(() => {
@@ -74,9 +74,7 @@ const SmartSchedulePortal = ({
     }, [isOpen, eventTitle, existingEvents, safeDate]);
 
     const handleExpandView = () => {
-        if (suggestions.length > 0 && onExpandView) {
-            onExpandView(suggestions);
-        }
+        setIsExpandedView(prev => !prev);
     };
 
     // Calculate the week days for the mini grid
@@ -87,10 +85,11 @@ const SmartSchedulePortal = ({
 
     return (
         <MotionDiv
-            className="smart-schedule-panel mini-week-mode"
+            className={`smart-schedule-panel mini-week-mode ${isExpandedView ? 'expanded-mode' : ''}`}
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 280 }}
+            animate={{ opacity: 1, height: isExpandedView ? 700 : 280 }}
             exit={{ opacity: 0, height: 0 }}
+            style={{ width: isExpandedView ? '100%' : 'auto' }}
         >
             <div className="panel-header">
                 <div className="portal-title">
@@ -100,7 +99,7 @@ const SmartSchedulePortal = ({
                 {suggestions.length > 0 && (
                     <button className="expand-view-btn" onClick={handleExpandView}>
                         <Calendar size={14} />
-                        <span>View Large</span>
+                        <span>{isExpandedView ? 'Collapse' : 'View Large'}</span>
                     </button>
                 )}
                 <button className="portal-close" onClick={onClose}>
@@ -212,7 +211,7 @@ const SmartSchedulePortal = ({
                                 })}
 
                                 {/* Hover Overlay for "Click to expand" */}
-                                {suggestions.length > 0 && (
+                                {suggestions.length > 0 && !isExpandedView && (
                                     <div className="mini-grid-overlay">
                                         <div className="overlay-content">
                                             <Calendar size={24} />

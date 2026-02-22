@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ThemeProvider } from './contexts/ThemeContext.jsx';
 import { CalendarProvider } from './contexts/CalendarContext.jsx';
-import { useCalendar } from './contexts/useCalendar'; // Added hook
 import { EventsProvider } from './contexts/EventsContext.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth';
@@ -57,10 +56,8 @@ function App() {
 
 const MainLayout = () => {
   const { user, loading } = useAuth();
-  const { view, setView } = useCalendar(); // Needed for zoom nav
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
-  const [isZoomNavEnabled, setIsZoomNavEnabled] = useState(false); // Zoom Nav Toggle
   const [initialChatMessage, setInitialChatMessage] = useState(null);
   const MotionDiv = motion.div;
 
@@ -77,17 +74,32 @@ const MainLayout = () => {
   useEffect(() => {
     const handlePing = (e) => {
       if (e.detail?.text) {
-        // Fix: Only set initialChatMessage if chat is NOT already open.
-        // If it IS open, AIChat.jsx listener will handle it directly.
         if (!isAIChatOpen) {
           setInitialChatMessage(e.detail.text);
           setIsAIChatOpen(true);
         }
       }
     };
+
+    // In App.jsx, handle open trigger from Header file uploads too
+    const handleImageUpload = (e) => {
+      if (!isAIChatOpen && e.detail?.files) {
+        // Open AIChat, AIChat has its own event listener for this, but if it was closed,
+        // the listener wasn't active. Let's delay the re-dispatch so AIChat has time to mount.
+        setIsAIChatOpen(true);
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('calai-image-upload', { detail: e.detail }));
+        }, 100);
+      }
+    };
+
     window.addEventListener('calai-ping', handlePing);
-    return () => window.removeEventListener('calai-ping', handlePing);
-  }, []);
+    window.addEventListener('calai-image-upload', handleImageUpload);
+    return () => {
+      window.removeEventListener('calai-ping', handlePing);
+      window.removeEventListener('calai-image-upload', handleImageUpload);
+    };
+  }, [isAIChatOpen]);
 
   const startResizing = useCallback((e) => {
     e.preventDefault();
@@ -145,35 +157,7 @@ const MainLayout = () => {
     };
   }, [resize, stopResizing]);
 
-  // Zoom Navigation Logic (Arrow Keys)
-  useEffect(() => {
-    if (!isZoomNavEnabled) return;
-
-    const handleZoomKey = (e) => {
-      // Ignore if in input
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-
-      const VIEWS = ['day', 'week', 'month', 'year']; // Zoom In -> Out
-      const currentIndex = VIEWS.indexOf(view);
-
-      if (e.key === 'ArrowUp') {
-        // Zoom OUT (e.g., Week -> Month)
-        e.preventDefault();
-        if (currentIndex < VIEWS.length - 1) {
-          setView(VIEWS[currentIndex + 1]);
-        }
-      } else if (e.key === 'ArrowDown') {
-        // Zoom IN (e.g., Month -> Week)
-        e.preventDefault();
-        if (currentIndex > 0) {
-          setView(VIEWS[currentIndex - 1]);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleZoomKey);
-    return () => window.removeEventListener('keydown', handleZoomKey);
-  }, [isZoomNavEnabled, view, setView]);
+  // Zoom Navigation Logic (Arrow Keys) removed per user request
 
   useEffect(() => {
     const initializeAI = async () => {
@@ -218,7 +202,9 @@ const MainLayout = () => {
       if (hasOpenModal) return;
 
       // Open AI chat and dispatch focus event with the typed character
-      setIsAIChatOpen(true);
+      if (!isAIChatOpen) {
+        setIsAIChatOpen(true);
+      }
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('calai-focus', { detail: { key: e.key } }));
       }, 100);
@@ -226,7 +212,7 @@ const MainLayout = () => {
 
     window.addEventListener('keydown', handleGlobalKeydown);
     return () => window.removeEventListener('keydown', handleGlobalKeydown);
-  }, []);
+  }, [isAIChatOpen]);
 
   if (loading) {
     return (
@@ -251,9 +237,7 @@ const MainLayout = () => {
         <ThemeBackground />
         <Header
           onOpenSettings={() => setIsSettingsOpen(true)}
-          onOpenAI={() => setIsAIChatOpen(true)}
-          isZoomNavEnabled={isZoomNavEnabled}
-          onToggleZoomNav={() => setIsZoomNavEnabled(!isZoomNavEnabled)}
+          onOpenAIChat={() => setIsAIChatOpen(true)}
         />
 
         <main
@@ -286,7 +270,7 @@ const MainLayout = () => {
 
         <Suspense fallback={<LoadingFallback />}>
           {/* Conditional rendering for heavy components to truly lazy load logic */}
-          <EventModal />
+          <EventModal isAIChatOpen={isAIChatOpen} />
 
           {/* ... existing code ... */}
 

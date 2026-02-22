@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
@@ -11,6 +12,8 @@ const DateNavigator = () => {
         navigateDate,
         goToToday
     } = useCalendar();
+    const panRef = useRef(0);
+    const MotionDiv = motion.div;
 
     const getLabel = () => {
         if (view === CALENDAR_VIEWS.DAY) return format(currentDate, 'MMMM d, yyyy');
@@ -63,19 +66,44 @@ const DateNavigator = () => {
                 </button>
             </div>
 
-            <div
+            <MotionDiv
                 className="date-label"
+                onPanStart={() => {
+                    panRef.current = 0;
+                }}
+                onPan={(e, info) => {
+                    panRef.current += info.delta.x;
+                    const absOffset = Math.abs(info.offset.x);
+
+                    let threshold = 40;
+                    if (absOffset > 200) threshold = 8;
+                    else if (absOffset > 100) threshold = 15;
+                    else if (absOffset > 50) threshold = 25;
+
+                    if (panRef.current >= threshold) {
+                        navigateDate(1);
+                        panRef.current -= threshold;
+                    } else if (panRef.current <= -threshold) {
+                        navigateDate(-1);
+                        panRef.current += threshold;
+                    }
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 style={{
                     minWidth: '140px',
                     textAlign: 'center',
                     fontWeight: '600',
                     fontSize: '0.9rem',
                     color: 'var(--text-primary)',
-                    padding: '0 8px'
+                    padding: '0 8px',
+                    cursor: 'ew-resize',
+                    userSelect: 'none'
                 }}
+                title="Drag left/right to change date"
             >
                 {getLabel()}
-            </div>
+            </MotionDiv>
         </div>
     );
 };

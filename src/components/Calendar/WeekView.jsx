@@ -224,13 +224,18 @@ const WeekView = () => {
                 {/* Live time indicator with absolute accuracy */}
                 {isToday(day) && (() => {
                   const nowTick = new Date(currentTick);
-                  const minutes = nowTick.getHours() * 60 + nowTick.getMinutes();
-                  const percent = (minutes / 1440) * 100;
+                  const hours = nowTick.getHours();
+                  const minutes = nowTick.getMinutes();
+                  const seconds = nowTick.getSeconds();
+
+                  // Exact position based on hour map
+                  const exactTop = (hours * pixelsPerHour) + ((minutes / 60) * pixelsPerHour) + ((seconds / 3600) * pixelsPerHour);
+
                   return (
                     <div className="week-time-indicator-grid-container">
                       <div
                         className="week-time-indicator"
-                        style={{ top: `${percent}%` }}
+                        style={{ top: `${exactTop}px` }}
                       >
                         <div className="week-time-indicator-line" />
                       </div>

@@ -40,6 +40,13 @@
   width: 1120px;
 }
 
+.event-modal.shifted-left {
+  /* AI Chat takes up 400px on the right. 
+     We can shift the center left by ~200px or absolute position it. */
+  transform: translateX(-200px);
+}
+
+
 .modal-header.compact {
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);

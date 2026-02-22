@@ -92,9 +92,9 @@ import IsometricClock from '../Common/IsometricClock'; // NEW IMPORT
 
 // ... helper functions ...
 
-const EventModal = () => {
+const EventModal = ({ isAIChatOpen }) => {
   // ... hooks and state ...
-  const { selectedEvent, isEventModalOpen, closeEventModal, setDraftEvent, setView, setSmartSuggestions, setSmartScheduleDraft } = useCalendar();
+  const { selectedEvent, isEventModalOpen, closeEventModal, setDraftEvent } = useCalendar();
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
 
@@ -304,7 +304,7 @@ const EventModal = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           onClick={(e) => e.stopPropagation()}
-          className={`event-modal glass-card single-screen ${isSmartScheduleOpen ? 'expanded' : ''}`}
+          className={`event-modal glass-card single-screen ${isSmartScheduleOpen ? 'expanded' : ''} ${isAIChatOpen ? 'shifted-left' : ''}`}
         >
           {/* Header */}
           <div className="modal-header compact">
@@ -492,12 +492,6 @@ const EventModal = () => {
             <SmartSchedulePortal
               isOpen={isSmartScheduleOpen}
               onClose={() => setIsSmartScheduleOpen(false)}
-              onExpandView={(suggestions) => {
-                setSmartSuggestions(suggestions);
-                setSmartScheduleDraft(formData);
-                closeEventModal();
-                setView(CALENDAR_VIEWS.WEEK);
-              }}
               onSelectSlot={(start, end) => {
                 setFormData(prev => ({
                   ...prev,

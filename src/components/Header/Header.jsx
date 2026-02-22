@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, ChevronLeft, ChevronRight, MousePointerClick, ArrowUp, ArrowDown, Plus } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, MousePointerClick, ArrowUp, ArrowDown, Plus, Sparkles } from 'lucide-react';
 import { useCalendar } from '../../contexts/useCalendar';
 import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { registerShortcut } from '../../utils/keyboardShortcuts';
@@ -10,8 +10,8 @@ import AIChatInput from '../UI/AIChatInput';
 import CalCharacter from '../AI/CalCharacter';
 import './Header.css';
 
-const Header = ({ onOpenSettings }) => {
-  const { view, setView, goToToday, openEventModal, isZoomMode, setIsZoomMode } = useCalendar();
+const Header = ({ onOpenSettings, onOpenAIChat }) => {
+  const { view, setView, goToToday, openEventModal } = useCalendar();
   const MotionHeader = motion.header;
   const MotionButton = motion.button;
 
@@ -64,8 +64,8 @@ const Header = ({ onOpenSettings }) => {
               title="Return to Today"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}
             >
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: 'rgba(0,0,0,0.2)' }}>
-                <CalCharacter mood="neutral" isSpeaking={false} scale={0.4} />
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CalCharacter emotion="idle" isTalking={false} size="mini" />
               </div>
               <div className="logo-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, lineHeight: 1 }}>CalAI</h1>
@@ -73,13 +73,40 @@ const Header = ({ onOpenSettings }) => {
               </div>
             </MotionButton>
 
+            {/* Current Time Display (Moved from right) */}
+            <LiveClock />
+
             {/* AI Chat Input - Restored */}
-            <div style={{ width: '320px', marginLeft: '0px' }}>
-              <AIChatInput
-                onSubmit={handleAIChatSubmit}
-                compact={true}
-                hideCharacter={true}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '0px' }}>
+              <MotionButton
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onOpenAIChat}
+                className="btn glass-btn"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                }}
+                title="Open AI Chat Sidebar"
+              >
+                <Sparkles size={16} />
+              </MotionButton>
+              <div style={{ width: '320px' }}>
+                <AIChatInput
+                  onSubmit={handleAIChatSubmit}
+                  compact={true}
+                  hideCharacter={true}
+                />
+              </div>
             </div>
           </div>
 
@@ -111,45 +138,7 @@ const Header = ({ onOpenSettings }) => {
               <Plus size={16} />
               <span>New</span>
             </MotionButton>
-            <LiveClock />
-            {/* Zoom Nav Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsZoomMode(!isZoomMode)}
-                className={`btn icon-only glass-btn ${isZoomMode ? 'active-nav-toggle' : ''}`}
-                style={{
-                  background: isZoomMode ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                  color: isZoomMode ? 'white' : 'var(--text-secondary)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '8px',
-                  width: 'auto',
-                  padding: '0 8px',
-                  height: '32px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
-                title={isZoomMode ? "Zoom Nav ON (Use Arrow Keys)" : "Zoom Nav OFF"}
-              >
-                <MousePointerClick size={16} />
-                <span style={{ fontSize: '10px', fontWeight: '700', marginLeft: '4px' }}>ZOOM</span>
-              </MotionButton>
 
-              {isZoomMode && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                  <button onClick={() => {
-                    const viewOrder = [CALENDAR_VIEWS.DAY, CALENDAR_VIEWS.WEEK, CALENDAR_VIEWS.MONTH, CALENDAR_VIEWS.YEAR];
-                    const idx = viewOrder.indexOf(view);
-                    if (idx < 3) setView(viewOrder[idx + 1]);
-                  }} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}><ArrowUp size={12} /></button>
-                  <button onClick={() => {
-                    const viewOrder = [CALENDAR_VIEWS.DAY, CALENDAR_VIEWS.WEEK, CALENDAR_VIEWS.MONTH, CALENDAR_VIEWS.YEAR];
-                    const idx = viewOrder.indexOf(view);
-                    if (idx > 0) setView(viewOrder[idx - 1]);
-                  }} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: 0 }}><ArrowDown size={12} /></button>
-                </div>
-              )}
-            </div>
 
             <div className="view-selector glass-panel" style={{ background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '10px' }}>
               {viewButtons.map(({ key, label }) => (

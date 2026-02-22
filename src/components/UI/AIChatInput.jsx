@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Send, ImagePlus, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import CalCharacter from '../AI/CalCharacter';
 import './AIChatInput.css';
 
@@ -13,6 +13,7 @@ const AIChatInput = ({
     const [inputInternal, setInputInternal] = useState('');
     const [selectedFiles, setSelectedFiles] = useState([]);
     const fileInputRef = useRef(null);
+    const MotionDiv = motion.div;
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -83,7 +84,7 @@ const AIChatInput = ({
 
             <AnimatePresence>
                 {selectedFiles.length > 0 && (
-                    <motion.div
+                    <MotionDiv
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
@@ -97,7 +98,7 @@ const AIChatInput = ({
                                 </button>
                             </div>
                         ))}
-                    </motion.div>
+                    </MotionDiv>
                 )}
             </AnimatePresence>
         </form>

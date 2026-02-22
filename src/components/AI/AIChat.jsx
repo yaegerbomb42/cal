@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus, Mic, MicOff, Volume2 } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
@@ -328,7 +329,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
 
     window.addEventListener('calai-ping', handlePing);
     return () => window.removeEventListener('calai-ping', handlePing);
-      }, [processInput, lastProcessedInput, events, isOpen, handleAIResponse, addMessage]);
+  }, [processInput, lastProcessedInput, events, isOpen, handleAIResponse, addMessage]);
 
   useEffect(() => {
     scrollToBottom();
@@ -985,7 +986,6 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
               <Send size={16} />
             </button>
           </form>
-
         </motion.div>
       </motion.div>
     </AnimatePresence>

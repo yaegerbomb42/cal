@@ -17,6 +17,8 @@
     "@google/generative-ai": "^0.24.1",
     "@mlc-ai/web-llm": "^0.2.80",
     "@mui/icons-material": "^5.16.7",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
@@ -28,7 +30,8 @@
     "pngjs": "^7.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^6.26.2"
+    "react-router-dom": "^6.26.2",
+    "three": "^0.183.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

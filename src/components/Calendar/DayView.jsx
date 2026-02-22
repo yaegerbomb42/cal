@@ -176,24 +176,30 @@ const DayView = () => {
             {/* Live time indicator with absolute accuracy */}
             {(() => {
               const nowTick = new Date(currentTick);
-              const minutes = nowTick.getHours() * 60 + nowTick.getMinutes();
-              const percent = (minutes / 1440) * 100;
+              const hours = nowTick.getHours();
+              const minutes = nowTick.getMinutes();
+              const seconds = nowTick.getSeconds();
+
+              // Exact position based on hour map
+              const exactTop = (hours * pixelsPerHour) + ((minutes / 60) * pixelsPerHour) + ((seconds / 3600) * pixelsPerHour);
+
               return (
-                <div
-                  className="day-current-time-grid"
-                  style={{ top: `${percent}%` }}
-                >
-                  <div className="current-time-line"></div>
-                  <div className="current-time-label">{format(nowTick, 'h:mm a')}</div>
+                <div className="day-time-indicator-grid-container">
+                  <div
+                    className="day-current-time-grid"
+                    style={{ top: `${exactTop}px` }}
+                  >
+                    <div className="current-time-line"></div>
+                  </div>
                 </div>
               );
             })()}
           </div>
 
           {dayEvents.length === 0 && (
-            <div className="day-empty-state">
+            <div className="week-empty-state">
               <div className="empty-title">No events scheduled</div>
-              <div className="empty-subtitle">Add something for this day to get started.</div>
+              <div className="empty-subtitle">Tap + to add events</div>
             </div>
           )}
         </div>

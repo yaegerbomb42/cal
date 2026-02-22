@@ -1,70 +1,49 @@
-.cal-character-procedural {
+.cal-character-container {
     width: 140px;
     height: 182px;
-    margin: 0;
-    animation: cal-float 4s ease-in-out infinite;
-    filter: drop-shadow(0 8px 24px rgba(99, 102, 241, 0.4));
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    filter: drop-shadow(0 8px 24px rgba(255, 215, 0, 0.2));
 }
 
-.cal-character-procedural svg {
-    width: 100%;
-    height: 100%;
-    overflow: visible;
+.cal-character-container.cal-mini {
+    width: 44px !important;
+    height: 44px !important;
+    filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.15)) !important;
 }
 
-.cal-character-procedural.cal-mini {
-    width: 36px !important;
-    height: 47px !important;
-    margin: 0 !important;
-    animation: none !important;
-    filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.3)) !important;
+.cal-character-container canvas {
+    outline: none;
+    pointer-events: none;
+    /* Let clicks pass through if it's just a display object */
 }
 
-.cal-character-procedural.cal-mini svg {
-    width: 36px !important;
-    height: 47px !important;
+/* Fallback while loading */
+.cal-loading-fallback {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffd700 0%, #b8860b 100%);
+    animation: pulse 2s infinite ease-in-out;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
 }
 
-/* Gentle floating animation */
-@keyframes cal-float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
     }
 
     50% {
-        transform: translateY(-8px);
+        transform: scale(1.05);
+        opacity: 1;
     }
-}
 
-/* Particle glow effect */
-.cal-character-procedural svg ellipse {
-    filter: blur(0.5px);
-}
-
-/* Legacy class support */
-.cal-character-new {
-    width: 120px;
-    height: 160px;
-    margin: 20px 0;
-    animation: cal-float 3s ease-in-out infinite;
-}
-
-.cal-character-new svg {
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
-}
-
-.cal-character-mini {
-    width: 40px !important;
-    height: 53px !important;
-    margin: 0 !important;
-    animation: none !important;
-}
-
-.cal-character-mini svg {
-    width: 40px !important;
-    height: 53px !important;
+    100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
 }
