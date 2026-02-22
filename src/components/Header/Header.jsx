@@ -7,6 +7,7 @@ import { registerShortcut } from '../../utils/keyboardShortcuts';
 import LiveClock from './LiveClock';
 import DateNavigator from './DateNavigator';
 import AIChatInput from '../UI/AIChatInput';
+import CalCharacter from '../AI/CalCharacter';
 import './Header.css';
 
 const Header = ({ onOpenSettings }) => {
@@ -61,12 +62,14 @@ const Header = ({ onOpenSettings }) => {
               className="logo-section"
               onClick={goToToday}
               title="Return to Today"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '16px' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}
             >
-              <img src="/logo.png?v=fixed" alt="CalAI" style={{ width: '36px', height: '36px', borderRadius: '8px' }} />
-              <div className="logo-text">
-                <h1 style={{ fontSize: '1.5rem', fontWeight: '700', letterSpacing: '-0.5px' }}>CalAI</h1>
-                <span style={{ fontSize: '9px', opacity: 0.5, marginLeft: 4 }}>HOME / TODAY</span>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: 'rgba(0,0,0,0.2)' }}>
+                <CalCharacter mood="neutral" isSpeaking={false} scale={0.4} />
+              </div>
+              <div className="logo-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, lineHeight: 1 }}>CalAI</h1>
+                <span style={{ fontSize: '8px', opacity: 0.5, letterSpacing: '0.5px', marginTop: '2px' }}>HOME / TODAY</span>
               </div>
             </MotionButton>
 
@@ -75,6 +78,7 @@ const Header = ({ onOpenSettings }) => {
               <AIChatInput
                 onSubmit={handleAIChatSubmit}
                 compact={true}
+                hideCharacter={true}
               />
             </div>
           </div>

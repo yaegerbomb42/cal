@@ -15,6 +15,10 @@ export const CalendarProvider = ({
   const [isEventModalOpen, setIsEventModalOpen] = useState(initialEventModalOpen ?? false);
   const [draftEvent, setDraftEvent] = useState(null); // For blinking draft indicator
 
+  // Smart Scheduler Global State
+  const [smartSuggestions, setSmartSuggestions] = useState(null); // Array of suggested slots
+  const [smartScheduleDraft, setSmartScheduleDraft] = useState(null); // Form data to return to
+
   const navigateDate = (direction) => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
@@ -49,6 +53,8 @@ export const CalendarProvider = ({
     setSelectedEvent(null);
     setIsEventModalOpen(false);
     setDraftEvent(null); // Clear draft when closing modal
+    setSmartSuggestions(null); // Clear suggestions when closing modal
+    setSmartScheduleDraft(null); // Clear draft when closing modal
   };
 
   const [isZoomMode, setIsZoomMode] = useState(false);
@@ -100,7 +106,11 @@ export const CalendarProvider = ({
       openEventModal,
       closeEventModal,
       draftEvent,
-      setDraftEvent
+      setDraftEvent,
+      smartSuggestions,
+      setSmartSuggestions,
+      smartScheduleDraft,
+      setSmartScheduleDraft
     }}>
       {children}
     </CalendarContext.Provider>

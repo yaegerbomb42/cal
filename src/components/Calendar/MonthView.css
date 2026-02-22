@@ -174,21 +174,24 @@
 }
 
 .day-event {
-  padding: 6px 8px;
-  border-radius: 8px;
-  font-size: 0.78rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.72rem;
   font-weight: 600;
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: normal;
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   text-overflow: ellipsis;
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .day-event:hover {
@@ -210,14 +213,16 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
+  line-height: 1.1;
 }
 
 .event-time {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   opacity: 0.9;
+  margin-top: 1px;
 }
 
 .more-events {

@@ -494,187 +494,210 @@ const Settings = ({ isOpen, onClose }) => {
   // --- Render Helpers ---
 
   const renderAITab = () => (
-    <div className="ai-engine-layout">
-      <div className="ai-config-panel glass-card">
-        <div className="provider-toggle">
+    <div className="content-section" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2rem' }}>
+
+      {/* Part 1: Model Type Selection */}
+      <div className="glass-card padding-lg">
+        <div className="section-header mb-4">
+          <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>1. Select Intelligence Engine</h3>
+          <span className="text-muted text-xs">Choose the backend model for CalAI's brain</span>
+        </div>
+        <div className="provider-toggle" style={{ display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
           <button
             className={cn("provider-btn", aiProvider === 'gemini' && "active")}
+            style={{ flex: 1, padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s', border: aiProvider === 'gemini' ? '1px solid var(--accent)' : '1px solid transparent', background: aiProvider === 'gemini' ? 'var(--accent)' : 'transparent', color: aiProvider === 'gemini' ? '#fff' : 'var(--text-secondary)' }}
             onClick={() => handleProviderChange('gemini')}
           >
-            <Zap size={16} /> Gemini
+            <Zap size={16} /> Gemini Pro
           </button>
           <button
             className={cn("provider-btn", aiProvider === 'ollama' && "active")}
+            style={{ flex: 1, padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s', border: aiProvider === 'ollama' ? '1px solid var(--accent)' : '1px solid transparent', background: aiProvider === 'ollama' ? 'var(--accent)' : 'transparent', color: aiProvider === 'ollama' ? '#fff' : 'var(--text-secondary)' }}
             onClick={() => handleProviderChange('ollama')}
           >
-            <Cpu size={16} /> Ollama (Local)
+            <Cpu size={16} /> Local Ollama
           </button>
           <button
             className={cn("provider-btn", aiProvider === 'local' && "active")}
+            style={{ flex: 1, padding: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.2s', border: aiProvider === 'local' ? '1px solid var(--accent)' : '1px solid transparent', background: aiProvider === 'local' ? 'var(--accent)' : 'transparent', color: aiProvider === 'local' ? '#fff' : 'var(--text-secondary)' }}
             onClick={() => handleProviderChange('local')}
           >
-            <Cpu size={16} /> Browser Model
+            <Globe size={16} /> Browser WebGPU
           </button>
+        </div>
+      </div>
+
+      {/* Part 2: API Key / System Configuration */}
+      <div className="glass-card padding-lg">
+        <div className="section-header mb-4">
+          <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>2. Connection & Authentication</h3>
+          <span className="text-muted text-xs">Configure your selected provider</span>
         </div>
 
         {aiProvider === 'gemini' && (
-          <div className="config-body">
-            <div className="api-input-row">
-              <div className="input-wrapper">
-                <Key size={14} className="input-icon" />
-                <input
-                  type="password"
-                  value={showApiKey ? apiKey : (apiKey || (hasSavedApiKey ? '•'.repeat(20) : ''))}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Paste Gemini API Key"
-                  autoComplete="off"
-                />
-                <button onClick={() => setShowApiKey(!showApiKey)} className="icon-btn">
-                  {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              <button onClick={handleSaveApiKey} disabled={!apiKey.trim()} className="save-btn pro-btn-primary">Save Securely</button>
-            </div>
-            <div className="status-row">
-              {connectionStatus === 'success' ? (
-                <span className="status-badge success"><CheckCircle size={12} /> Connected</span>
+          <AnimatePresence mode="wait">
+            <MotionDiv
+              key={connectionStatus === 'success' ? 'connected' : 'setup'}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+            >
+              {connectionStatus === 'success' && hasSavedApiKey ? (
+                <div style={{ padding: '20px', borderRadius: '12px', background: 'linear-gradient(145deg, rgba(99,102,241,0.05) 0%, rgba(99,102,241,0.1) 100%)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="status-indicator-glow"><div className="dot"></div></div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Engine Online</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                        <Key size={12} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>••••••••••••••••{savedApiKeyRef.current?.slice(-4) || 'TEST'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={testGeminiConnection} className="icon-action-btn" title="Test Connection"><RefreshCw size={16} /></button>
+                    <button onClick={() => { setConnectionStatus(null); setHasSavedApiKey(false); }} className="icon-action-btn danger" title="Disconnect"><LogOut size={16} /></button>
+                  </div>
+                </div>
               ) : (
-                <span className="status-badge neutral">Not connected</span>
+                <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '0 12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <Key size={16} className="text-accent" style={{ opacity: 0.7 }} />
+                      <input
+                        type={showApiKey ? 'text' : 'password'}
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="Paste your Gemini AI Studio Key"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', padding: '12px', width: '100%', outline: 'none', fontSize: '0.9rem' }}
+                        autoComplete="off"
+                      />
+                      <button onClick={() => setShowApiKey(!showApiKey)} className="icon-btn hover-bg">
+                        {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleSaveApiKey}
+                      disabled={!apiKey.trim()}
+                      className="premium-btn"
+                      style={{ padding: '0 24px', borderRadius: '8px', background: 'var(--accent)', color: 'white', fontWeight: 600, border: 'none', cursor: apiKey.trim() ? 'pointer' : 'not-allowed', opacity: apiKey.trim() ? 1 : 0.5 }}
+                    >Authenticate</button>
+                  </div>
+                </div>
               )}
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" className="link-text">Get Key</a>
-            </div>
-          </div>
+            </MotionDiv>
+          </AnimatePresence>
         )}
 
         {aiProvider === 'ollama' && (
-          <div className="config-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div className="input-group">
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Model Name</label>
-                <input
-                  className="ai-input"
-                  value={ollamaConfig.model}
-                  onChange={(e) => setOllamaConfig(prev => ({ ...prev, model: e.target.value }))}
-                  placeholder="e.g. llama3, mistral"
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
-                />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '20px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Model Name</label>
+                <input value={ollamaConfig.model} onChange={(e) => setOllamaConfig(prev => ({ ...prev, model: e.target.value }))} placeholder="e.g. llama3, mistral" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', outline: 'none' }} />
               </div>
-              <div className="input-group">
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Base URL</label>
-                <input
-                  className="ai-input"
-                  value={ollamaConfig.baseUrl}
-                  onChange={(e) => setOllamaConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
-                  placeholder="http://localhost:11434"
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div className="status-row">
-                <button
-                  onClick={async () => {
-                    const connected = await checkOllamaConnection(ollamaConfig.baseUrl);
-                    toastService[connected ? 'success' : 'error'](connected ? 'Ollama Connected!' : 'Connection Failed');
-                  }}
-                  className="feature-btn small"
-                  style={{ fontSize: '0.8rem', padding: '4px 8px' }}
-                >
-                  Test Connection
-                </button>
+              <div style={{ flex: 2 }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Base URL</label>
+                <input value={ollamaConfig.baseUrl} onChange={(e) => setOllamaConfig(prev => ({ ...prev, baseUrl: e.target.value }))} placeholder="http://localhost:11434" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', outline: 'none' }} />
               </div>
             </div>
+            <button onClick={async () => { const connected = await checkOllamaConnection(ollamaConfig.baseUrl); toastService[connected ? 'success' : 'error'](connected ? 'Ollama Connected!' : 'Connection Failed'); }} style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', cursor: 'pointer' }}>Test Connection</button>
           </div>
         )}
 
         {aiProvider === 'local' && (
-          <div className="config-body">
-            <div className="model-select-row">
-              <div className="select-wrapper">
-                <Globe size={14} className="select-icon" />
-                <select disabled={!isLocalBrainLoaded}>
-                  <option>Qwen 2.5 (3B) - Optimized</option>
-                  <option>Llama 3 (Tiny) - Legacy</option>
-                </select>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
+            <div style={{ flex: 1 }}>
+              <select disabled={!isLocalBrainLoaded} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', outline: 'none' }}>
+                <option>Qwen 2.5 (3B) - Optimized</option>
+                <option>Llama 3 (Tiny) - Legacy</option>
+              </select>
+            </div>
+            <div style={{ marginLeft: '16px' }}>
               {!isLocalBrainLoaded ? (
-                <button onClick={handleInitLocalBrain} className="load-btn pro-btn-secondary" disabled={localBrainProgress}>
+                <button onClick={handleInitLocalBrain} disabled={localBrainProgress} style={{ padding: '12px 24px', borderRadius: '8px', background: 'var(--accent)', color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
                   {localBrainProgress ? `${Math.round(localBrainProgress.progress * 100)}%` : 'Load Model'}
                 </button>
               ) : (
-                <button onClick={handleUnloadBrain} className="unload-btn danger-link">Unload</button>
+                <button onClick={handleUnloadBrain} style={{ padding: '12px 24px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: 600, border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer' }}>Unload Model</button>
               )}
             </div>
-            {isLocalBrainLoaded && <div className="status-row"><span className="status-badge success"><CheckCircle size={12} /> Model Loaded</span></div>}
           </div>
         )}
-
-        <div className="personality-config" style={{ marginTop: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ASSISTANT PERSONALITY</label>
-          <div className="personality-selector" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
-            {[
-              { id: 'professional', label: 'Professional' },
-              { id: 'your-bff', label: 'Your BFF' },
-              { id: 'creative', label: 'Creative' },
-              { id: 'spicy', label: 'Spicy' }
-            ].map((p) => (
-              <button
-                key={p.id}
-                className={cn('personality-btn', aiPersonality === p.id && 'active')}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: '8px',
-                  background: aiPersonality === p.id ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--glass-border)',
-                  color: aiPersonality === p.id ? '#fff' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem'
-                }}
-                onClick={() => setAiPersonality(p.id)}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            {aiPersonality === 'professional' && "Straight to the point. High logic. Talks like everything is a business meeting."}
-            {aiPersonality === 'your-bff' && "Super friendly and gossip-like. 'Ooo I love that place, so exciting!' 💕"}
-            {aiPersonality === 'creative' && "Socrates meets Carl Marx meets Chris Rock. Jokes and connections everywhere. 🎭"}
-            {aiPersonality === 'spicy' && "Makes everything sexual. Late night bar? Trying to get lucky? 😏🔥"}
-          </div>
-        </div>
       </div>
 
-      <div className="ai-chat-panel glass-card">
-        <div className="chat-header">
-          <span>Live Test Environment</span>
-          <span className="badge">{aiProvider}</span>
+      {/* Part 3: Personality Choice */}
+      <div className="glass-card padding-lg">
+        <div className="section-header mb-4">
+          <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>3. Assistant Tone & Personality</h3>
+          <span className="text-muted text-xs">How should Cal AI respond to you?</span>
         </div>
-        <div className="chat-viewport" ref={chatScrollRef}>
-          {testChatHistory.length === 0 && (
-            <div className="empty-chat">
-              <MessageSquare size={24} />
-              <p>Test the {aiProvider === 'gemini' ? 'Gemini' : 'Local'} model live.</p>
-            </div>
-          )}
-          {testChatHistory.map(msg => (
-            <div key={msg.id} className={`chat-bubble ${msg.role}`}>
-              {msg.content}
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          {[
+            { id: 'professional', label: 'Professional', desc: 'Direct, formal, structured.' },
+            { id: 'your-bff', label: 'Best Friend', desc: 'Warm, supportive, casual.' },
+            { id: 'creative', label: 'Creative', desc: 'Witty, lateral thinker.' },
+            { id: 'spicy', label: 'Spicy / Edgy', desc: 'Sarcastic, humorous.' }
+          ].map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setAiPersonality(p.id)}
+              style={{
+                padding: '16px 12px', borderRadius: '12px', textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer',
+                background: aiPersonality === p.id ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.2)',
+                border: aiPersonality === p.id ? '1px solid var(--accent)' : '1px solid var(--glass-border)',
+              }}
+            >
+              <div style={{ fontSize: '0.95rem', fontWeight: 500, color: aiPersonality === p.id ? 'var(--text-primary)' : 'var(--text-secondary)', marginBottom: '8px' }}>{p.label}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.desc}</div>
+            </button>
           ))}
-          {isChatProcessing && <div className="chat-bubble ai typing">...</div>}
         </div>
-        <form onSubmit={handleTestChatSubmit} className="chat-input-area">
-          <input
-            value={testChatInput}
-            onChange={e => setTestChatInput(e.target.value)}
-            placeholder={`Message ${aiProvider === 'gemini' ? 'Gemini' : 'Local Brain'}...`}
-            disabled={isChatProcessing || (aiProvider === 'local' && !isLocalBrainLoaded)}
-          />
-          <button type="submit" disabled={!testChatInput.trim() || isChatProcessing || (aiProvider === 'local' && !isLocalBrainLoaded)}>
-            <Zap size={16} />
-          </button>
-        </form>
       </div>
-    </div >
+
+      {/* Part 4: Testing Chat */}
+      <div className="glass-card padding-lg">
+        <div className="section-header mb-4">
+          <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '4px' }}>4. Sandbox Test</h3>
+          <span className="text-muted text-xs">Verify your connection and personality logic</span>
+        </div>
+        <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column' }}>
+          <div ref={chatScrollRef} style={{ height: '240px', overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {testChatHistory.length === 0 && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: '8px' }}>
+                <MessageSquare size={24} opacity={0.5} />
+                <span style={{ fontSize: '0.9rem' }}>Say hello to test your configuration.</span>
+              </div>
+            )}
+            {testChatHistory.map(msg => (
+              <div key={msg.id} style={{
+                maxWidth: '80%', padding: '10px 14px', borderRadius: '12px', fontSize: '0.9rem', lineHeight: 1.4,
+                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                background: msg.role === 'user' ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
+                borderBottomRightRadius: msg.role === 'user' ? '4px' : '12px',
+                borderBottomLeftRadius: msg.role === 'assistant' ? '4px' : '12px'
+              }}>
+                {msg.content}
+              </div>
+            ))}
+            {isChatProcessing && <div style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '12px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Typing...</div>}
+          </div>
+          <form onSubmit={handleTestChatSubmit} style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
+            <input
+              value={testChatInput}
+              onChange={e => setTestChatInput(e.target.value)}
+              placeholder="Send a test message..."
+              disabled={isChatProcessing || (aiProvider === 'local' && !isLocalBrainLoaded)}
+              style={{ flex: 1, background: 'transparent', border: 'none', padding: '16px', color: 'var(--text-primary)', outline: 'none', fontSize: '0.9rem' }}
+            />
+            <button type="submit" disabled={!testChatInput.trim() || isChatProcessing || (aiProvider === 'local' && !isLocalBrainLoaded)} style={{ background: 'transparent', border: 'none', padding: '0 20px', color: 'var(--accent)', cursor: (!testChatInput.trim() || isChatProcessing) ? 'not-allowed' : 'pointer', opacity: (!testChatInput.trim() || isChatProcessing) ? 0.5 : 1 }}>
+              <Zap size={18} />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 
   if (!isOpen) return null;
@@ -892,89 +915,38 @@ const Settings = ({ isOpen, onClose }) => {
                   )}
 
                   {activeTab === 'preferences' && (
-                    <div className="content-section preferences-section">
+                    <div className="content-section preferences-section" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-                      {/* Section 1: Scheduling Style - Intuitive Presets */}
+                      {/* Section: Work Rhythm */}
                       <div className="glass-card padding-lg">
                         <div className="section-header mb-4">
-                          <h3>How I Schedule</h3>
-                          <span className="text-muted text-xs">Choose what fits your style</span>
+                          <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '4px' }}>My Work Rhythm</h3>
                         </div>
 
-                        <div className="scheduling-presets">
-                          <button
-                            className={`preset-card ${priorityPrefs?.urgencyWeight >= 70 ? 'selected' : ''}`}
-                            onClick={() => {
-                              updatePriorityPref('urgencyWeight', 85);
-                              updatePriorityPref('conflictResolution', 'priority');
-                              updatePriorityPref('preferUninterrupted', true);
-                            }}
-                          >
-                            <div className="preset-icon">📋</div>
-                            <div className="preset-content">
-                              <span className="preset-title">Structured</span>
-                              <span className="preset-desc">Rigid schedule.</span>
-                            </div>
-                            {priorityPrefs?.urgencyWeight >= 70 && <Check size={16} className="preset-check" />}
-                          </button>
-
-                          <button
-                            className={`preset-card ${priorityPrefs?.urgencyWeight >= 40 && priorityPrefs?.urgencyWeight < 70 ? 'selected' : ''}`}
-                            onClick={() => {
-                              updatePriorityPref('urgencyWeight', 55);
-                              updatePriorityPref('conflictResolution', 'ask');
-                              updatePriorityPref('preferUninterrupted', true);
-                            }}
-                          >
-                            <div className="preset-icon">⚖️</div>
-                            <div className="preset-content">
-                              <span className="preset-title">Balanced</span>
-                              <span className="preset-desc">Flexible but focused.</span>
-                            </div>
-                            {priorityPrefs?.urgencyWeight >= 40 && priorityPrefs?.urgencyWeight < 70 && <Check size={16} className="preset-check" />}
-                          </button>
-
-                          <button
-                            className={`preset-card ${priorityPrefs?.urgencyWeight < 40 ? 'selected' : ''}`}
-                            onClick={() => {
-                              updatePriorityPref('urgencyWeight', 25);
-                              updatePriorityPref('conflictResolution', 'chronological');
-                              updatePriorityPref('autoReschedule', true);
-                            }}
-                          >
-                            <div className="preset-icon">🌊</div>
-                            <div className="preset-content">
-                              <span className="preset-title">Fluid</span>
-                              <span className="preset-desc">Go with the flow.</span>
-                            </div>
-                            {priorityPrefs?.urgencyWeight < 40 && <Check size={16} className="preset-check" />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Section 2: Work Rhythm */}
-                      <div className="glass-card padding-lg mt-3">
-                        <div className="section-header mb-4">
-                          <h3>My Work Rhythm</h3>
-                        </div>
-
-                        <div className="rhythm-grid">
+                        <div className="rhythm-grid" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                           {/* Peak Energy */}
                           <div className="rhythm-item">
-                            <label className="rhythm-label">When I'm most productive</label>
-                            <div className="energy-blocks">
+                            <label className="rhythm-label" style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 500 }}>When I'm most productive</label>
+                            <div className="energy-blocks" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                               {[
-                                { id: 'morning', icon: '☀️', label: 'Morning', time: '6am-12pm' },
-                                { id: 'afternoon', icon: '🌤️', label: 'Afternoon', time: '12pm-6pm' },
-                                { id: 'evening', icon: '🌙', label: 'Evening', time: '6pm-12am' }
+                                { id: 'morning', icon: '☀️', label: 'Morning' },
+                                { id: 'afternoon', icon: '🌤️', label: 'Afternoon' },
+                                { id: 'evening', icon: '🌙', label: 'Evening' }
                               ].map(time => (
                                 <button
                                   key={time.id}
-                                  className={`energy-block ${priorityPrefs?.peakEnergyTime === time.id ? 'selected' : ''}`}
+                                  className={`energy-block ${priorityPrefs?.peakEnergyTime === time.id ? 'active' : ''}`}
+                                  style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                    padding: '16px 8px', borderRadius: '12px',
+                                    background: priorityPrefs?.peakEnergyTime === time.id ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.2)',
+                                    border: `1px solid ${priorityPrefs?.peakEnergyTime === time.id ? 'var(--accent)' : 'var(--glass-border)'}`,
+                                    cursor: 'pointer', transition: 'all 0.2s', gap: '8px'
+                                  }}
                                   onClick={() => updatePriorityPref('peakEnergyTime', time.id)}
                                 >
-                                  <span className="energy-icon">{time.icon}</span>
-                                  <span className="energy-name">{time.label}</span>
+                                  <span className="energy-icon" style={{ fontSize: '1.5rem' }}>{time.icon}</span>
+                                  <span className="energy-name" style={{ fontSize: '0.9rem', color: priorityPrefs?.peakEnergyTime === time.id ? 'var(--text-primary)' : 'var(--text-muted)' }}>{time.label}</span>
                                 </button>
                               ))}
                             </div>
@@ -982,8 +954,8 @@ const Settings = ({ isOpen, onClose }) => {
 
                           {/* Focus Duration */}
                           <div className="rhythm-item">
-                            <label className="rhythm-label">How long I can focus</label>
-                            <div className="focus-options">
+                            <label className="rhythm-label" style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px', fontWeight: 500 }}>How long I can focus</label>
+                            <div className="focus-options" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                               {[
                                 { value: 25, label: 'Short bursts', desc: '25 min' },
                                 { value: 45, label: 'Medium blocks', desc: '45 min' },
@@ -991,74 +963,54 @@ const Settings = ({ isOpen, onClose }) => {
                               ].map(opt => (
                                 <button
                                   key={opt.value}
-                                  className={`focus-option ${priorityPrefs.deepWorkDuration === opt.value ? 'selected' : ''}`}
+                                  className={`focus-option ${priorityPrefs.deepWorkDuration === opt.value ? 'active' : ''}`}
+                                  style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '16px', borderRadius: '12px',
+                                    background: priorityPrefs?.deepWorkDuration === opt.value ? 'rgba(99,102,241,0.15)' : 'rgba(0,0,0,0.2)',
+                                    border: `1px solid ${priorityPrefs?.deepWorkDuration === opt.value ? 'var(--accent)' : 'var(--glass-border)'}`,
+                                    cursor: 'pointer', transition: 'all 0.2s'
+                                  }}
                                   onClick={() => updatePriorityPref('deepWorkDuration', opt.value)}
                                 >
-                                  <span className="focus-label">{opt.label}</span>
-                                  <span className="focus-time">{opt.desc}</span>
+                                  <span className="focus-label" style={{ fontSize: '0.95rem', color: priorityPrefs?.deepWorkDuration === opt.value ? 'var(--text-primary)' : 'var(--text-muted)' }}>{opt.label}</span>
+                                  <span className="focus-time" style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{opt.desc}</span>
                                 </button>
                               ))}
                             </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Section 3: Quick Settings */}
-                      <div className="glass-card padding-lg mt-3">
-                        <div className="quick-settings-grid">
-                          <label className="quick-setting-row">
-                            <div className="setting-info">
-                              <span className="setting-name">Smart reschedule</span>
-                              <span className="setting-desc" style={{ maxWidth: '280px', display: 'block', lineHeight: '1.2' }}>
-                                Requires user approval via chat w/ diff view, or manual placement
-                              </span>
+                          {/* Quick Auto-Settings Panel */}
+                          <div className="rhythm-item" style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>Focus Protection enabled</label>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Smart reschedule and interruption handling</span>
+                              </div>
+                              <div style={{ color: 'var(--accent)', fontSize: '0.85rem', padding: '4px 12px', background: 'rgba(99,102,241,0.1)', borderRadius: '20px' }}>Active</div>
                             </div>
-                            <div className="toggle-switch-wrapper">
-                              <input
-                                type="checkbox"
-                                checked={priorityPrefs.autoReschedule}
-                                onChange={(e) => updatePriorityPref('autoReschedule', e.target.checked)}
-                              />
-                              <span className="track">
-                                <span className="thumb" />
-                              </span>
-                            </div>
-                          </label>
 
-                          <label className="quick-setting-row">
-                            <div className="setting-info">
-                              <span className="setting-name">Protect focus blocks</span>
-                              <span className="setting-desc">Cluster meetings, keep work time clear</span>
-                            </div>
-                            <div className="toggle-switch-wrapper">
-                              <input
-                                type="checkbox"
-                                checked={priorityPrefs.preferUninterrupted}
-                                onChange={(e) => updatePriorityPref('preferUninterrupted', e.target.checked)}
-                              />
-                              <span className="track">
-                                <span className="thumb" />
-                              </span>
-                            </div>
-                          </label>
-
-                          <div className="quick-setting-row">
-                            <div className="setting-info">
-                              <span className="setting-name">Default reminder</span>
-                              <span className="setting-desc">Notify me before events</span>
-                            </div>
-                            <div className="reminder-pills">
-                              {[5, 15, 30, 60].map(min => (
-                                <button
-                                  key={min}
-                                  className={`reminder-pill ${priorityPrefs.defaultReminder === min ? 'selected' : ''}`}
-                                  onClick={() => updatePriorityPref('defaultReminder', min)}
-                                >
-                                  {min}m
-                                </button>
-                              ))}
+                            <div style={{ marginTop: '20px' }}>
+                              <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 500 }}>Default reminder time</label>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                {[5, 10, 15, 30].map(min => (
+                                  <button
+                                    key={min}
+                                    style={{
+                                      padding: '8px 16px', borderRadius: '20px', fontSize: '0.85rem',
+                                      background: priorityPrefs.defaultReminder === min ? 'var(--accent)' : 'rgba(0,0,0,0.3)',
+                                      color: priorityPrefs.defaultReminder === min ? '#fff' : 'var(--text-muted)',
+                                      border: '1px solid var(--glass-border)', cursor: 'pointer'
+                                    }}
+                                    onClick={() => updatePriorityPref('defaultReminder', min)}
+                                  >
+                                    {min}m
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           </div>
+
                         </div>
                       </div>
 

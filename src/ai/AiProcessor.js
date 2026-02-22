@@ -346,7 +346,7 @@ export const processEventInput = async (
 
   if (tryCloudFirst) {
     try {
-      const parsed = await geminiService.parseEventFromText(input);
+      const parsed = await geminiService.parseEventFromText(input, baseDraft);
       draft = { ...draft, ...parsed };
       source = 'gemini';
     } catch (error) {

@@ -87,48 +87,27 @@ const CalCharacter = ({
     const renderEye = useCallback((state, offset, baseX, baseY) => {
         // Eye positions relative to head center
         const x = baseX + offset;
+        let d = "";
 
         if (state === 'closed') {
-            return (
-                <motion.line
-                    x1={x}
-                    y1={baseY}
-                    x2={x + 18}
-                    y2={baseY}
-                    stroke="#00e5ff"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    filter="url(#eyeGlow)"
-                />
-            );
+            d = `M${x},${baseY} Q${x + 9},${baseY} ${x + 18},${baseY}`;
+        } else if (state === 'squint') {
+            d = `M${x},${baseY} Q${x + 9},${baseY - 2} ${x + 18},${baseY}`;
+        } else {
+            // Default open or wide eyes
+            const curve = state === 'wide' ? -10 : -6;
+            d = `M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}`;
         }
 
-        if (state === 'squint') {
-            return (
-                <motion.path
-                    d={`M${x},${baseY} Q${x + 9},${baseY - 2} ${x + 18},${baseY}` || ""}
-                    fill="none"
-                    stroke="#00e5ff"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    filter="url(#eyeGlow)"
-                />
-            );
-        }
-
-        // Default open or wide eyes
-        const curve = state === 'wide' ? -10 : -6;
         return (
             <motion.path
-                d={`M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}` || ""}
+                initial={{ d }}
+                animate={{ d }}
                 fill="none"
                 stroke="#00e5ff"
                 strokeWidth="3"
                 strokeLinecap="round"
                 filter="url(#eyeGlow)"
-                animate={{
-                    d: (`M${x},${baseY} Q${x + 9},${baseY + curve} ${x + 18},${baseY}` || "")
-                }}
                 transition={{ duration: 0.15 }}
             />
         );
@@ -136,108 +115,57 @@ const CalCharacter = ({
 
     // Mouth rendering - with talking frames
     const renderMouth = useCallback((state) => {
-        const centerX = 50;
-        const mouthY = 60;
+        let d = "";
+        let fill = "none";
+        let strokeWidth = 2.5;
+        let opacity = 1;
 
         switch (state) {
             case 'talk_open':
-                return (
-                    <motion.ellipse
-                        cx={centerX}
-                        cy={mouthY}
-                        rx={8}
-                        ry={6}
-                        fill="#00e5ff"
-                        opacity={0.9}
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 42,60 Q 50,68 58,60 Q 50,52 42,60`;
+                fill = "#00e5ff";
+                strokeWidth = 0;
+                opacity = 0.9;
+                break;
             case 'talk_mid':
-                return (
-                    <motion.ellipse
-                        cx={centerX}
-                        cy={mouthY}
-                        rx={6}
-                        ry={4}
-                        fill="#00e5ff"
-                        opacity={0.9}
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 44,60 Q 50,65 56,60 Q 50,55 44,60`;
+                fill = "#00e5ff";
+                strokeWidth = 0;
+                opacity = 0.9;
+                break;
             case 'talk_closed':
-                return (
-                    <motion.line
-                        x1={centerX - 8}
-                        y1={mouthY}
-                        x2={centerX + 8}
-                        y2={mouthY}
-                        stroke="#00e5ff"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 42,60 Q 50,60 58,60`; // Use Q to match segment count
+                strokeWidth = 2;
+                break;
             case 'smile_wide':
-                return (
-                    <motion.path
-                        d={`M${centerX - 12},${mouthY - 2} Q${centerX},${mouthY + 8} ${centerX + 12},${mouthY - 2}` || ""}
-                        fill="none"
-                        stroke="#00e5ff"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 38,58 Q 50,68 62,58`;
+                strokeWidth = 3;
+                break;
             case 'neutral':
-                return (
-                    <motion.line
-                        x1={centerX - 10}
-                        y1={mouthY}
-                        x2={centerX + 10}
-                        y2={mouthY}
-                        stroke="#00e5ff"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 40,60 Q 50,60 60,60`;
+                break;
             case 'surprise':
-                return (
-                    <motion.ellipse
-                        cx={centerX}
-                        cy={mouthY}
-                        rx={5}
-                        ry={7}
-                        fill="none"
-                        stroke="#00e5ff"
-                        strokeWidth="2.5"
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 45,60 Q 50,69 55,60 Q 50,51 45,60`;
+                break;
             case 'frown':
-                return (
-                    <motion.path
-                        d={`M${centerX - 10},${mouthY + 2} Q${centerX},${mouthY - 5} ${centerX + 10},${mouthY + 2}` || ""}
-                        fill="none"
-                        stroke="#00e5ff"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 40,62 Q 50,55 60,62`;
+                break;
             case 'smile':
             default:
-                return (
-                    <motion.path
-                        d={`M${centerX - 10},${mouthY - 1} Q${centerX},${mouthY + 5} ${centerX + 10},${mouthY - 1}` || ""}
-                        fill="none"
-                        stroke="#00e5ff"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        filter="url(#eyeGlow)"
-                    />
-                );
+                d = `M 40,59 Q 50,65 60,59`;
+                break;
         }
+
+        return (
+            <motion.path
+                initial={{ d, fill, strokeWidth, opacity }}
+                animate={{ d, fill, strokeWidth, opacity }}
+                stroke="#00e5ff"
+                strokeLinecap="round"
+                filter="url(#eyeGlow)"
+                transition={{ duration: 0.15 }}
+            />
+        );
     }, []);
 
     // Calculate dimensions

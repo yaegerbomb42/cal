@@ -7,7 +7,8 @@ import './AIChatInput.css';
 const AIChatInput = ({
     onSubmit,
     disabled = false,
-    compact = false
+    compact = false,
+    hideCharacter = false
 }) => {
     const [inputInternal, setInputInternal] = useState('');
     const [selectedFiles, setSelectedFiles] = useState([]);
@@ -36,9 +37,11 @@ const AIChatInput = ({
     return (
         <form onSubmit={handleSubmit} className={`ai-chat-input-wrapper ${compact ? 'compact' : ''}`}>
             <div className="ai-input-container glass-card">
-                <div style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
-                    <CalCharacter size="mini" />
-                </div>
+                {!hideCharacter && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginLeft: '4px' }}>
+                        <CalCharacter size="mini" />
+                    </div>
+                )}
 
                 <input
                     type="text"

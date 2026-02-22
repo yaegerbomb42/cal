@@ -48,93 +48,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const { events, addEvent } = useEvents();
   const { openEventModal } = useCalendar();
 
-  // Process initial message from prop (race condition fix)
-  useEffect(() => {
-    if (initialMessage && !isLoading) {
-      const msg = initialMessage;
-      if (onClearInitialMessage) onClearInitialMessage(); // Clear FIRST
-      addMessage('user', msg);
-      processInput(msg);
-    }
-  }, [initialMessage, isLoading, onClearInitialMessage, processInput, addMessage]);
 
-  useEffect(() => {
-    if (geminiService.isInitialized) {
-      setIsConnected(true);
-    }
-
-    const handlePing = (e) => {
-      // Only handle if already open; App.jsx handles the wake-up case
-      if (!isOpen) return;
-
-      const { text, response } = e.detail;
-      if (!text || text === lastProcessedInput) return;
-
-      setLastProcessedInput(text);
-      addMessage('user', text);
-      if (response) {
-        handleAIResponse(response);
-        return;
-      }
-      processInput(text);
-
-      // Reset last input after a delay to allow same query later
-      setTimeout(() => setLastProcessedInput(null), 2000);
-    };
-
-    window.addEventListener('calai-ping', handlePing);
-    return () => window.removeEventListener('calai-ping', handlePing);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processInput, lastProcessedInput, events, isOpen, handleAIResponse, addMessage]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, pendingEvent, clarificationState]);
-
-  // Voice input handler
-  useEffect(() => {
-    const handleVoiceResult = (e) => {
-      if (e.detail.isFinal) {
-        const transcript = e.detail.transcript;
-        setInputValue(transcript);
-        setIsVoiceListening(false);
-        // Optional: auto-submit after voice input
-        // processInput(transcript);
-      }
-    };
-
-    const handleVoiceEnd = () => setIsVoiceListening(false);
-    const handleSpeechStart = () => setIsSpeaking(true);
-    const handleSpeechEnd = () => setIsSpeaking(false);
-
-    window.addEventListener('calai-voice-result', handleVoiceResult);
-    window.addEventListener('calai-voice-end', handleVoiceEnd);
-    window.addEventListener('calai-speech-start', handleSpeechStart);
-    window.addEventListener('calai-speech-end', handleSpeechEnd);
-
-    return () => {
-      window.removeEventListener('calai-voice-result', handleVoiceResult);
-      window.removeEventListener('calai-voice-end', handleVoiceEnd);
-      window.removeEventListener('calai-speech-start', handleSpeechStart);
-      window.removeEventListener('calai-speech-end', handleSpeechEnd);
-    };
-  }, []);
-
-  // Global keyboard capture - focus input and prepend typed character
-  const inputRef = useRef(null);
-  useEffect(() => {
-    const handleFocus = (e) => {
-      const key = e.detail?.key;
-      if (inputRef.current) {
-        inputRef.current.focus();
-        if (key && key.length === 1) {
-          setInputValue(prev => key + prev);
-        }
-      }
-    };
-    window.addEventListener('calai-focus', handleFocus);
-    return () => window.removeEventListener('calai-focus', handleFocus);
-  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -203,6 +117,28 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     setStatusMessage({ type, message });
   };
 
+
+
+
+
+
+
+
+
+
+  const checkProblematicness = useCallback(async (event, conflicts) => {
+    if (conflicts && conflicts.length > 0) {
+      addMessage('ai', `⚠️ Heads up: This conflicts with ${conflicts.length} existing event(s). Shall I continue?`);
+      voiceAIService.speakAsHal('conflict');
+    }
+
+    const start = new Date(event.start);
+    const hours = start.getHours();
+    if (hours >= 22 || hours <= 5) {
+      addMessage('ai', "🌙 This is a bit late/early, Dave. Are you sure you want this on your schedule?");
+    }
+  }, [addMessage, addEvent]);
+
   const processClarification = useCallback(async (text) => {
     if (!clarificationState) return;
     const { draft, missingFields } = clarificationState;
@@ -228,88 +164,6 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     setClarificationState(null);
     addMessage('ai', "I've got everything I need. Does this event look right?");
   }, [clarificationState, events, addMessage, checkProblematicness]);
-
-  const checkProblematicness = useCallback(async (event, conflicts) => {
-    if (conflicts && conflicts.length > 0) {
-      addMessage('ai', `⚠️ Heads up: This conflicts with ${conflicts.length} existing event(s). Shall I continue?`);
-      voiceAIService.speakAsHal('conflict');
-    }
-
-    const start = new Date(event.start);
-    const hours = start.getHours();
-    if (hours >= 22 || hours <= 5) {
-      addMessage('ai', "🌙 This is a bit late/early, Dave. Are you sure you want this on your schedule?");
-    }
-  }, [addMessage]);
-
-  const processInput = useCallback(async (text) => {
-    setIsLoading(true);
-    setStatus(null, null);
-
-    try {
-      if (clarificationState) {
-        await processClarification(text);
-        return;
-      }
-
-      const intent = detectIntent(text);
-      logger.info('AI intent detected', { intent });
-
-      if (intent === 'event_query') {
-        const response = buildQueryResponse(text, events);
-        addMessage('ai', response);
-        return;
-      }
-
-      if (intent === 'event_create') {
-        const draftResult = await processEventInput(text, { geminiService, localBrainService });
-
-        if (draftResult.status === 'needs_clarification') {
-          setClarificationState({ draft: draftResult.draft, missingFields: draftResult.missingFields });
-
-          // Smarter Prompting: Don't just say "What is the start time?"
-          const field = draftResult.missingFields[0];
-          let prompt = getClarificationPrompt(field, { draft: draftResult.draft });
-
-          if (field === 'start') {
-            prompt = "I need a date and time for this event. When should I schedule it?";
-          }
-
-          addMessage('ai', prompt);
-          // Auto-speak if TTS enabled
-          if (speakResponse) voiceAIService.speak(prompt);
-          return;
-        }
-
-        const finalized = finalizeDraft(draftResult.draft);
-        const conflicts = await geminiService.checkConflicts(finalized, events);
-        setPendingEvent({ ...finalized, conflicts, originalText: text, graphData: draftResult.graphData });
-        addMessage('ai', "I've drafted this event for you. Does it look correct?");
-        return;
-      }
-
-      const response = await geminiService.chatResponse(text, events);
-      handleAIResponse(sanitizeAIOutput(response, { input: text }));
-    } catch (error) {
-      if (error instanceof AIParseError) {
-        addMessage('ai', "I couldn't parse that event yet. Could you rephrase with a time or date?");
-        return;
-      }
-      if (error instanceof AIServiceError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      if (error instanceof ValidationError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      logger.error('AI processing error', { error });
-      addMessage('ai', 'I encountered an error processing your request. Please try again.');
-      setStatus('error', 'AI request failed');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [clarificationState, events, speakResponse, addMessage, handleAIResponse, processClarification]);
 
   const handleAIResponse = useCallback(async (response) => {
     try {
@@ -354,6 +208,176 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       addMessage('ai', "I had trouble processing that response.");
     }
   }, [speakResponse, addMessage]);
+
+  const processInput = useCallback(async (text) => {
+    setIsLoading(true);
+    setStatus(null, null);
+
+    try {
+      if (clarificationState) {
+        await processClarification(text);
+        return;
+      }
+
+      const intent = detectIntent(text);
+      logger.info('AI intent detected', { intent });
+
+      if (intent === 'event_query') {
+        const response = buildQueryResponse(text, events);
+        addMessage('ai', response);
+        return;
+      }
+
+      if (intent === 'event_create') {
+        const draftResult = await processEventInput(text, { geminiService, localBrainService });
+
+        if (draftResult.status === 'needs_clarification') {
+          setClarificationState({ draft: draftResult.draft, missingFields: draftResult.missingFields });
+
+          // Smarter Prompting: Don't just say "What is the start time?"
+          const field = draftResult.missingFields[0];
+          let prompt = getClarificationPrompt(field, { draft: draftResult.draft });
+
+          if (field === 'start') {
+            prompt = "I need a date and time for this event. When should I schedule it?";
+          }
+
+          addMessage('ai', prompt);
+          // Auto-speak if TTS enabled
+          if (speakResponse) voiceAIService.speak(prompt);
+          return;
+        }
+
+        const finalized = finalizeDraft(draftResult.draft);
+        const conflicts = await geminiService.checkConflicts(finalized, events);
+
+        try {
+          await addEvent(finalized, { allowConflicts: true });
+
+          let responseMsg = `I've added "${finalized.title}" to your calendar!`;
+          if (conflicts && conflicts.length > 0) {
+            responseMsg += ` ⚠️ Note: This conflicts with ${conflicts.length} existing event(s).`;
+          }
+          addMessage('ai', responseMsg);
+        } catch (err) {
+          if (err instanceof ValidationError) {
+            addMessage('ai', err.message);
+          } else {
+            addMessage('ai', 'Something went wrong while saving the event.');
+          }
+        }
+        return;
+      }
+
+      const response = await geminiService.chatResponse(text, events);
+      handleAIResponse(sanitizeAIOutput(response, { input: text }));
+    } catch (error) {
+      if (error instanceof AIParseError) {
+        addMessage('ai', "I couldn't parse that event yet. Could you rephrase with a time or date?");
+        return;
+      }
+      if (error instanceof AIServiceError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      if (error instanceof ValidationError) {
+        addMessage('ai', error.message);
+        return;
+      }
+      logger.error('AI processing error', { error });
+      addMessage('ai', 'I encountered an error processing your request. Please try again.');
+      setStatus('error', 'AI request failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clarificationState, events, speakResponse, addMessage, handleAIResponse, processClarification, addEvent]);
+
+  // Process initial message from prop (race condition fix)
+  useEffect(() => {
+    if (initialMessage && !isLoading) {
+      const msg = initialMessage;
+      if (onClearInitialMessage) onClearInitialMessage(); // Clear FIRST
+      addMessage('user', msg);
+      processInput(msg);
+    }
+  }, [initialMessage, isLoading, onClearInitialMessage, processInput, addMessage]);
+
+  useEffect(() => {
+    if (geminiService.isInitialized) {
+      setIsConnected(true);
+    }
+
+    const handlePing = (e) => {
+      // Only handle if already open; App.jsx handles the wake-up case
+      if (!isOpen) return;
+
+      const { text, response } = e.detail;
+      if (!text || text === lastProcessedInput) return;
+
+      setLastProcessedInput(text);
+      addMessage('user', text);
+      if (response) {
+        handleAIResponse(response);
+        return;
+      }
+      processInput(text);
+
+      // Reset last input after a delay to allow same query later
+      setTimeout(() => setLastProcessedInput(null), 2000);
+    };
+
+    window.addEventListener('calai-ping', handlePing);
+    return () => window.removeEventListener('calai-ping', handlePing);
+      }, [processInput, lastProcessedInput, events, isOpen, handleAIResponse, addMessage]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, pendingEvent, clarificationState]);
+
+  // Voice input handler
+  useEffect(() => {
+    const handleVoiceResult = (e) => {
+      if (e.detail.isFinal) {
+        const transcript = e.detail.transcript;
+        setInputValue(transcript);
+        setIsVoiceListening(false);
+        // Optional: auto-submit after voice input
+        // processInput(transcript);
+      }
+    };
+
+    const handleVoiceEnd = () => setIsVoiceListening(false);
+    const handleSpeechStart = () => setIsSpeaking(true);
+    const handleSpeechEnd = () => setIsSpeaking(false);
+
+    window.addEventListener('calai-voice-result', handleVoiceResult);
+    window.addEventListener('calai-voice-end', handleVoiceEnd);
+    window.addEventListener('calai-speech-start', handleSpeechStart);
+    window.addEventListener('calai-speech-end', handleSpeechEnd);
+
+    return () => {
+      window.removeEventListener('calai-voice-result', handleVoiceResult);
+      window.removeEventListener('calai-voice-end', handleVoiceEnd);
+      window.removeEventListener('calai-speech-start', handleSpeechStart);
+      window.removeEventListener('calai-speech-end', handleSpeechEnd);
+    };
+  }, []);
+
+  // Global keyboard capture - focus input and prepend typed character
+  const inputRef = useRef(null);
+  useEffect(() => {
+    const handleFocus = (e) => {
+      const key = e.detail?.key;
+      if (inputRef.current) {
+        inputRef.current.focus();
+        if (key && key.length === 1) {
+          setInputValue(prev => key + prev);
+        }
+      }
+    };
+    window.addEventListener('calai-focus', handleFocus);
+    return () => window.removeEventListener('calai-focus', handleFocus);
+  }, []);
 
   const handleConfirmEvent = async () => {
     if (!pendingEvent) return;
@@ -461,7 +485,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     setIsImageProcessing(true);
     setStatus('info', 'Analyzing files with Gemini 3...');
     try {
-      const parsedEvents = await geminiService.parseEventsFromFiles(files);
+      const parsedEvents = await geminiService.parseEventsFromImages(files);
       if (parsedEvents.length === 0) {
         addMessage('ai', "I checked those files but couldn't find any clear calendar events.");
       } else {
@@ -469,8 +493,24 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
           ...finalizeDraft(event),
           evidence: event.evidence // Preserve evidence
         }));
-        addMessage('ai', `I found ${drafts.length} event${drafts.length === 1 ? '' : 's'}. Please confirm them below.`);
-        setImageDrafts(prev => [...prev, ...drafts]);
+
+        let count = 0;
+        let errors = 0;
+        for (const draft of drafts) {
+          try {
+            await addEvent(draft, { allowConflicts: true });
+            count++;
+          } catch (err) {
+            errors++;
+            logger.error('Failed to auto-add image event', { error: err });
+          }
+        }
+
+        if (count > 0) {
+          addMessage('ai', `I automatically added ${count} event${count === 1 ? '' : 's'} from your files to your calendar!`);
+        } else if (errors > 0) {
+          addMessage('ai', 'I found events in your files, but there was an error saving them to the calendar.');
+        }
       }
     } catch (error) {
       if (error instanceof AIParseError || error instanceof AIServiceError) {

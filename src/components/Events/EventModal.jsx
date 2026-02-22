@@ -7,7 +7,6 @@ import { getEventColor } from '../../utils/helpers';
 import { validateEvent } from '../../utils/eventValidator';
 import { RECURRENCE_TYPES, formatRecurrenceText } from '../../utils/recurringEvents';
 import { toastService } from '../../utils/toast';
-import { isToday } from '../../utils/dateUtils';
 import { ValidationError } from '../../utils/errors';
 import { roundToNearest5Minutes, roundUpTo5Minutes } from '../../utils/timeUtils';
 import './EventModal.css';
@@ -17,6 +16,7 @@ import ClockPicker from '../Common/ClockPicker';
 import SmartSchedulePortal from './SmartSchedulePortal';
 import ConflictResolutionModal from './ConflictResolutionModal';
 import CustomRecurrenceEditor from './CustomRecurrenceEditor';
+import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 
 const padTime = (value) => String(value).padStart(2, '0');
 
@@ -94,7 +94,7 @@ import IsometricClock from '../Common/IsometricClock'; // NEW IMPORT
 
 const EventModal = () => {
   // ... hooks and state ...
-  const { selectedEvent, isEventModalOpen, closeEventModal, setDraftEvent } = useCalendar();
+  const { selectedEvent, isEventModalOpen, closeEventModal, setDraftEvent, setView, setSmartSuggestions, setSmartScheduleDraft } = useCalendar();
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
 
@@ -165,13 +165,20 @@ const EventModal = () => {
     }
 
     const baseDate = selectedEvent?.start ? new Date(selectedEvent.start) : new Date();
-    const isDefaultToday = selectedEvent?.start ? isToday(baseDate) : true;
-    const startTime = selectedEvent?.start
-      ? ensureValidStartTime(baseDate)
-      : ensureValidStartTime(isDefaultToday ? roundUpTo5Minutes(baseDate) : new Date(baseDate.setHours(12, 0, 0, 0)));
-    const endTime = selectedEvent?.end
-      ? roundToNearest5Minutes(new Date(selectedEvent.end))
-      : roundToNearest5Minutes(new Date(startTime.getTime() + 60 * 60 * 1000)); // Default: Start + 1 hour, snapped
+    const isEditing = selectedEvent && selectedEvent.id;
+
+    let startTime;
+    if (isEditing) {
+      startTime = ensureValidStartTime(baseDate);
+    } else if (selectedEvent?.start) {
+      startTime = ensureValidStartTime(roundToNearest5Minutes(baseDate));
+    } else {
+      startTime = ensureValidStartTime(roundUpTo5Minutes(new Date()));
+    }
+
+    const endTime = (selectedEvent && selectedEvent.id && selectedEvent.end)
+      ? new Date(selectedEvent.end)
+      : new Date(startTime.getTime() + 60 * 60 * 1000); // Default: Start + 1 hour exactly
 
     setFormData({
       title: '',
@@ -485,6 +492,12 @@ const EventModal = () => {
             <SmartSchedulePortal
               isOpen={isSmartScheduleOpen}
               onClose={() => setIsSmartScheduleOpen(false)}
+              onExpandView={(suggestions) => {
+                setSmartSuggestions(suggestions);
+                setSmartScheduleDraft(formData);
+                closeEventModal();
+                setView(CALENDAR_VIEWS.WEEK);
+              }}
               onSelectSlot={(start, end) => {
                 setFormData(prev => ({
                   ...prev,

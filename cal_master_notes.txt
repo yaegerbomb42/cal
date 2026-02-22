@@ -1,0 +1,3 @@
+completed settings config ui improvements and hardcoded api key
+completed settings config ui improvements and hardcoded api key
+Fixed SmartScheduler portal Invalid date error. Overhauled Intelligence tab into 4 specific sections.

@@ -12,7 +12,7 @@ import ContextMenu from '../UI/ContextMenu';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal, draftEvent } = useCalendar();
+  const { currentDate, openEventModal, draftEvent, smartSuggestions, setSmartSuggestions, setSmartScheduleDraft, smartScheduleDraft } = useCalendar();
   const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
@@ -62,6 +62,10 @@ const WeekView = () => {
   }, []);
 
   const handleTimeSlotClick = (day, hour) => {
+    // If we're in smart suggestion mode, ignore normal empty clicks, or cancel
+    if (smartSuggestions) {
+      return;
+    }
     const startTime = new Date(day);
     startTime.setHours(hour.getHours(), 0, 0, 0);
     const endTime = new Date(startTime);
@@ -254,7 +258,8 @@ const WeekView = () => {
                         top: `${topPercent}%`,
                         height: `${heightPercent}%`,
                         left: '4px',
-                        right: '4px'
+                        right: '4px',
+                        zIndex: 10
                       }}
                     >
                       <span style={{ fontSize: '0.7rem', color: 'var(--accent)', padding: '4px' }}>
@@ -263,6 +268,56 @@ const WeekView = () => {
                     </div>
                   );
                 })()}
+
+                {/* Smart Suggestions Blinking Indicators */}
+                {smartSuggestions && smartSuggestions.length > 0 && smartSuggestions.map((slot, idx) => {
+                  const sugStart = new Date(slot.start);
+                  const sugEnd = new Date(slot.end);
+                  const isSameDay = sugStart.toDateString() === day.toDateString();
+                  if (!isSameDay) return null;
+
+                  const hour = sugStart.getHours();
+                  const minutes = sugStart.getMinutes();
+                  const durationMinutes = (sugEnd - sugStart) / (1000 * 60);
+                  const topPercent = ((hour * 60 + minutes) / 1440) * 100;
+                  const heightPercent = (durationMinutes / 1440) * 100;
+
+                  return (
+                    <MotionDiv
+                      key={`sug-wv-${idx}`}
+                      className="smart-suggestion-indicator"
+                      style={{
+                        top: `${topPercent}%`,
+                        height: `${heightPercent}%`,
+                        left: '2px',
+                        right: '2px',
+                        zIndex: 100
+                      }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Close smart suggestions mode
+                        setSmartSuggestions(null);
+                        // Re-open event modal with the new times + the old draft
+                        if (smartScheduleDraft) {
+                          openEventModal({
+                            ...smartScheduleDraft,
+                            start: slot.start,
+                            end: slot.end
+                          });
+                          // clear it out
+                          setSmartScheduleDraft(null);
+                        } else {
+                          openEventModal({ start: slot.start, end: slot.end });
+                        }
+                      }}
+                    >
+                      <div className="suggestion-glow-layer"></div>
+                      <span className="suggestion-text">Top Pick: {slot.reason || 'AI Optimized'}</span>
+                    </MotionDiv>
+                  );
+                })}
               </div>
             );
           })}

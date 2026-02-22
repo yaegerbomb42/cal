@@ -158,12 +158,22 @@
 .date-pickers-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 1rem;
   background: rgba(255, 255, 255, 0.03);
   padding: 1rem;
   /* More room */
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.date-pickers-row .smart-date-input-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.date-pickers-row .smart-input {
+  width: 100%;
 }
 
 .iso-clocks-container {
