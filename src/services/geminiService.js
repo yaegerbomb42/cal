@@ -56,8 +56,9 @@ export class GeminiService {
       this.apiKey = finalKey;
       this.genAI = new GoogleGenerativeAI(this.apiKey);
 
-      // Use stable flash model
-      const ENFORCED_MODEL = 'gemini-2.5-flash';
+      // MANDATORY: Strictly use 'gemini-3-flash-preview' (Gemini 3 Flash Preview).
+      // NEVER switch to Pro or a different version.
+      const ENFORCED_MODEL = 'gemini-3-flash-preview';
       this.modelFlash = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
       this.modelPro = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
 
