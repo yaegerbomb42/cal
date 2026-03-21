@@ -1,3 +1,5 @@
 completed settings config ui improvements and hardcoded api key
 completed settings config ui improvements and hardcoded api key
 Fixed SmartScheduler portal Invalid date error. Overhauled Intelligence tab into 4 specific sections.
+IMPORTANT: geminiService uses NEW @google/genai SDK. Do NOT reference modelFlash/modelPro — those were from the OLD SDK. Use _generate() or ai.models.generateContent(). API uses v1alpha endpoint via httpOptions.
+Ollama in dev mode uses Vite proxy at /ollama-proxy to avoid CORS. Production deploys won't have local Ollama access.

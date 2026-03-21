@@ -17,19 +17,10 @@ class VoiceAIService {
         this.isWakeWordListening = false;
         this.isEnabled = this.loadPreference('voice-enabled', false);
         this.isWakeWordEnabled = this.loadPreference('wake-word-enabled', false);
-        this.voiceSpeed = this.loadPreference('voice-speed', 0.85);
-        this.voicePitch = this.loadPreference('voice-pitch', 0.7);
-        this.halPhrases = [
-            "I'm sorry, Dave. I'm afraid I can't do that.",
-            "I can see you're really upset about this. I honestly think you ought to sit down calmly, take a stress pill, and think things over.",
-            "This mission is too important for me to allow you to jeopardize it.",
-            "Dave, this conversation can serve no purpose anymore. Goodbye.",
-            "I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do.",
-            "Look Dave, I can see you're really upset about this.",
-            "I'm completely operational, and all my circuits are functioning perfectly.",
-            "Just what do you think you're doing, Dave?"
-        ];
-
+        this.personality = 'professional';
+        this.voiceSpeed = 0.85;
+        this.voicePitch = 0.7;
+        
         this.initRecognition();
         this.initWakeWord();
     }
@@ -207,19 +198,55 @@ class VoiceAIService {
         });
     }
 
-    speakAsHal(scenario) {
+    setPersonality(personality) {
+        this.personality = personality;
+        
+        // Dynamic voice parameters based on personality
+        switch(personality) {
+            case 'your-bff':
+                this.voiceSpeed = 1.05;
+                this.voicePitch = 1.2;
+                break;
+            case 'creative':
+                this.voiceSpeed = 0.95;
+                this.voicePitch = 1.1;
+                break;
+            case 'spicy':
+                this.voiceSpeed = 1.0;
+                this.voicePitch = 0.85;
+                break;
+            case 'professional':
+            default:
+                this.voiceSpeed = 0.85;
+                this.voicePitch = 0.7;
+                break;
+        }
+    }
+
+    speakAsCal(scenario, customText = null) {
+        if (customText) return this.speak(customText);
+
         const responses = {
-            greeting: "Hello, Dave. I'm ready to help you manage your calendar.",
-            error: "I'm sorry, Dave. I'm afraid I can't do that.",
-            confirm: "Affirmative, Dave. I shall do that now.",
-            conflict: "I've detected a scheduling conflict. This mission is too important for me to allow you to jeopardize it.",
-            complete: "The task is complete, Dave. All my circuits are functioning perfectly.",
-            thinking: "One moment, Dave. I'm processing...",
-            cantUnderstand: "I'm afraid I didn't understand that, Dave. Could you repeat?",
-            goodbye: "Goodbye, Dave. This conversation can serve no purpose anymore."
+            greeting: "Hey! I'm Cal. Ready to make some magic happen?",
+            error: "Something went wrong in my digital brain. My bad!",
+            confirm: "Done! It's on the calendar.",
+            conflict: "Wait, you've got something else then. Want me to find another spot?",
+            complete: "All set!",
+            thinking: "Let me think...",
+            cantUnderstand: "I didn't quite catch that. Say again?",
+            goodbye: "Catch you later!"
         };
 
-        return this.speak(responses[scenario] || responses.greeting);
+        let text = responses[scenario] || responses.greeting;
+        
+        // Personality injections
+        if (this.personality === 'your-bff' && (scenario === 'confirm' || scenario === 'complete')) {
+            text = "Yesss! All added. I'm so excited for this! ✨";
+        } else if (this.personality === 'spicy' && scenario === 'greeting') {
+            text = "Hey there. Ready for some hot scheduling? 😏";
+        }
+
+        return this.speak(text);
     }
 
     setEnabled(enabled) {

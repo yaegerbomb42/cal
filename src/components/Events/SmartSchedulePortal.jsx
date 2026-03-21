@@ -21,7 +21,8 @@ const SmartSchedulePortal = ({
     onSelectSlot,
     eventTitle = '',
     existingEvents = [],
-    preferredDate
+    preferredDate,
+    autoPlanPreview = null // Array of { todo, slot }
 }) => {
     // Ensure we have a valid date object and prevent infinite loops from unstable default props
     const timestamp = (preferredDate instanceof Date && !isNaN(preferredDate)) ? preferredDate.getTime() : 0;
@@ -31,7 +32,7 @@ const SmartSchedulePortal = ({
 
     const [suggestions, setSuggestions] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isExpandedView, setIsExpandedView] = useState(false);
+    const isBulkMode = !!autoPlanPreview;
 
     // Generate smart time suggestions
     useEffect(() => {
@@ -73,9 +74,7 @@ const SmartSchedulePortal = ({
 
     }, [isOpen, eventTitle, existingEvents, safeDate]);
 
-    const handleExpandView = () => {
-        setIsExpandedView(prev => !prev);
-    };
+
 
     // Calculate the week days for the mini grid
     const weekStart = startOfWeek(safeDate, { weekStartsOn: 0 }); // Sunday start
@@ -85,29 +84,50 @@ const SmartSchedulePortal = ({
 
     return (
         <MotionDiv
-            className={`smart-schedule-panel mini-week-mode ${isExpandedView ? 'expanded-mode' : ''}`}
+            className="smart-schedule-panel mini-week-mode"
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: isExpandedView ? 700 : 280 }}
+            animate={{ opacity: 1, height: '100%' }}
             exit={{ opacity: 0, height: 0 }}
-            style={{ width: isExpandedView ? '100%' : 'auto' }}
+            style={{ width: '100%' }}
         >
             <div className="panel-header">
                 <div className="portal-title">
                     <Sparkles size={16} className="sparkle-icon" />
-                    <span>Smart Schedule</span>
+                    <span>{isBulkMode ? 'Auto-Plan Preview' : 'Smart Schedule'}</span>
                 </div>
-                {suggestions.length > 0 && (
-                    <button className="expand-view-btn" onClick={handleExpandView}>
-                        <Calendar size={14} />
-                        <span>{isExpandedView ? 'Collapse' : 'View Large'}</span>
+                {isBulkMode && (
+                    <button 
+                        className="confirm-all-btn"
+                        style={{
+                            background: 'var(--accent)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '4px 12px',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer',
+                            marginLeft: 'auto',
+                            marginRight: '12px'
+                        }}
+                        onClick={() => onSelectSlot(autoPlanPreview.map(p => ({
+                            ...p.todo,
+                            start: p.slot.start,
+                            end: p.slot.end,
+                            category: 'task'
+                        })))}
+                    >
+                        <Check size={14} /> Schedule All
                     </button>
                 )}
                 <button className="portal-close" onClick={onClose}>
-                    <X size={14} />
+                    <X size={16} />
                 </button>
             </div>
 
-            <div className="panel-content mini-week-content" onClick={handleExpandView}>
+            <div className="panel-content mini-week-content">
                 {isLoading ? (
                     <div className="portal-loading">
                         <div className="loading-spinner" />
@@ -155,7 +175,30 @@ const SmartSchedulePortal = ({
                                     });
 
                                     return (
-                                        <div key={`col-${dayIndex}`} className="mini-day-column">
+                                        <div 
+                                            key={`col-${dayIndex}`} 
+                                            className="mini-day-column"
+                                            onClick={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                const y = e.clientY - rect.top;
+                                                const percent = y / rect.height;
+                                                const totalMinutes = Math.floor(percent * 24 * 60);
+                                                
+                                                // Round to nearest 15 mins for better UX
+                                                const roundedMinutes = Math.round(totalMinutes / 15) * 15;
+                                                const hours = Math.floor(roundedMinutes / 60);
+                                                const mins = roundedMinutes % 60;
+
+                                                const start = new Date(dayStart);
+                                                start.setHours(hours, mins, 0, 0);
+                                                
+                                                const end = new Date(start);
+                                                end.setHours(start.getHours() + 1); // Default 1hr duration
+                                                
+                                                onSelectSlot(start, end);
+                                                onClose();
+                                            }}
+                                        >
                                             {/* Hourly Grid Lines */}
                                             {Array.from({ length: 24 }).map((_, h) => (
                                                 <div key={`grid-${h}`} className="mini-grid-line" style={{ top: `${(h / 24) * 100}%` }} />
@@ -164,9 +207,8 @@ const SmartSchedulePortal = ({
                                             {/* Render Existing Events */}
                                             {dayEvents.map((event, idx) => {
                                                 const start = new Date(event.start);
-                                                const end = new Date(event.end);
                                                 const startMins = start.getHours() * 60 + start.getMinutes();
-                                                const duration = (end - start) / (1000 * 60);
+                                                const duration = (new Date(event.end) - new Date(event.start)) / (1000 * 60);
 
                                                 return (
                                                     <div
@@ -181,44 +223,64 @@ const SmartSchedulePortal = ({
                                                 );
                                             })}
 
-                                            {/* Render AI Suggestions */}
+                                            {/* Render Bulk Previews */}
+                                            {isBulkMode && autoPlanPreview.map((item, idx) => {
+                                                const start = new Date(item.slot.start);
+                                                if (start.toDateString() !== dayStart.toDateString()) return null;
+                                                const startMins = start.getHours() * 60 + start.getMinutes();
+                                                const duration = (new Date(item.slot.end) - start) / (1000 * 60);
+
+                                                return (
+                                                    <motion.div
+                                                        key={`bulk-${idx}`}
+                                                        className="mini-suggestion bulk-preview"
+                                                        style={{
+                                                            top: `${(startMins / (1440)) * 100}%`,
+                                                            height: `${(duration / (1440)) * 100}%`,
+                                                            backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                                                            border: '2px dashed var(--accent)',
+                                                            zIndex: 15
+                                                        }}
+                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                    >
+                                                        <div className="mini-suggestion-glow" />
+                                                        <span className="mini-suggestion-label">{item.todo.text}</span>
+                                                    </motion.div>
+                                                );
+                                            })}
+
                                             {daySuggestions.map((slot, idx) => {
                                                 const start = new Date(slot.start);
-                                                const end = new Date(slot.end);
                                                 const startMins = start.getHours() * 60 + start.getMinutes();
-                                                const duration = (end - start) / (1000 * 60);
+                                                const duration = (new Date(slot.end) - new Date(slot.start)) / (1000 * 60);
 
                                                 return (
                                                     <motion.div
                                                         key={`sug-${idx}`}
                                                         className="mini-suggestion"
                                                         style={{
-                                                            top: `${(startMins / (24 * 60)) * 100}%`,
-                                                            height: `${(duration / (24 * 60)) * 100}%`
+                                                            top: `${(startMins / (1440)) * 100}%`,
+                                                            height: `${(duration / (1440)) * 100}%`
                                                         }}
-                                                        whileHover={{ scale: 1.1, zIndex: 10 }}
+                                                        whileHover={{ scale: 1.05, zIndex: 10 }}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            onSelectSlot(start, end);
+                                                            onSelectSlot(start, new Date(slot.end));
+                                                            onClose();
                                                         }}
+                                                        title={slot.reason || 'AI suggested slot'}
                                                     >
                                                         <div className="mini-suggestion-glow" />
+                                                        <span className="mini-suggestion-label">
+                                                            {format(start, 'h:mm a')}
+                                                        </span>
                                                     </motion.div>
                                                 );
                                             })}
                                         </div>
                                     );
                                 })}
-
-                                {/* Hover Overlay for "Click to expand" */}
-                                {suggestions.length > 0 && !isExpandedView && (
-                                    <div className="mini-grid-overlay">
-                                        <div className="overlay-content">
-                                            <Calendar size={24} />
-                                            <span>Click to View Large</span>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>

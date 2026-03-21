@@ -1,13 +1,19 @@
-/* Smart Schedule Panel (Embedded Mini Week) */
 .smart-schedule-panel.mini-week-mode {
-    width: 100%;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    margin-top: 1rem;
-    border-radius: 12px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0px;
+  background: rgba(15, 23, 42, 0.98);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 0 20px 20px;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0;
 }
 
 .panel-header {
@@ -128,8 +134,7 @@
     flex: 1;
     position: relative;
     overflow: hidden;
-    height: 180px;
-    /* Constrained height for mini view */
+    height: 100%;
 }
 
 .mini-timeline-labels {
@@ -158,7 +163,14 @@
 .mini-day-column {
     flex: 1;
     position: relative;
-    border-right: 1px solid rgba(255, 255, 255, 0.02);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    height: 100%;
+    cursor: crosshair;
+    transition: background 0.1s;
+}
+
+.mini-day-column:hover {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .mini-grid-line {
@@ -166,7 +178,8 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.05);
+    pointer-events: none;
 }
 
 .mini-event {
@@ -187,6 +200,24 @@
     border: 1px dashed var(--accent);
     z-index: 5;
     animation: aiSlotPulse 2s ease-in-out infinite;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mini-suggestion-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 2px;
+    pointer-events: none;
 }
 
 .mini-grid-overlay {
@@ -199,8 +230,8 @@
     opacity: 0;
     transition: opacity 0.2s;
     z-index: 20;
-    backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
 }
 
 .mini-days-container:hover .mini-grid-overlay {

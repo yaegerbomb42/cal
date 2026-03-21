@@ -12,8 +12,8 @@ import ContextMenu from '../UI/ContextMenu';
 import './WeekView.css';
 
 const WeekView = () => {
-  const { currentDate, openEventModal, draftEvent, smartSuggestions, setSmartSuggestions, setSmartScheduleDraft, smartScheduleDraft } = useCalendar();
-  const { events, updateEvent, getEventsForDate, deleteEvent } = useEvents();
+  const { currentDate, openEventModal, draftEvent, smartSuggestions, setSmartSuggestions, setSmartScheduleDraft, smartScheduleDraft, isArchiveMode } = useCalendar();
+  const { events, updateEvent, getEventsForDate, deleteEvent, archiveEvent } = useEvents();
   const MotionDiv = motion.div;
   const weekDays = getWeekDays(currentDate);
   const dayHours = getDayHours();
@@ -75,7 +75,11 @@ const WeekView = () => {
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
-    openEventModal(event);
+    if (isArchiveMode) {
+      archiveEvent(event.id);
+    } else {
+      openEventModal(event);
+    }
   };
 
   const handleDragStart = (event, e) => {
@@ -128,8 +132,9 @@ const WeekView = () => {
         <div className="header-cell gutter"></div>
         {weekDays.map((day) => (
           <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')} style={{ textAlign: 'center' }}>
-            <div className="header-date-group" style={{ justifyContent: 'center' }}>
+            <div className="header-date-group" style={{ justifyContent: 'center', gap: '6px' }}>
               <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+              <span className="day-num" style={{ fontWeight: '700' }}>{day.getDate()}</span>
             </div>
           </div>
         ))}
@@ -145,13 +150,39 @@ const WeekView = () => {
             <div
               key={`time-${hour.getHours()}`}
               className={cn('week-time-slot')}
+              style={{ height: pixelsPerHour }}
             >
               {format(hour, 'h a').toLowerCase().replace(' ', '')}
             </div>
           ))}
         </div>
 
-        <div className="week-days-grid">
+        <div className="week-days-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          {/* Centralized Time Indicator Layer */}
+          {(() => {
+            const todayIndex = weekDays.findIndex(day => isToday(day));
+            if (todayIndex === -1) return null;
+
+            const nowTick = new Date(currentTick);
+            const hours = nowTick.getHours();
+            const minutes = nowTick.getMinutes();
+            const seconds = nowTick.getSeconds();
+            const exactTop = (hours * pixelsPerHour) + ((minutes / 60) * pixelsPerHour) + ((seconds / 3600) * pixelsPerHour);
+
+            return (
+              <div className="week-time-indicator-layer">
+                <div
+                  className="week-time-indicator-full-line"
+                  style={{ top: `${exactTop}px` }}
+                >
+                  <div 
+                    className="week-time-indicator-dot" 
+                    style={{ left: `calc(${(todayIndex / 7) * 100}% - 5px)` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
           {weekDays.map((day) => {
             const dayEvents = getEventsForDate(day);
             const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
@@ -200,16 +231,32 @@ const WeekView = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <div className="week-event-title">{event.title || 'Untitled'}</div>
-                        <div className="week-event-time">
-                          <Clock size={10} />
+                        <div className="week-event-title" style={{ fontSize: '0.75rem', fontWeight: '600', lineHeight: '1.2', whiteSpace: 'normal', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{event.title || 'Untitled'}</div>
+                        <div className="week-event-time" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px', fontSize: '0.65rem', fontWeight: '500' }}>
+                          <Clock size={10} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} />
                           {format(new Date(event.start), 'h:mm a')}
                         </div>
                         {showLocation && event.location && (
-                          <div className="week-event-location">
-                            <MapPin size={10} />
-                            {event.location}
-                          </div>
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(event.location)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="week-event-location"
+                            onClick={(e) => { e.stopPropagation(); }}
+                            style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', marginTop: '4px', color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.65rem', fontWeight: '500' }}
+                          >
+                            <MapPin size={10} style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <span style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              whiteSpace: 'normal',
+                              pointerEvents: 'none'
+                            }}>
+                              {event.location}
+                            </span>
+                          </a>
                         )}
                         {event.priority === 'high' && (
                           <div style={{ position: 'absolute', top: 4, right: 4, color: 'white' }}>
@@ -221,27 +268,7 @@ const WeekView = () => {
                   })}
                 </div>
 
-                {/* Live time indicator with absolute accuracy */}
-                {isToday(day) && (() => {
-                  const nowTick = new Date(currentTick);
-                  const hours = nowTick.getHours();
-                  const minutes = nowTick.getMinutes();
-                  const seconds = nowTick.getSeconds();
 
-                  // Exact position based on hour map
-                  const exactTop = (hours * pixelsPerHour) + ((minutes / 60) * pixelsPerHour) + ((seconds / 3600) * pixelsPerHour);
-
-                  return (
-                    <div className="week-time-indicator-grid-container">
-                      <div
-                        className="week-time-indicator"
-                        style={{ top: `${exactTop}px` }}
-                      >
-                        <div className="week-time-indicator-line" />
-                      </div>
-                    </div>
-                  );
-                })()}
 
                 {/* Draft event blinking indicator */}
                 {draftEvent && draftEvent.start && (() => {

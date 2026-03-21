@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
-import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check, Sparkles } from 'lucide-react';
+import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check, Sparkles, MapPin, Clock, Layout } from 'lucide-react';
 import { getEventColor } from '../../utils/helpers';
 import { paginateItems } from '../../utils/pagination';
-import { isToday } from 'date-fns';
+import { isToday, endOfDay } from 'date-fns';
 import './UpcomingSidebar.css';
 
+import { toastService } from '../../utils/toast';
 import { firebaseService } from '../../services/firebaseService';
 import { useAuth } from '../../contexts/useAuth';
 
@@ -82,9 +83,19 @@ const CustomMultiSelect = ({ options, selectedValues, onChange }) => {
     );
 };
 
+const TASK_SUGGESTIONS = [
+    { text: 'Deep Work Session', icon: <Zap size={14} /> },
+    { text: 'Review & Respond to Emails', icon: <Archive size={14} /> },
+    { text: 'Admin & Operations', icon: <Layout size={14} /> },
+    { text: 'Quick Health Break / Walk', icon: <Zap size={14} /> },
+    { text: 'Project Deep Dive', icon: <Sparkles size={14} /> },
+    { text: 'Daily Standup / Sync', icon: <Clock size={14} /> },
+    { text: 'Content Creation / Writing', icon: <Edit2 size={14} /> }
+];
+
 const UpcomingSidebar = () => {
-    const { events, deleteEvent, deleteEventsByName, updateEvent, addEvent } = useEvents();
-    const { openEventModal } = useCalendar();
+    const { events, deleteEvent, deleteEventsByName, updateEvent, unarchiveEvent } = useEvents();
+    const { openEventModal, setAutoPlanPreview, isArchiveMode, setIsArchiveMode } = useCalendar();
     const { user } = useAuth(); // Needed for persistence
 
     // View States
@@ -100,6 +111,20 @@ const UpcomingSidebar = () => {
 
     // Quick Add Focus
     const [quickAddText, setQuickAddText] = useState('');
+    const [pendingTodos, setPendingTodos] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const suggestionsRef = useRef(null);
+
+    // Click outside handler for task suggestions
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Load Filters from Persistence
     useEffect(() => {
@@ -126,7 +151,7 @@ const UpcomingSidebar = () => {
     // Removed toggleFocusMode as it is now part of viewMode
 
     // --- Helpers ---
-    const now = new Date();
+    const now = useMemo(() => new Date(), []); // Stable reference for memoization
 
     const getTimeLabel = (date) => {
         const diff = new Date(date) - now;
@@ -155,10 +180,16 @@ const UpcomingSidebar = () => {
     const displayEvents = useMemo(() => {
         return events
             .filter(event => {
+                // If we are in Archive view, show ONLY archived events
+                if (viewMode === 'archive') return event.isArchived;
+
+                // For all other views, EXCLUDE archived events
+                if (event.isArchived) return false;
+
                 const eventStart = new Date(event.start);
                 const inRange = viewMode === 'upcoming'
                     ? eventStart >= now
-                    : eventStart < now;
+                    : true; // focus and bulk trash don't use this list
 
                 const matchesCategory = categoryFilters.includes('all')
                     ? true
@@ -171,7 +202,7 @@ const UpcomingSidebar = () => {
                 const dateB = new Date(b.start);
                 return viewMode === 'upcoming' ? dateA - dateB : dateB - dateA;
             });
-    }, [events, viewMode, categoryFilters]); // removed 'now' to prevent re-calc every second if parent rerenders, though 'now' is local constant so it changes every render anyway. Ideally 'now' should be stable or just new Date() inside.
+    }, [events, viewMode, categoryFilters, now]); // removed 'now' to prevent re-calc every second if parent rerenders, though 'now' is local constant so it changes every render anyway. Ideally 'now' should be stable or just new Date() inside.
     // Actually, since 'UpcomingSidebar' renders, 'now' is new. If we include 'now' in deps, it breaks memo. 
     // We should capture 'now' effectively or just accept it. 
     // Better: use a reference time that updates less frequently if needed, or just let it slide since events change rarely.
@@ -196,46 +227,48 @@ const UpcomingSidebar = () => {
         updateEvent(event.id, { completed: !event.completed });
     };
 
-    const handleSmartFocusSubmit = async (e) => {
+    const handleSmartFocusSubmit = (e) => {
         e.preventDefault();
         if (!quickAddText.trim()) return;
 
-        // Auto-Schedule Logic
-        // If it starts with "Todo:", "Task:", or just looks like a task, 
-        // we try to find a slot.
-        try {
-            // Simple mock "AI" or regex for now, then real AI later if needed.
-            // For now, we assume EVERYTHING entered here is a task to be scheduled.
-            const { findNextFreeSlot } = await import('../../utils/scheduler');
-            const slot = findNextFreeSlot(events, 30); // Default 30 min
+        // Accumulate todos in local state before scheduling
+        setPendingTodos(prev => [...prev, { id: Date.now().toString(), text: quickAddText.trim() }]);
+        setQuickAddText('');
+    };
 
-            if (slot) {
-                addEvent({
-                    title: quickAddText,
-                    start: slot.start,
-                    end: slot.end,
-                    category: 'task',
-                    priority: 'medium',
-                    description: 'Auto-scheduled by AI',
-                    completed: false
-                });
-                // toastService.success(`Scheduled for ${new Date(slot.start).toLocaleTimeString()}`);
-            } else {
-                // Fallback if full
-                const start = new Date();
-                const end = new Date(start.getTime() + 30 * 60000);
-                addEvent({
-                    title: quickAddText,
-                    start: start.toISOString(),
-                    end: end.toISOString(),
-                    category: 'task',
-                    completed: false
-                });
+    const handleAutoPlan = async () => {
+        if (pendingTodos.length === 0) return;
+
+        try {
+            const { findNextFreeSlot } = await import('../../utils/scheduler');
+            const previewSlots = [];
+            let workingEvents = [...events];
+
+            for (const todo of pendingTodos) {
+                // Try today first
+                let slot = findNextFreeSlot(workingEvents, 30, now, endOfDay(now));
+                
+                // If not found today, search the next 7 days
+                if (!slot) {
+                    const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    slot = findNextFreeSlot(workingEvents, 45, now, weekEnd);
+                }
+
+                if (slot) {
+                    previewSlots.push({ todo, slot });
+                    // Add to working events so next todo doesn't overlap with this suggested slot
+                    workingEvents.push({ ...todo, start: slot.start, end: slot.end });
+                }
             }
-            setQuickAddText('');
+
+            if (previewSlots.length > 0) {
+                setAutoPlanPreview(previewSlots);
+                toastService.success(`AI found slots for ${previewSlots.length} tasks`);
+            } else {
+                toastService.info('No optimal space found for remaining tasks today');
+            }
         } catch (error) {
-            console.error("Focus Plan Error:", error);
-            setQuickAddText('');
+            console.error("Auto Plan Error:", error);
         }
     };
 
@@ -260,6 +293,28 @@ const UpcomingSidebar = () => {
 
     return (
         <div className={`upcoming-sidebar glass-card ${viewMode === 'focus' ? 'focus-mode-sidebar' : ''}`}>
+            {isArchiveMode && (
+                <div className="archive-mode-banner" style={{
+                    padding: '10px',
+                    margin: '0 0 1rem 0',
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                }}>
+                    <div className="pulse-red" style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }}></div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ef4444' }}>Eraser Mode Active</span>
+                    <button 
+                        onClick={() => setIsArchiveMode(false)}
+                        style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
+
             <div className="sidebar-header">
                 <div className="header-title-row">
                     <h3>
@@ -294,8 +349,18 @@ const UpcomingSidebar = () => {
                         <Archive size={18} />
                     </button>
                     <button
+                        className={`nav-btn-item ${isArchiveMode ? 'active archive-active' : ''}`}
+                        onClick={() => setIsArchiveMode(!isArchiveMode)}
+                        title="Archive Mode (Click events to delete)"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                    <button
                         className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
-                        onClick={() => setViewMode('bulk-trash')}
+                        onClick={() => {
+                            setViewMode('bulk-trash');
+                            setIsArchiveMode(false);
+                        }}
                         title="Trash / Bulk Delete"
                     >
                         {/* Soul Fade Trash Icon */}
@@ -320,25 +385,86 @@ const UpcomingSidebar = () => {
             {viewMode === 'focus' && (
                 <div className="focus-mode-content fade-in">
                     <div className="focus-header-actions">
-                        <button className="pro-btn-secondary small" onClick={() => handleSmartFocusSubmit({ preventDefault: () => { } })}>
-                            <Sparkles size={14} className="text-accent" /> Auto-Plan
+                        <button
+                            className="pro-btn-secondary small"
+                            onClick={handleAutoPlan}
+                            disabled={pendingTodos.length === 0}
+                            style={{ opacity: pendingTodos.length === 0 ? 0.5 : 1, width: '100%', justifyContent: 'center', marginBottom: '1rem' }}
+                        >
+                            <Sparkles size={14} className="text-accent" /> Smart Schedule {pendingTodos.length > 0 && `(${pendingTodos.length})`}
                         </button>
                     </div>
 
-                    {/* Quick Add Bar */}
-                    <form onSubmit={handleSmartFocusSubmit} className="focus-quick-add">
+                    {/* Quick Add Bar with Suggestions */}
+                    <form 
+                        onSubmit={handleSmartFocusSubmit} 
+                        className="focus-quick-add"
+                        ref={suggestionsRef}
+                    >
                         <Plus size={16} className="quick-add-icon" />
                         <input
                             type="text"
-                            placeholder="Add task or ask AI..."
+                            placeholder="Add task to auto-plan..."
                             value={quickAddText}
-                            onChange={(e) => setQuickAddText(e.target.value)}
+                            onChange={(e) => {
+                                setQuickAddText(e.target.value);
+                                setShowSuggestions(true);
+                            }}
+                            onFocus={() => setShowSuggestions(true)}
                             className="quick-add-input"
                         />
+                        
+                        {showSuggestions && (
+                            <div className="task-suggestions-dropdown">
+                                {TASK_SUGGESTIONS
+                                    .filter(s => s.text.toLowerCase().includes(quickAddText.toLowerCase()))
+                                    .map((suggestion, idx) => (
+                                        <div 
+                                            key={idx} 
+                                            className="suggestion-item"
+                                            onClick={() => {
+                                                setQuickAddText(suggestion.text);
+                                                setShowSuggestions(false);
+                                            }}
+                                        >
+                                            <span className="suggestion-icon">{suggestion.icon}</span>
+                                            <span>{suggestion.text}</span>
+                                        </div>
+                                    ))}
+                                {quickAddText && (
+                                    <div 
+                                        className="suggestion-item manual-entry"
+                                        onClick={() => setShowSuggestions(false)}
+                                    >
+                                        <Plus size={14} className="suggestion-icon" />
+                                        <span>Use "{quickAddText}"</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </form>
 
-                    {/* Today's Checklist */}
-                    <div className="focus-list">
+                    {/* Pending Todos to be Scheduled */}
+                    {pendingTodos.length > 0 && (
+                        <div className="pending-todos" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pending To Schedule</div>
+                            {pendingTodos.map(todo => (
+                                <div key={todo.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', marginBottom: '4px', fontSize: '0.85rem' }}>
+                                    <span>{todo.text}</span>
+                                    <button
+                                        onClick={() => setPendingTodos(prev => prev.filter(t => t.id !== todo.id))}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0 4px' }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Today's Scheduled Checklist */}
+                    <div className="focus-list" style={{ marginTop: pendingTodos.length > 0 ? '1rem' : '0' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Today's Schedule</div>
                         {todayEvents.length === 0 ? (
                             <div className="focus-empty">
                                 <CheckCircle size={32} className="text-muted" />
@@ -440,23 +566,63 @@ const UpcomingSidebar = () => {
                                                     )}
                                                 </div>
                                             </div>
+
+                                            {/* Expandable Content on Hover */}
+                                            <div className="event-description-collapse">
+                                                <div className="event-description-content">
+                                                    <div style={{ fontWeight: '500', marginBottom: '4px', color: 'var(--text-primary)' }}>
+                                                        <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                                                        {new Date(event.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - {new Date(event.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                                    </div>
+                                                    {event.location && (
+                                                        <a
+                                                            href={`https://maps.google.com/?q=${encodeURIComponent(event.location)}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="event-location"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <MapPin size={12} />
+                                                            {event.location}
+                                                        </a>
+                                                    )}
+                                                    {event.description && (
+                                                        <div style={{ marginTop: '6px' }}>{event.description}</div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="event-actions">
-                                            <button
-                                                onClick={() => openEventModal(event)}
-                                                className="action-btn edit"
-                                                title="Edit event"
-                                            >
-                                                <Edit2 size={14} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteClick(event.id)}
-                                                className="action-btn delete"
-                                                title="Delete event"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            {viewMode === 'archive' ? (
+                                                <button
+                                                    onClick={() => unarchiveEvent(event.id)}
+                                                    className="action-btn edit"
+                                                    title="Restore event"
+                                                    style={{ color: '#22c55e' }}
+                                                >
+                                                    <History size={14} />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => openEventModal(event)}
+                                                    className="action-btn edit"
+                                                    title="Edit event"
+                                                >
+                                                    <Edit2 size={14} />
+                                                </button>
+                                            )}
+                                                <button
+                                                    onClick={() => {
+                                                        if (viewMode === 'archive' ? window.confirm('Permanently delete this archived event?') : true) {
+                                                            handleDeleteClick(event.id);
+                                                        }
+                                                    }}
+                                                    className="action-btn delete"
+                                                    title="Delete event"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                         </div>
                                     </div>
                                 );

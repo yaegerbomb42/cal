@@ -27,6 +27,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       content: "Hey, I'm Cal! Ready to help. What would you like me to schedule?"
     }
   ]);
+  const [chatHistory, setChatHistory] = useState([]); // Array of { isUser, text }
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -37,6 +38,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [isImageProcessing, setIsImageProcessing] = useState(false);
   const [isLocalMode] = useState(localBrainService.getPreferLocal());
   const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [listenMode, setListenMode] = useState(false); // STT Toggle
   const [, setIsSpeaking] = useState(false);
   const [speakResponse, setSpeakResponse] = useState(false); // TTS Toggle
   const [lastProcessedInput, setLastProcessedInput] = useState(null);
@@ -270,8 +272,16 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
         return;
       }
 
-      const response = await geminiService.chatResponse(text, events);
-      handleAIResponse(sanitizeAIOutput(response, { input: text }));
+      const response = await geminiService.chatResponse(text, chatHistory, events);
+      const aiText = sanitizeAIOutput(response, { input: text });
+      
+      setChatHistory(prev => [
+        ...prev,
+        { isUser: true, text },
+        { isUser: false, text: aiText }
+      ]);
+
+      handleAIResponse(aiText);
     } catch (error) {
       if (error instanceof AIParseError) {
         addMessage('ai', "I couldn't parse that event yet. Could you rephrase with a time or date?");
@@ -341,13 +351,20 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       if (e.detail.isFinal) {
         const transcript = e.detail.transcript;
         setInputValue(transcript);
-        setIsVoiceListening(false);
-        // Optional: auto-submit after voice input
-        // processInput(transcript);
+        if (listenMode) {
+            // Auto-submit in listen mode
+            addMessage('user', transcript);
+            processInput(transcript);
+            setInputValue('');
+        } else {
+            setIsVoiceListening(false);
+        }
       }
     };
 
-    const handleVoiceEnd = () => setIsVoiceListening(false);
+    const handleVoiceEnd = () => {
+        if (!listenMode) setIsVoiceListening(false);
+    };
     const handleSpeechStart = () => setIsSpeaking(true);
     const handleSpeechEnd = () => setIsSpeaking(false);
 
@@ -486,32 +503,20 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     setIsImageProcessing(true);
     setStatus('info', 'Analyzing files with Gemini 3...');
     try {
-      const parsedEvents = await geminiService.parseEventsFromImages(files);
-      if (parsedEvents.length === 0) {
-        addMessage('ai', "I checked those files but couldn't find any clear calendar events.");
-      } else {
-        const drafts = parsedEvents.map(event => ({
+      const result = await geminiService.parseEventsFromImages(files, messages[messages.length - 1]?.content || "");
+      
+      if (result.events && result.events.length > 0) {
+        const drafts = result.events.map(event => ({
           ...finalizeDraft(event),
-          evidence: event.evidence // Preserve evidence
+          evidence: event.evidence || "Found in image"
         }));
-
-        let count = 0;
-        let errors = 0;
-        for (const draft of drafts) {
-          try {
-            await addEvent(draft, { allowConflicts: true });
-            count++;
-          } catch (err) {
-            errors++;
-            logger.error('Failed to auto-add image event', { error: err });
-          }
-        }
-
-        if (count > 0) {
-          addMessage('ai', `I automatically added ${count} event${count === 1 ? '' : 's'} from your files to your calendar!`);
-        } else if (errors > 0) {
-          addMessage('ai', 'I found events in your files, but there was an error saving them to the calendar.');
-        }
+        
+        setImageDrafts(prev => [...prev, ...drafts]);
+        addMessage('ai', `I found ${drafts.length} potential event${drafts.length === 1 ? '' : 's'}. Look good?`);
+      } else if (result.summary) {
+        addMessage('ai', result.summary);
+      } else {
+        addMessage('ai', "I checked those files but couldn't find any clear calendar events.");
       }
     } catch (error) {
       if (error instanceof AIParseError || error instanceof AIServiceError) {
@@ -613,22 +618,53 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
           )}
 
           <div className="chat-header">
-            <div className="chat-title">
-
-              <h3>Cal</h3>
+            <div className="chat-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button 
+                onClick={() => {
+                  setMessages([{ id: 1, type: 'ai', content: "Chat cleared. What's next?" }]);
+                  setChatHistory([]);
+                }}
+                className="action-btn"
+                title="Clear Chat History"
+                style={{ opacity: 0.6 }}
+              >
+                <X size={16} />
+              </button>
+              <h3 style={{ margin: 0 }}>Cal</h3>
               <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
             </div>
-            <button
-              onClick={() => setSpeakResponse(!speakResponse)}
-              className={`action-btn ${speakResponse ? 'active' : ''}`}
-              title={speakResponse ? "Mute Voice" : "Enable Voice"}
-              style={{ marginRight: '8px', color: speakResponse ? 'var(--accent)' : 'var(--text-muted)' }}
-            >
-              {speakResponse ? <Volume2 size={18} /> : <MicOff size={18} />}
-            </button>
-            <button onClick={onClose} className="close-btn" aria-label="Close Cal chat">
-              <X size={18} />
-            </button>
+            
+            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+              <button
+                onClick={() => {
+                    const newMode = !listenMode;
+                    setListenMode(newMode);
+                    if (newMode) {
+                        voiceAIService.startListening();
+                    } else {
+                        voiceAIService.stopListening();
+                    }
+                }}
+                className={`action-btn ${listenMode ? 'active' : ''}`}
+                title={listenMode ? "Listening Mode Active" : "Enable Listen Mode"}
+                style={{ color: listenMode ? 'var(--accent)' : 'var(--text-muted)' }}
+              >
+                {listenMode ? <Mic size={18} /> : <MicOff size={18} />}
+              </button>
+
+              <button
+                onClick={() => setSpeakResponse(!speakResponse)}
+                className={`action-btn ${speakResponse ? 'active' : ''}`}
+                title={speakResponse ? "Mute Voice" : "Enable Voice Output"}
+                style={{ color: speakResponse ? 'var(--accent)' : 'var(--text-muted)' }}
+              >
+                <Volume2 size={18} />
+              </button>
+
+              <button onClick={onClose} className="close-btn" aria-label="Close Cal chat">
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
           {statusMessage && (

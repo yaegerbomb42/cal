@@ -14,6 +14,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@google/genai": "^1.42.0",
     "@google/generative-ai": "^0.24.1",
     "@mlc-ai/web-llm": "^0.2.80",
     "@mui/icons-material": "^5.16.7",
@@ -30,6 +31,7 @@
     "pngjs": "^7.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-google-autocomplete": "^2.7.5",
     "react-router-dom": "^6.26.2",
     "three": "^0.183.1"
   },

@@ -7,19 +7,65 @@ const SmartDateInput = ({ value, onChange, label, autoFocus }) => {
     const [prediction, setPrediction] = useState(null);
     const [isValid, setIsValid] = useState(false);
     const inputRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartRef = useRef(0);
+    const dateStartRef = useRef(null);
 
     // Initialize input value from prop
     useEffect(() => {
-        if (value && !inputValue) {
+        if (value) {
             const date = new Date(value);
             if (!isNaN(date.getTime())) {
-                // Format as "Month DD, YYYY" for display
-                setInputValue(date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
+                setInputValue(date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
                 setIsValid(true);
             }
         }
-    }, [value, inputValue]);
+    }, [value]);
 
+    const handleMouseDown = (e) => {
+        if (e.button !== 0) return; // Only left click
+        setIsDragging(true);
+        dragStartRef.current = e.clientX;
+        dateStartRef.current = new Date(value || new Date());
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e) => {
+        if (!dateStartRef.current) return;
+        const deltaX = e.clientX - dragStartRef.current;
+        
+        // Acceleration logic: 
+        // Small drags ( < 20px ) = 0 days
+        // 20-50px = 1-2 days
+        // > 50px = square of distance multiplier
+        const absDelta = Math.abs(deltaX);
+        let daysToShift = 0;
+        
+        if (absDelta > 15) {
+            const direction = deltaX > 0 ? 1 : -1;
+            // Base shift: 1 day per 30px
+            // Acceleration: add power of distance
+            daysToShift = Math.floor((absDelta / 30) * (1 + (absDelta / 150))) * direction;
+        }
+
+        const newDate = new Date(dateStartRef.current);
+        newDate.setDate(newDate.getDate() + daysToShift);
+        
+        // Only update if it's a different day, to avoid excessive re-render
+        if (newDate.toDateString() !== new Date(value).toDateString()) {
+            onChange(newDate);
+            setInputValue(newDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    // ... rest of parseDate, handleChange, commitDate, handleKeyDown ...
     const parseDate = (text) => {
         if (!text) return null;
         const lowerText = text.toLowerCase().trim();
@@ -49,45 +95,29 @@ const SmartDateInput = ({ value, onChange, label, autoFocus }) => {
         }
 
         // 3. Simple Month Date Year (e.g. "march 1", "mar 1 2024")
-        // Regex matches: Month (full or 3 chars) + space + Day + optional Year
         const dateMatch = lowerText.match(/^([a-z]{3,})\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s+(\d{4}))?$/i);
         if (dateMatch) {
             const monthStr = dateMatch[1];
             const day = parseInt(dateMatch[2]);
             const year = dateMatch[3] ? parseInt(dateMatch[3]) : currentYear;
-
-            // Check if month is valid
             const monthIndex = new Date(`${monthStr} 1, 2000`).getMonth();
             if (!isNaN(monthIndex)) {
-                const d = new Date(year, monthIndex, day);
-                // If no year specified and date is in past, maybe they meant next year? 
-                // (Optional logic, for now stick to current year unless specified)
-                if (!dateMatch[3] && d < now && (now - d > 86400000 * 30)) {
-                    // If it looks like it was months ago, maybe next year?
-                    // Skipping this for simplicity as per requirement "default to current views day" roughly
-                }
-                return d;
+                return new Date(year, monthIndex, day);
             }
         }
 
-        // 4. ISO or Slash dates (MM/DD, YYYY-MM-DD) handled by Date.parse fallback
         const parsed = Date.parse(text);
-        if (!isNaN(parsed)) {
-            return new Date(parsed);
-        }
-
+        if (!isNaN(parsed)) return new Date(parsed);
         return null;
     };
 
     const handleChange = (e) => {
         const text = e.target.value;
         setInputValue(text);
-
         const parsed = parseDate(text);
         if (parsed && !isNaN(parsed.getTime())) {
             setPrediction(parsed);
             setIsValid(true);
-            // Optional: Auto-emit change? usually better on blur or enter to prevent jumping
         } else {
             setPrediction(null);
             setIsValid(false);
@@ -96,15 +126,9 @@ const SmartDateInput = ({ value, onChange, label, autoFocus }) => {
 
     const commitDate = () => {
         if (prediction) {
-            setInputValue(prediction.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
-            // Preserve time from original value if it exists, or toggle to start of day
-            // But for this modal, let's just pass the date part mostly, parent handles time with separate input
-            // Actually parent expects ISO string usually or Date object. 
-            // Let's pass the Date object and let parent format.
             onChange(prediction);
-            setPrediction(null); // Clear prediction visualization as it's now the value
-        } else {
-            // If invalid, revert or clear?
+            setInputValue(prediction.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
+            setPrediction(null);
         }
     };
 
@@ -117,7 +141,11 @@ const SmartDateInput = ({ value, onChange, label, autoFocus }) => {
     };
 
     return (
-        <div className="smart-date-input-container">
+        <div 
+            className={`smart-date-input-container ${isDragging ? 'dragging' : ''}`}
+            onMouseDown={handleMouseDown}
+            style={{ cursor: isDragging ? 'grabbing' : 'ew-resize' }}
+        >
             {label && <label className="smart-date-label">{label}</label>}
             <div className="input-wrapper">
                 <CalendarIcon size={14} className="input-icon" />
@@ -131,6 +159,7 @@ const SmartDateInput = ({ value, onChange, label, autoFocus }) => {
                     onKeyDown={handleKeyDown}
                     placeholder="Ex: 'March 1', 'Tomorrow', 'Next Mon'"
                     autoFocus={autoFocus}
+                    onMouseDown={(e) => e.stopPropagation()} // Allow typing without dragging
                 />
                 {prediction && inputValue.toLowerCase() !== prediction.toLocaleDateString().toLowerCase() && (
                     <div className="prediction-ghost">

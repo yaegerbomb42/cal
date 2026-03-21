@@ -129,12 +129,11 @@
   display: grid;
   grid-template-columns: 70px 1fr;
   border-radius: 16px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   min-height: 0;
   height: 100%;
   padding-bottom: 0;
-  --hour-height: auto;
+  --hour-height: calc(100% / 24);
 }
 
 .day-time-column {
@@ -165,6 +164,12 @@
 .day-hour-cell {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   width: 100%;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.day-hour-cell:hover {
+  background: rgba(99, 102, 241, 0.06);
 }
 
 .day-events-layer {

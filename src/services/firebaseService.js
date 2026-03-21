@@ -16,13 +16,13 @@ import { logger } from '../utils/logger';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBx6flUzCCOgrsWPLXhYBwSXqFr3wRqzLE",
-  authDomain: "call-277ce.firebaseapp.com",
-  projectId: "call-277ce",
-  storageBucket: "call-277ce.firebasestorage.app",
-  messagingSenderId: "488319878601",
-  appId: "1:488319878601:web:b08b2d00090c62cc3c1418",
-  measurementId: "G-MD6KWZML8Z"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 class FirebaseService {

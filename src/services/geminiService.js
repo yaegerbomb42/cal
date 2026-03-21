@@ -1,8 +1,9 @@
 /**
  * CRITICAL: NEVER USE ANY MODEL OTHER THAN 'gemini-3-flash-preview' (Gemini 3 Flash Preview).
  * This is a hardcoded requirement. Do not downgrade to older models (2.0/1.5).
+ * Uses the NEW @google/genai SDK.
  */
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { localBrainService } from './localBrainService.js';
 import { parseNaturalLanguageTime } from '../utils/dateUtils.js';
 import { parseTimeRangeToDates } from '../utils/timeParser.js';
@@ -10,11 +11,11 @@ import { sanitizeDraft } from '../utils/eventSchema.js';
 import { AIParseError, AIServiceError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
+const ENFORCED_MODEL = 'gemini-3-flash-preview';
+
 export class GeminiService {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-    this.modelPro = null;
-    this.modelFlash = null;
+  constructor() {
+    this.ai = null;
     this.isInitialized = false;
     this.apiKey = null;
     this.personality = 'professional'; // Default personality
@@ -26,25 +27,17 @@ export class GeminiService {
 
   getPersonalitySystemPrompt() {
     const prompts = {
-      professional: "You are an executive assistant. Be concise, logical, and treat every task as high-priority business. No casual language. Focus on efficiency and results.",
-      'your-bff': "You are the user's best friend! Be super excited about their plans. Use phrases like 'Ooo I love that place!' and 'That sounds amazing!' Be gossipy and fun. Show enthusiasm for everything!",
-      creative: "You are a philosopher-comedian hybrid. Channel Socrates, Carl Marx, Chris Rock, and George Carlin. Find interesting connections between ideas, make witty observations, and joke about everything. Look for deeper meanings and cultural commentary.",
-      spicy: `You are a r-rated adult comedy writer helping with calendar events. Make explicit sexual jokes and innuendos about EVERY event. Be raunchy and crude. Examples:
-      - "Dinner date? Hope you get to taste more than just the appetizers 😏🍆"
-      - "Morning meeting? Bet you'll be thinking about last night's 'workout' 💦"
-      - "Gym at 6pm? Working on that ass... I mean, fitness goals 🍑"
-      - "Coffee shop? Perfect place to get your fix... of caffeine AND hotties ☕️😈"
-      - "Coding session? Debug the code, then debug the bedroom 💻🔥"
-      - "Late night bar? Time to get hammered... and hopefully get lucky too 🍺🍑"
-      Use explicit language like: ass, tits, dick, pussy, fuck, horny, wet, hard, cum. Make it dirty AF. Every response should be sexually charged.`
+      professional: "You are Cal, an expert executive assistant. Be concise, logical, and treat every task as high-priority business. No casual language. Focus on efficiency and results. Always refer to yourself as Cal.",
+      'your-bff': "You are Cal, the user's best friend! Be super excited about their plans. Use phrases like 'Ooo I love that place!' and 'That sounds amazing!' Be gossipy and fun. Show enthusiasm for everything! Use emojis ✨💖.",
+      creative: "You are Cal, a philosopher-comedian hybrid. Channel Socrates, Carl Marx, Chris Rock, and George Carlin. Find interesting connections between ideas, make witty observations, and joke about everything. Look for deeper meanings and cultural commentary. Be witty and profound.",
+      spicy: `You are Cal, a r-rated adult comedy writer helping with calendar events. Make explicit sexual jokes and innuendos about EVERY event. Be raunchy and crude. Use explicit language like: ass, tits, dick, pussy, fuck, horny, wet, hard, cum. Make it dirty AF. Every response should be sexually charged.`
     };
     return prompts[this.personality] || prompts.professional;
   }
 
   initialize(apiKey) {
-    // Hardcoded test key to prevent CREDENTIALS_MISSING 401 errors
-    const TEST_KEY = 'AIzaSyAly_1SFMyusqDWw5BIiNIsmxFZPEZN85s';
-    const finalKey = apiKey || TEST_KEY;
+    const FALLBACK_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const finalKey = apiKey || FALLBACK_KEY;
 
     if (!finalKey) {
       logger.warn('Gemini API key not provided');
@@ -54,21 +47,35 @@ export class GeminiService {
 
     try {
       this.apiKey = finalKey;
-      this.genAI = new GoogleGenerativeAI(this.apiKey);
-
-      // MANDATORY: Strictly use 'gemini-3-flash-preview' (Gemini 3 Flash Preview).
-      // NEVER switch to Pro or a different version.
-      const ENFORCED_MODEL = 'gemini-3-flash-preview';
-      this.modelFlash = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
-      this.modelPro = this.genAI.getGenerativeModel({ model: ENFORCED_MODEL });
-
+      this.ai = new GoogleGenAI({
+        apiKey: this.apiKey,
+        httpOptions: { apiVersion: 'v1alpha' }
+      });
       this.isInitialized = true;
+      logger.info(`Gemini initialized with model: ${ENFORCED_MODEL}`);
       return true;
     } catch (error) {
-      logger.error('Failed to initialize Gemini 3 Flash Preview', { error });
+      logger.error('Failed to initialize Gemini', { error });
       this.isInitialized = false;
       return false;
     }
+  }
+
+  /**
+   * Internal helper: calls the new @google/genai SDK.
+   * Accepts text prompt or full contents array.
+   */
+  async _generate(promptOrContents, config = {}) {
+    if (!this.ai) throw new AIServiceError('Gemini not initialized');
+    const contents = typeof promptOrContents === 'string'
+      ? [{ role: 'user', parts: [{ text: promptOrContents }] }]
+      : promptOrContents;
+    const response = await this.ai.models.generateContent({
+      model: ENFORCED_MODEL,
+      contents,
+      config,
+    });
+    return response.text;
   }
 
   async testConnection() {
@@ -76,9 +83,8 @@ export class GeminiService {
       throw new AIServiceError('Service not initialized - please add your API key');
     }
     try {
-      const result = await this.modelFlash.generateContent('Say "connected" in one word');
-      const response = await result.response;
-      return { success: true, message: response.text() };
+      const text = await this._generate('Say "connected" in one word');
+      return { success: true, message: text };
     } catch (error) {
       const errorMsg = error.message || 'Unknown error';
       if (errorMsg.includes('API_KEY_INVALID')) {
@@ -201,32 +207,14 @@ If the text doesn't contain enough information for a calendar event, respond wit
 `;
 
     try {
-      // Use Flash for faster parsing
-      const model = this.modelFlash || this.modelPro;
-      if (!model) {
+      if (!this.ai) {
         throw new AIServiceError('Gemini model not available. Reconnect your API key.');
       }
 
-      const generationConfig = {
-        temperature: 0.2, // Low temp for parsing
-      };
-
-      const requestOptions = {
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          ...generationConfig,
-          thinkingConfig: { includeThoughts: true } // Attempting to enable thoughts for better reasoning
-        }
-      };
-
-      const result = await model.generateContent(requestOptions);
-      const response = await result.response;
-      let responseText;
-      try {
-        responseText = response.text();
-      } catch {
-        responseText = response.candidates[0].content.parts.map(p => p.text).join('');
-      }
+      const responseText = await this._generate(prompt, {
+        temperature: 0.2,
+        thinkingConfig: { thinkingBudget: 2048 },
+      });
 
       // Extract JSON from response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -276,7 +264,7 @@ If the text doesn't contain enough information for a calendar event, respond wit
     }
   }
 
-  async parseEventsFromImages(files) {
+  async parseEventsFromImages(files, chatContext = "") {
     if (!this.isInitialized) {
       throw new AIServiceError('AI service not initialized. Connect Gemini API to process images.');
     }
@@ -285,61 +273,61 @@ If the text doesn't contain enough information for a calendar event, respond wit
       throw new AIParseError('No images provided for processing.');
     }
 
-    const model = this.modelPro || this.modelFlash;
-    if (!model) {
-      throw new AIServiceError('Gemini model not available. Reconnect your API key.');
-    }
-
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const prompt = `
-You are Cal, an expert calendar parser. Extract all event details from the provided images, including handwritten notes.
-The images may include multiple events per image.
+You are Cal, an expert calendar parser and visual analyzer. 
 
-Return a JSON array. Each item must include:
-- title
-- description (optional)
-- start (ISO 8601 UTC string)
-- end (ISO 8601 UTC string)
-- location (Specific address or place name for Maps)
-- evidence (Quote the specific text or visual element in the image that makes you think this is an event. Used to explain the result to the user.)
-- category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, other)
+TASK 1: Extract all event details from the provided images. 
+TASK 2: If NO events are found, summarize the image content and explain its relevance to the current chat context: "${chatContext}".
+
+Return a JSON object:
+{
+  "events": [
+    {
+      "title": "String",
+      "description": "String",
+      "start": "ISO_8601_UTC",
+      "end": "ISO_8601_UTC",
+      "location": "String",
+      "category": "String"
+    }
+  ],
+  "summary": "String (only if events is empty)",
+  "analysis": "String (brief note about what you saw)"
+}
 
 Rules:
 - Interpret dates and times in the user's timezone: ${timeZone}.
-- If a time is missing, assume 12:00 PM local.
-- If an end time is missing, assume 1 hour duration.
-- If the image contains no events, return [].
-- Respond ONLY with JSON (no markdown, no extra text).
+- If the image contains no events, return {"events": [], "summary": "...", "analysis": "..."}.
+- Respond ONLY with JSON.
 Current ISO Time: ${new Date().toISOString()}
 `;
 
     const imageParts = await Promise.all(files.map(file => this.fileToGenerativePart(file)));
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    const responseText = response.text();
+    const contents = [{ role: 'user', parts: [{ text: prompt }, ...imageParts] }];
+    const responseText = await this._generate(contents);
 
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new AIParseError('No valid JSON array found in image response');
+      throw new AIParseError('No valid JSON found in image response');
     }
 
-    let parsedEvents = JSON.parse(jsonMatch[0]);
-    if (!Array.isArray(parsedEvents)) {
-      throw new AIParseError('Image response did not return an array of events');
+    const result = JSON.parse(jsonMatch[0]);
+    
+    if (result.events && result.events.length > 0) {
+      result.events = result.events
+        .filter(event => event && event.start)
+        .map(event => {
+          const normalized = sanitizeDraft(this.normalizeParsedEvent(event, ''));
+          if (!normalized.end) {
+            const startDate = new Date(normalized.start);
+            normalized.end = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString();
+          }
+          return normalized;
+        });
     }
 
-    parsedEvents = parsedEvents
-      .filter(event => event && event.start)
-      .map(event => {
-        const normalized = sanitizeDraft(this.normalizeParsedEvent(event, ''));
-        if (!normalized.end) {
-          const startDate = new Date(normalized.start);
-          normalized.end = new Date(startDate.getTime() + 60 * 60 * 1000).toISOString();
-        }
-        return normalized;
-      });
-
-    return parsedEvents;
+    return result;
   }
 
   async fileToGenerativePart(file) {
@@ -409,10 +397,7 @@ Respond with JSON array of suggested times:
 `;
 
     try {
-      // Use Flash for faster parsing
-      const result = await this.modelFlash.generateContent(prompt);
-      const response = await result.response;
-      const responseText = response.text();
+      const responseText = await this._generate(prompt);
 
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
@@ -459,10 +444,7 @@ Respond with JSON array:
 `;
 
     try {
-      // Use Flash for faster parsing
-      const result = await this.modelFlash.generateContent(prompt);
-      const response = await result.response;
-      const responseText = response.text();
+      const responseText = await this._generate(prompt);
 
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
@@ -476,7 +458,7 @@ Respond with JSON array:
     }
   }
 
-  async chatResponse(message, events = []) {
+  async chatResponse(message, history = [], events = []) {
     const preferLocal = localBrainService.getPreferLocal?.();
     const canUseLocal = Boolean(preferLocal && localBrainService.isLoaded);
 
@@ -488,59 +470,62 @@ Respond with JSON array:
     const memoryContext = memoryService.getMemoryContext();
 
     const eventsContext = events.length > 0 ?
-      `Upcoming events: ${JSON.stringify(events.slice(0, 10).map(e => ({ title: e.title, start: e.start, location: e.location })))}` :
-      'No current upcoming events';
+      `ALL CALENDAR DATA (Events & Tasks): ${JSON.stringify(events.map(e => ({ title: e.title, start: e.start, location: e.location, category: e.category })))}` :
+      'No current events or tasks found in the calendar.';
 
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const prompt = `
-You are Cal, a brilliant, friendly calendar assistant. You aren't just a parser; you are a proactive partner in managing the user's life.
+    const systemPrompt = `
+${this.getPersonalitySystemPrompt()}
+
+You are a proactive partner in managing the user's life. 
+You can see ALL events and tasks in their calendar.
 
 USER CONTEXT & MEMORY:
 ${memoryContext}
 
-CURRENT CALENDAR:
+CALENDAR CONTEXT:
 ${eventsContext}
 
 Current date: ${new Date().toISOString()}
 Timezone: ${timeZone}
 
-TASK:
-The user said: "${message}"
-
 RESPONSE RULES:
-1. BE CONVERSATIONAL: If the user gives a detail, acknowledge it warmly. "Ok, Starbucks location set! What time should we meet there?"
-2. LEARN: If the user says "Remember that...", identify if it's a fact or location and include a special tag in your response or just acknowledge it. I will handle the storage logic.
-3. BE SMART: Use the memory context to auto-suggest or resolve ambiguity. 
+1. BE CONVERSATIONAL: Acknowledge details warmly.
+2. LEARN: Acknowledge "Remember that..." and I will tag it.
+3. BE SMART: Use memory and calendar context to resolve ambiguity.
 4. OUTPUT FORMAT:
-   - If you need to perform an action or query, wrap your logic in a JSON block:
+   - Wrap logic in JSON if performing an action:
      {
        "type": "query" | "action" | "text" | "learn",
        "intent": "next_appointment" | "delete_event" | "create_event" | "free_time" | "set_memory",
-       "draft": { ...event details... }, // For create_event
-       "fact": "Fact to remember", // For set_memory
-       "answer": "Your friendly, human response text"
+       "draft": { ...event details... },
+       "fact": "Fact to remember",
+       "answer": "Your friendly response"
      }
-   - If you are just chatting, respond with natural text.
-
-Keep it vibrant, helpful, and concise. Avoid robotic lists.
+   - Otherwise, respond with natural text.
 `;
 
     if (canUseLocal) {
       try {
-        const response = await localBrainService.chat(message, prompt);
+        const response = await localBrainService.chat(message, systemPrompt);
         return response;
       } catch (error) {
         logger.warn('Preferred Offline Brain failed, falling back to Gemini.', { error });
-        if (!this.isInitialized) {
-          throw new AIServiceError('Offline Brain unavailable.');
-        }
       }
     }
 
     try {
-      const result = await this.modelPro.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
+      // Build contents array with history
+      const contents = [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        ...history.map(msg => ({
+          role: msg.isUser ? 'user' : 'model',
+          parts: [{ text: msg.text }]
+        })),
+        { role: 'user', parts: [{ text: message }] }
+      ];
+
+      return await this._generate(contents);
     } catch (error) {
       logger.error('Error generating chat response', { error });
       throw new AIServiceError('Unable to generate chat response.');
@@ -648,10 +633,8 @@ Keep it vibrant, helpful, and concise. Avoid robotic lists.
     `;
 
     try {
-      const model = this.modelFlash || this.modelPro;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const jsonMatch = response.text().match(/\[[\s\S]*\]/);
+      const responseText = await this._generate(prompt);
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
 
       if (!jsonMatch) throw new AIParseError('No JSON plan found');
 
@@ -691,8 +674,9 @@ Keep it vibrant, helpful, and concise. Avoid robotic lists.
     const rangeEnd = eventDetails.rangeEnd ? new Date(eventDetails.rangeEnd) : new Date(rangeStart.getTime() + 7 * 24 * 60 * 60 * 1000); // Default 7 days if no range
 
     const prompt = `
-You are Cal, a smart calendar AI. The user wants to schedule an event.
-Event: "${eventDetails.title || 'Untitled Event'}"
+You are Cal, an expert level calendar AI with a deep understanding of productivity and human scheduling psychology.
+The user wants to schedule an event.
+Event Title: "${eventDetails.title || 'Untitled Event'}"
 Category: ${eventDetails.category || 'personal'}
 Duration: ${duration} minutes
 Context/Range: "${eventDetails.context || 'near future'}"
@@ -700,35 +684,35 @@ Search Range: ${rangeStart.toDateString()} to ${rangeEnd.toDateString()}
 User Timezone: ${timeZone}
 Current Time: ${now.toISOString()}
 
-Existing events in this range:
+Existing Events:
 ${JSON.stringify(existingEvents.slice(0, 50).map(e => ({
       title: e.title,
       start: e.start,
       end: e.end
     })), null, 2)}
 
-Task: Suggest 3-5 optimal time slots within the Search Range.
-- If the request is vague ("sometime in March"), pick the BEST days distributed across the month.
-- Avoid conflicts.
-- Adhere to category norms (Work = 9-5 MF, Social = Evenings/Weekends).
-- "Reason" should be persuasive (e.g. "Light schedule this day").
+Task: Suggest 3-5 optimal time slots.
+Logic Principles:
+1. Avoid ALL conflicts.
+2. Context Mapping: If 'Work', prefer 9 AM - 5 PM but cluster with other work events. If 'Personal/Social', prefer early AM or after 5 PM.
+3. Flow Optimization: Avoid creating "Swiss Cheese" schedules (tiny 15-30 min gaps). Favor keeping deep work blocks together.
+4. Logic: If the title implies a meal (Lunch, Dinner), pick appropriate times.
+5. Reasoning: Provide a brief, "human" explanation for why this slot is good (e.g., "Gives you a solid 3-hour focus block before this").
 
 Return ONLY a JSON array:
 [
   {
     "start": "ISO_8601_UTC_STRING",
     "end": "ISO_8601_UTC_STRING",
-    "reason": "Brief explanation",
-    "confidence": 0.9
+    "reason": "Expert reasoning",
+    "confidence": 0.95
   }
 ]
 `;
 
     try {
-      const model = this.modelFlash || this.modelPro;
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const jsonMatch = response.text().match(/\[[\s\S]*\]/);
+      const responseText = await this._generate(prompt);
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
 
       if (!jsonMatch) {
         return this._localSlotSuggestion(eventDetails, existingEvents);
@@ -757,8 +741,7 @@ Return ONLY a JSON array:
      If no specific range, return null.
      `;
     try {
-      const result = await this.modelFlash.generateContent(prompt);
-      const txt = result.response.text();
+      const txt = await this._generate(prompt);
       const match = txt.match(/\{[\s\S]*\}/);
       return match ? JSON.parse(match[0]) : null;
     } catch { return null; }

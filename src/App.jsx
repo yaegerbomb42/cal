@@ -6,6 +6,8 @@ import { CalendarProvider } from './contexts/CalendarContext.jsx';
 import { EventsProvider } from './contexts/EventsContext.jsx';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth';
+import { useCalendar } from './contexts/useCalendar';
+import { useEvents } from './contexts/useEvents';
 import Login from './components/Auth/Login';
 import Header from './components/Header/Header';
 import Calendar from './components/Calendar/Calendar';
@@ -15,6 +17,7 @@ const Settings = lazy(() => import('./components/Settings/Settings'));
 
 import Toast from './components/Toast/Toast';
 import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
+import SmartSchedulePortal from './components/Events/SmartSchedulePortal';
 import ThemeBackground from './components/Common/ThemeBackground';
 import { geminiService } from './services/geminiService';
 import { localBrainService } from './services/localBrainService';
@@ -56,6 +59,8 @@ function App() {
 
 const MainLayout = () => {
   const { user, loading } = useAuth();
+  const { autoPlanPreview, setAutoPlanPreview } = useCalendar();
+  const { events, addEvent } = useEvents();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState(null);
@@ -287,6 +292,22 @@ const MainLayout = () => {
             <Settings
               isOpen={isSettingsOpen}
               onClose={() => setIsSettingsOpen(false)}
+            />
+          )}
+
+          {autoPlanPreview && (
+            <SmartSchedulePortal
+              isOpen={!!autoPlanPreview}
+              onClose={() => setAutoPlanPreview(null)}
+              autoPlanPreview={autoPlanPreview}
+              existingEvents={events}
+              onSelectSlot={(slots) => {
+                // If slots is an array (Bulk Mode)
+                if (Array.isArray(slots)) {
+                  slots.forEach(slot => addEvent(slot));
+                }
+                setAutoPlanPreview(null);
+              }}
             />
           )}
         </Suspense>

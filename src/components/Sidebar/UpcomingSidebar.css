@@ -154,11 +154,9 @@ body.focus-mode-active .header:hover {
 
 .nav-btn-item {
     width: 48px;
-    /* Slightly larger, unified size */
     height: 48px;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    /* ... rest ... */
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-secondary);
     display: inline-flex;
@@ -184,6 +182,12 @@ body.focus-mode-active .header:hover {
     color: white;
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
     transform: scale(1.05);
+}
+
+.nav-btn-item.archive-active {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4) !important;
 }
 
 /* Add a subtle glow/shine effect to active buttons */
@@ -311,6 +315,208 @@ body.focus-mode-active .header:hover {
     outline: none;
     color: var(--text-primary);
     font-size: 0.8rem;
+}
+
+/* NEW: Focus Mode & Quick Add Styles */
+.focus-quick-add {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.focus-quick-add:focus-within {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+.quick-add-icon {
+    color: var(--accent);
+}
+
+.quick-add-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.quick-add-input::placeholder {
+    color: var(--text-muted);
+}
+
+.task-suggestions-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.95);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    z-index: 1000;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    padding: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.suggestion-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    transform: translateX(4px);
+}
+
+.suggestion-icon {
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+.focus-header-actions .pro-btn-secondary {
+    background: linear-gradient(135deg, var(--accent), #4f46e5);
+    color: white;
+    border: none;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    width: 100%;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.focus-header-actions .pro-btn-secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+}
+
+.focus-header-actions .pro-btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.focus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.focus-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+}
+
+.focus-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.focus-item.completed {
+    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.check-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.check-btn:hover {
+    transform: scale(1.1);
+}
+
+.checked-icon {
+    color: #10b981;
+}
+
+.unchecked-icon:hover {
+    color: var(--accent);
+}
+
+.focus-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.focus-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.focus-title.strikethrough {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.focus-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.focus-edit-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: var(--text-muted);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+.focus-item:hover .focus-edit-btn {
+    opacity: 1;
+}
+
+.focus-edit-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
 }
 
 .delete-input::placeholder {
@@ -556,7 +762,6 @@ body.focus-mode-active .header:hover {
     flex: 1;
     display: flex;
     flex-direction: column;
-    /* allow stacking so title can grow */
     justify-content: center;
     gap: 4px;
     min-width: 0;
@@ -578,10 +783,6 @@ body.focus-mode-active .header:hover {
     line-height: 1.2;
 }
 
-/* Force metadata to stay inline or hide if too small? 
-   User wants "one line". So we combine title and meta?
-   Or putting meta next to title.
-*/
 .event-meta-inline {
     display: flex;
     align-items: center;
@@ -589,11 +790,52 @@ body.focus-mode-active .header:hover {
     font-size: 0.7rem;
     color: var(--text-muted);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* Hiding the old meta row if we restructure structure in JSX slightly or just display:none it 
-   and rely on the new structure I'll assume I update JSX to match
-*/
+/* Event Location Link */
+.event-location {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.7rem;
+    margin-top: 2px;
+    transition: color 0.2s;
+}
+
+.event-location:hover {
+    color: #818cf8;
+    /* Lighter indigo */
+    text-decoration: underline;
+}
+
+/* Hidden Description that reveals on hover */
+.event-description-collapse {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.upcoming-event-item:hover .event-description-collapse {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 8px;
+}
+
+.event-description-content {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    border-radius: 6px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    white-space: pre-wrap;
+}
+
 .time-til {
     font-size: 0.65rem;
     font-weight: 700;
@@ -1070,4 +1312,34 @@ body.focus-mode-active .header:hover {
 
 [data-theme="light"] .no-events {
     color: var(--text-muted);
+}
+
+.archive-mode-banner {
+    animation: fadeIn 0.3s ease;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.pulse-red {
+    animation: pulse-red-anim 2s infinite;
+}
+
+@keyframes pulse-red-anim {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }

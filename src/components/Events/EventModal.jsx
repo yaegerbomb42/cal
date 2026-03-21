@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink, ChevronRight, Sparkles, MessageSquare, AlertTriangle } from 'lucide-react';
+import { X, Save, Trash2, MapPin, Clock, Tag, Palette, Repeat, Bell, Check, ArrowLeft, ExternalLink, ChevronRight, Sparkles, MessageSquare, AlertTriangle, Zap } from 'lucide-react';
+import Autocomplete from 'react-google-autocomplete';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { getEventColor } from '../../utils/helpers';
@@ -321,23 +322,20 @@ const EventModal = ({ isAIChatOpen }) => {
                 </span>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+            <div style={{ display: 'flex', gap: '8px', position: 'relative', alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={() => setIsSmartScheduleOpen(!isSmartScheduleOpen)}
-                className={`icon-btn ${isSmartScheduleOpen ? 'active' : ''}`}
-                title="AI Schedule"
-                style={{ color: isSmartScheduleOpen ? 'var(--accent)' : 'inherit' }}
+                className={`smart-schedule-btn ${isSmartScheduleOpen ? 'active' : ''}`}
               >
-                <Sparkles size={16} />
+                <Zap size={14} /> Smart Schedule
               </button>
-
               <button onClick={closeEventModal} className="close-btn"><X size={18} /></button>
             </div>
           </div>
 
           <div className="modal-body-wrapper" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-            <form onSubmit={handleSubmit} className="modal-content-grid" style={{ flex: 1 }}>
+            <form onSubmit={handleSubmit} className="modal-content-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.1fr 1.1fr' }}>
 
               {/* Left Column: Details */}
               <div className="modal-col left-col">
@@ -348,6 +346,7 @@ const EventModal = ({ isAIChatOpen }) => {
                   onChange={(e) => handleChange('title', e.target.value)}
                   className="title-input"
                   placeholder="Event Title"
+                  style={{ marginBottom: '1rem', padding: '0.5rem 0' }}
                   autoFocus
                 />
 
@@ -372,12 +371,22 @@ const EventModal = ({ isAIChatOpen }) => {
                     <span className="flex-center gap-2"><MapPin size={12} /> Location</span>
                   </label>
                   <div className="location-input-wrapper">
-                    <input
+                    <Autocomplete
+                      apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
                       value={formData.location}
                       onChange={(e) => handleChange('location', e.target.value)}
+                      onPlaceSelected={(place) => {
+                        if (place && place.formatted_address) {
+                          handleChange('location', place.formatted_address);
+                        } else if (place && place.name) {
+                          handleChange('location', place.name);
+                        }
+                      }}
+                      options={{
+                        types: ['establishment', 'geocode']
+                      }}
                       className="input compact"
-                      placeholder="Add location..."
-                      autoComplete="off"
+                      placeholder="Search location..."
                     />
                     {formData.location && (
                       <a
@@ -404,19 +413,19 @@ const EventModal = ({ isAIChatOpen }) => {
                   />
                 </div>
 
-                <div className="recurrence-compact">
-                  <label><Repeat size={12} /> Repeat</label>
-                  <select value={formData.recurring?.type} onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} className="select compact">
+                <div className="recurrence-compact" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}><Repeat size={12} /> Repeat &nbsp;</label>
+                  <select value={formData.recurring?.type} onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} className="select compact" style={{ flex: 1 }}>
                     {Object.values(RECURRENCE_TYPES).map(t => <option key={t} value={t}>{formatRecurrenceText({ type: t })}</option>)}
                   </select>
-
-                  {formData.recurring?.type === 'custom' && (
-                    <CustomRecurrenceEditor
-                      value={formData.recurring}
-                      onChange={(rec) => handleChange('recurring', rec)}
-                    />
-                  )}
                 </div>
+
+                {formData.recurring?.type === 'custom' && (
+                  <CustomRecurrenceEditor
+                    value={formData.recurring}
+                    onChange={(rec) => handleChange('recurring', rec)}
+                  />
+                )}
 
                 {/* Overlap Warning */}
                 {overlappingEvents.length > 0 && (
@@ -451,22 +460,32 @@ const EventModal = ({ isAIChatOpen }) => {
               </div>
 
               {/* Right Column: Time & Clocks */}
-              <div className="modal-col right-col">
-                <div className="date-pickers-row">
-                  <SmartDateInput
-                    value={formData.start ? new Date(formData.start) : new Date()}
-                    onChange={(date) => updateDateTime('start', 'date', date)}
-                    compact
-                  />
-                  <span className="arrow-sep">→</span>
-                  <SmartDateInput
-                    value={formData.end ? new Date(formData.end) : new Date()}
-                    onChange={(date) => updateDateTime('end', 'date', date)}
-                    compact
-                  />
+              <div className="modal-col right-col" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Schedule</h4>
                 </div>
 
-                <div className="iso-clocks-container">
+                <div className="date-pickers-row" style={{ display: 'block', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', width: '100%' }}>
+                    <div style={{ flex: 1 }}>
+                      <SmartDateInput
+                        value={formData.start ? new Date(formData.start) : new Date()}
+                        onChange={(date) => updateDateTime('start', 'date', date)}
+                        compact
+                      />
+                    </div>
+                    <span className="arrow-sep" style={{ opacity: 0.5 }}>→</span>
+                    <div style={{ flex: 1 }}>
+                      <SmartDateInput
+                        value={formData.end ? new Date(formData.end) : new Date()}
+                        onChange={(date) => updateDateTime('end', 'date', date)}
+                        compact
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="iso-clocks-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-around', position: 'relative' }}>
                   <IsometricClock
                     label="Start Time"
                     value={formData.start ? new Date(formData.start) : new Date()}
@@ -479,13 +498,21 @@ const EventModal = ({ isAIChatOpen }) => {
                   />
                 </div>
 
-                <div className="duration-pills">
+                <div className="duration-pills" style={{ marginTop: '1rem' }}>
                   {[15, 30, 60, 90].map(m => (
                     <button key={m} type="button" onClick={() => handleDurationChange(m)} className="pill-btn">+{m}m</button>
                   ))}
                 </div>
               </div>
 
+              {/* Footer Actions (Moved INSIDE form) */}
+              <div className="modal-footer" style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', background: 'rgba(15, 23, 42, 0.4)' }}>
+                {isEditing ? <button type="button" onClick={handleDelete} className="btn-icon danger" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'none' }}><Trash2 size={16} /> Delete</button> : <div />}
+                <div className="flex-gap">
+                  <button type="button" onClick={closeEventModal} className="btn text-only" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px' }}>Cancel</button>
+                  <button type="submit" className="btn primary" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px' }}>Save Event</button>
+                </div>
+              </div>
             </form>
 
             {/* Smart Schedule Panel */}
@@ -503,20 +530,11 @@ const EventModal = ({ isAIChatOpen }) => {
               existingEvents={events}
               preferredDate={formData.start ? new Date(formData.start) : new Date()}
             />
-          </div>
 
-          {/* Footer Actions */}
-          <div className="modal-footer">
-            {isEditing && <button type="button" onClick={handleDelete} className="btn-icon danger"><Trash2 size={16} /></button>}
-            <div className="flex-gap">
-              <button type="button" onClick={closeEventModal} className="btn text-only">Cancel</button>
-              <button type="submit" className="btn primary">Save</button>
-            </div>
-          </div>
-
+          </div> {/* Closes modal-body-wrapper */}
         </MotionDiv>
-      </MotionDiv>
-    </AnimatePresence>
+      </MotionDiv >
+    </AnimatePresence >
   );
 };
 

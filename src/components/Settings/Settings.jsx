@@ -48,6 +48,11 @@ const Settings = ({ isOpen, onClose }) => {
     // Directly update services to avoid reload need
     if (window.geminiService) window.geminiService.setPersonality(p);
     if (window.localBrainService) window.localBrainService.setPersonality(p);
+    
+    // Voice Sync
+    import('../../services/voiceAIService').then(({ voiceAIService }) => {
+        voiceAIService.setPersonality(p);
+    });
   };
 
   useEffect(() => {
@@ -297,23 +302,10 @@ const Settings = ({ isOpen, onClose }) => {
       let response = '';
       if (aiProvider === 'gemini') {
         if (!savedApiKeyRef.current && !apiKey) throw new Error("Gemini API Key missing");
-        // FIX: Use the initialized service models instead of creating a new instance with hardcoded 'gemini-pro'
-        const model = geminiService.modelFlash || geminiService.modelPro;
-
-        if (model) {
-          const result = await model.generateContent(message);
-          response = result.response.text();
-        } else {
-          // Fallback: If service isn't fully ready but we have key, try init
+        if (!geminiService.isInitialized) {
           geminiService.initialize(savedApiKeyRef.current || apiKey);
-          const fallbackModel = geminiService.modelFlash;
-          if (fallbackModel) {
-            const result = await fallbackModel.generateContent(message);
-            response = result.response.text();
-          } else {
-            response = "Gemini service could not be initialized. Please check API Key.";
-          }
         }
+        response = await geminiService._generate(message);
       }
       else if (aiProvider === 'ollama') {
         response = await chatOllama(
@@ -608,7 +600,7 @@ const Settings = ({ isOpen, onClose }) => {
         {aiProvider === 'local' && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', borderRadius: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)' }}>
             <div style={{ flex: 1 }}>
-              <select disabled={!isLocalBrainLoaded} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', outline: 'none' }}>
+              <select style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-primary)', outline: 'none', cursor: 'pointer', WebkitAppearance: 'menulist', appearance: 'menulist', zIndex: 10, position: 'relative' }}>
                 <option>Qwen 2.5 (3B) - Optimized</option>
                 <option>Llama 3 (Tiny) - Legacy</option>
               </select>
@@ -980,17 +972,9 @@ const Settings = ({ isOpen, onClose }) => {
                             </div>
                           </div>
 
-                          {/* Quick Auto-Settings Panel */}
+                          {/* Default reminder time */}
                           <div className="rhythm-item" style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <div>
-                                <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 500 }}>Focus Protection enabled</label>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Smart reschedule and interruption handling</span>
-                              </div>
-                              <div style={{ color: 'var(--accent)', fontSize: '0.85rem', padding: '4px 12px', background: 'rgba(99,102,241,0.1)', borderRadius: '20px' }}>Active</div>
-                            </div>
-
-                            <div style={{ marginTop: '20px' }}>
+                            <div style={{ marginTop: '0' }}>
                               <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 500 }}>Default reminder time</label>
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 {[5, 10, 15, 30].map(min => (

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, MapPin } from 'lucide-react';
 import { getMonthDays, isSameMonth, isToday, formatTime24 } from '../../utils/dateUtils';
 import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
@@ -86,8 +86,18 @@ const MonthView = () => {
                     className={cn('day-event', new Date(event.end || event.start) < now && 'past')}
                     style={{ backgroundColor: event.color || getEventColor(event.category) }}
                   >
-                    <span className="event-time">{formatTime24(new Date(event.start))}</span>
-                    <span className="event-title">{event.title}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+                      <span className="event-time" style={{ flexShrink: 0 }}>{formatTime24(new Date(event.start))}</span>
+                      <span className="event-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</span>
+                    </div>
+                    {
+                      event.location && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginTop: '2px', opacity: 0.9, fontSize: '0.65rem' }}>
+                          <MapPin size={8} style={{ flexShrink: 0 }} />
+                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location}</span>
+                        </div>
+                      )
+                    }
                   </MotionDiv>
                 ))}
 
@@ -108,8 +118,8 @@ const MonthView = () => {
             </MotionDiv>
           );
         })}
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

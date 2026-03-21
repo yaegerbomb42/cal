@@ -265,6 +265,39 @@ export const EventsProvider = ({ children, initialEvents }) => {
     }
   };
 
+  const archiveEvent = async (id) => {
+    const event = events.find(e => e.id === id);
+    if (!event) return;
+
+    setEvents(prev => prev.map(e => 
+      e.id === id ? { ...e, isArchived: true, archivedAt: new Date().toISOString() } : e
+    ));
+
+    toastService.success(`"${event.title}" archived`, {
+      action: {
+        label: 'Undo',
+        onClick: () => unarchiveEvent(id)
+      }
+    });
+  };
+
+  const unarchiveEvent = async (id) => {
+    setEvents(prev => prev.map(e => 
+      e.id === id ? { ...e, isArchived: false, archivedAt: null } : e
+    ));
+    toastService.success("Event restored");
+  };
+
+  const clearArchivedEvents = () => {
+    const archivedCount = events.filter(e => e.isArchived).length;
+    if (archivedCount === 0) return;
+
+    if (window.confirm(`Permanently delete all ${archivedCount} archived events?`)) {
+      setEvents(prev => prev.filter(e => !e.isArchived));
+      toastService.success(`Cleared ${archivedCount} archived events`);
+    }
+  };
+
   const deleteEventsByCategory = (category) => {
     const toDelete = events.filter(e => e.category?.toLowerCase() === category.toLowerCase());
     if (toDelete.length === 0) {
@@ -344,6 +377,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
     endOfDay.setHours(23, 59, 59, 999);
 
     return events.filter(event => {
+      if (event.isArchived) return false;
       const eventStart = new Date(event.start);
       return eventStart >= startOfDay && eventStart <= endOfDay;
     });
@@ -351,6 +385,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
 
   const getEventsForRange = (startDate, endDate) => {
     return events.filter(event => {
+      if (event.isArchived) return false;
       const eventStart = new Date(event.start);
       return eventStart >= startDate && eventStart <= endDate;
     });
@@ -384,6 +419,9 @@ export const EventsProvider = ({ children, initialEvents }) => {
       getUpcomingEvents,
       getArchivedEvents,
       getActiveEvents,
+      archiveEvent,
+      unarchiveEvent,
+      clearArchivedEvents,
       searchEvents,
       filterEvents,
       isLoading

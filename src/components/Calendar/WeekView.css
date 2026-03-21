@@ -16,11 +16,12 @@
 }
 
 .header-cell {
-  padding: 0.75rem 0.5rem;
+  padding: 10px 4px;
   border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 0.25rem;
 }
 
@@ -55,7 +56,6 @@
   grid-template-columns: 70px 1fr;
   overflow-y: auto;
   position: relative;
-  scrollbar-width: thin;
   scrollbar-color: var(--glass-border) transparent;
 }
 
@@ -71,9 +71,10 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  padding: 6px 0.75rem 0;
-  font-size: 0.85rem;
+  padding: 4px 0.75rem 0;
+  font-size: 0.75rem;
   color: #fbbf24;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Smart Suggestion Indicators */
@@ -129,11 +130,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .week-view {
-    /* Add responsive week view later if needed */
-  }
-}
+
 
 .week-days-grid {
   display: grid;
@@ -155,11 +152,12 @@
 .week-hour-cell {
   height: var(--hour-height);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background 0.2s;
+  transition: background 0.15s ease;
+  cursor: pointer;
 }
 
 .week-hour-cell:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(99, 102, 241, 0.06);
 }
 
 .week-events-layer {
@@ -175,45 +173,35 @@
   z-index: 20;
 }
 
-.week-time-indicator-grid-container {
+.week-time-indicator-layer {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 0px;
   pointer-events: none;
   z-index: 50;
 }
 
-.week-time-indicator {
+.week-time-indicator-full-line {
   position: absolute;
   left: 0;
   right: 0;
-  height: 0;
-  pointer-events: none;
-  width: 100%;
-}
-
-.week-time-indicator-line {
-  position: absolute;
-  top: 0;
   height: 2px;
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  background: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
   width: 100%;
 }
 
-.week-time-indicator-line::after {
-  content: '';
+.week-time-indicator-dot {
   position: absolute;
-  left: -4px;
-  /* Move dot slightly left to align cleanly with the day grid line */
   top: -4px;
   width: 10px;
   height: 10px;
   background: #ef4444;
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(239, 68, 68, 1);
+  z-index: 51;
 }
 
 .week-event {
@@ -254,7 +242,7 @@
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  /* max 2 lines */
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
   font-size: 0.75rem;
