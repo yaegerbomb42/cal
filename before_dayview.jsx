@@ -3,22 +3,35 @@ import { useRef, useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
-import { cn, getEventColor } from '../../utils/helpers';
+import { cn, getEventColor, formatDuration } from '../../utils/helpers';
 import {
   formatTime,
   getDayHours,
   sortEventsByStart
 } from '../../utils/dateUtils';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useHourScale } from '../../utils/useHourScale';
 import { getEventOverlapLayout } from '../../utils/eventOverlap';
 import './DayView.css';
 
-
+const buildEventSnippet = (event) => {
+  const pieces = [];
+  if (event.category) {
+    pieces.push(`${event.category.charAt(0).toUpperCase()}${event.category.slice(1)}`);
+  }
+  pieces.push(event.title || 'Untitled');
+  if (event.location) {
+    pieces.push(event.location);
+  }
+  if (event.reminder) {
+    pieces.push(`${event.reminder}m reminder`);
+  }
+  return pieces.join(' · ');
+};
 
 const DayView = () => {
-  const { currentDate, openEventModal, isArchiveMode } = useCalendar();
-  const { getEventsForDate, updateEvent, archiveEvent } = useEvents();
+  const { currentDate, openEventModal } = useCalendar();
+  const { getEventsForDate, updateEvent } = useEvents();
 
   const MotionDiv = motion.div;
   const MotionButton = motion.button;
@@ -28,7 +41,7 @@ const DayView = () => {
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
   const dayHours = getDayHours();
-  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: false, minPixels: 64 });
+  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true });
   const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
 
   const [currentTick, setCurrentTick] = useState(Date.now());
@@ -125,8 +138,8 @@ const DayView = () => {
               const durationMinutes = Math.max(15, (end.getTime() - start.getTime()) / (1000 * 60));
 
               const isPastEvent = end < now;
-              const rowStart = Math.max(1, (minutesFromDayStart || 0) + 1);
-              const rowSpan = Math.max(15, Math.ceil(durationMinutes || 0));
+              const rowStart = minutesFromDayStart + 1;
+              const rowSpan = Math.ceil(durationMinutes);
 
               return (
                 <MotionButton
@@ -134,58 +147,28 @@ const DayView = () => {
                   type="button"
                   className={cn('day-event-card', isPastEvent && 'past')}
                   style={{
-                    gridColumnStart: (column || 0) + 1,
-                    gridColumnEnd: (column || 0) + 2,
+                    gridColumnStart: column + 1,
+                    gridColumnEnd: column + 2,
                     gridRow: `${rowStart} / span ${rowSpan}`,
-                    zIndex: 5 + (column || 0),
+                    zIndex: 5 + column,
                     backgroundColor: event.color || getEventColor(event.category),
                     cursor: 'grab'
                   }}
-                  onClick={(e) => {
-                    if (isArchiveMode) {
-                      e.stopPropagation();
-                      archiveEvent(event.id);
-                    } else {
-                      openEventModal(event);
-                    }
-                  }}
+                  onClick={() => openEventModal(event)}
                   draggable
                   onDragStart={(e) => handleDragStart(event, e)}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.04 }}
                 >
-                  <div className="event-time" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    <Clock size={10} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} />
-                    <span style={{ fontSize: '0.65rem', fontWeight: '500' }}>
-                      {formatTime(new Date(event.start))} - {formatTime(new Date(event.end))}
+                  <div className="event-time">
+                    <Clock size={12} />
+                    <span>
+                      {formatTime(new Date(event.start))}–{formatTime(new Date(event.end))}
                     </span>
+                    <span className="event-duration">{formatDuration(event.start, event.end)}</span>
                   </div>
-                  <div className="event-snippet" style={{ fontSize: '0.75rem', fontWeight: '600', lineHeight: '1.2', marginTop: '2px', whiteSpace: 'normal', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {event.title || 'Untitled'}
-                  </div>
-                  {event.location && (
-                    <a
-                      href={`https://maps.google.com/?q=${encodeURIComponent(event.location)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="event-location-link"
-                      onClick={(e) => { e.stopPropagation(); }}
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', marginTop: '4px', color: 'rgba(255,255,255,0.9)', textDecoration: 'none', fontSize: '0.65rem', fontWeight: '500' }}
-                    >
-                      <MapPin size={10} style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        whiteSpace: 'normal',
-                        pointerEvents: 'none'
-                      }}>
-                        {event.location}
-                      </span>
-                    </a>
-                  )}
+                  <div className="event-snippet">{buildEventSnippet(event)}</div>
                 </MotionButton>
               );
             })}

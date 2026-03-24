@@ -65,7 +65,7 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}
             >
               <div style={{ width: '36px', height: '36px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CalCharacter emotion="idle" isTalking={false} size="mini" />
+                <CalCharacter emotion="happy" isTalking={false} size="mini" />
               </div>
               <div className="logo-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, lineHeight: 1 }}>CalAI</h1>
@@ -84,21 +84,15 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
                 onClick={onOpenAIChat}
                 className="btn glass-btn"
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  background: 'linear-gradient(135deg, #0ea5e9, #8b5cf6)',
-                  border: '1px solid rgba(255,255,255,0.2)',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                  padding: '0 10px',
+                  width: 'auto'
                 }}
                 title="Open AI Chat Sidebar"
               >
                 <Sparkles size={16} />
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', marginLeft: '6px', whiteSpace: 'nowrap' }}>Open Chat</span>
               </MotionButton>
               <div style={{ width: '320px' }}>
                 <AIChatInput

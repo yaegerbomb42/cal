@@ -328,22 +328,30 @@ const UpcomingSidebar = () => {
                 {/* Unified Navigation - Centered & Reordered */}
                 <div className="sidebar-nav-row">
                     <button
-                        className={`nav-btn-item ${viewMode === 'upcoming' ? 'active' : ''}`}
-                        onClick={() => setViewMode('upcoming')}
+                        onClick={() => {
+                            setViewMode('upcoming');
+                            setIsArchiveMode(false);
+                        }}
                         title="Upcoming Events"
                     >
                         <Calendar size={18} />
                     </button>
                     <button
                         className={`nav-btn-item ${viewMode === 'focus' ? 'active' : ''}`}
-                        onClick={() => setViewMode('focus')}
+                        onClick={() => {
+                            setViewMode('focus');
+                            setIsArchiveMode(false);
+                        }}
                         title="Focus Mode"
                     >
                         <Zap size={18} />
                     </button>
                     <button
                         className={`nav-btn-item ${viewMode === 'archive' ? 'active' : ''}`}
-                        onClick={() => setViewMode('archive')}
+                        onClick={() => {
+                            setViewMode('archive');
+                            setIsArchiveMode(false);
+                        }}
                         title="Archive"
                     >
                         <Archive size={18} />
@@ -565,6 +573,12 @@ const UpcomingSidebar = () => {
                                                         <span className="category-tag">{event.category}</span>
                                                     )}
                                                 </div>
+                                            </div>
+
+                                            {/* Always visible minimal details */}
+                                            <div style={{ fontSize: '0.65rem', opacity: 0.6, display: 'flex', gap: '8px', marginTop: '2px' }}>
+                                                <span>{new Date(event.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                                                {event.location && <span>· {event.location}</span>}
                                             </div>
 
                                             {/* Expandable Content on Hover */}

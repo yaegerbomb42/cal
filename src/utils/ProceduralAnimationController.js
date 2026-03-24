@@ -104,6 +104,21 @@ const GestureGroups = {
             { name: 'eager', weight: 25, parts: { body: 'lean', eyes: 'widen', head: 'nodDown' } },
             { name: 'pleased', weight: 15, parts: { mouth: 'smileWide', head: 'tiltRight' } }
         ]
+    },
+    scanning: {
+        weight: 10,
+        gestures: [
+            { name: 'scan_left', weight: 50, parts: { eyes: 'lookLeft', head: 'turnLeft', mouth: 'neutral' } },
+            { name: 'scan_right', weight: 50, parts: { eyes: 'lookRight', head: 'turnRight', mouth: 'neutral' } }
+        ]
+    },
+    confused: {
+        weight: 10,
+        gestures: [
+            { name: 'huh', weight: 40, parts: { head: 'tiltLeft', eyes: 'squint', mouth: 'neutral' } },
+            { name: 'what', weight: 30, parts: { head: 'turnRight', eyes: 'widen', head_tilt: 'tiltLeft' } },
+            { name: 'puzzled', weight: 30, parts: { head: 'nodUp', eyes: 'lookLeft' } }
+        ]
     }
 };
 
@@ -335,10 +350,21 @@ class ProceduralAnimationController {
             case 'thinking':
                 this.applyGesture(GestureGroups.thinking.gestures[0]);
                 break;
-            case 'confused':
-                this.targetState.headAngle = -15;
-                this.targetState.leftEyeState = 'squint';
-                this.targetState.rightEyeState = 'wide';
+            case 'scanning': {
+                const scan = this.selectWeightedGesture('scanning');
+                this.applyGesture(scan);
+                break;
+            }
+            case 'confused': {
+                const confArray = GestureGroups.confused.gestures;
+                const confIndex = Math.floor(Math.random() * confArray.length);
+                this.applyGesture(confArray[confIndex]);
+                break;
+            }
+            case 'sleepy':
+                this.targetState.leftEyeState = 'closed';
+                this.targetState.rightEyeState = 'closed';
+                this.targetState.headAngle = 10;
                 break;
             case 'idle':
             default:

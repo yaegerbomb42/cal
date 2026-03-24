@@ -153,17 +153,17 @@ body.focus-mode-active .header:hover {
 }
 
 .nav-btn-item {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    background: rgba(255, 255, 255, 0.03);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
     color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
@@ -219,9 +219,9 @@ body.focus-mode-active .header:hover {
 .icon-btn {
     width: 32px;
     height: 32px;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    background: var(--bg-tertiary);
+    border-radius: 9px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
     color: var(--text-secondary);
     display: inline-flex;
     align-items: center;

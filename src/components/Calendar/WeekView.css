@@ -22,7 +22,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
+  padding: 12px 4px;
 }
 
 .header-cell.gutter {
@@ -34,16 +35,17 @@
 }
 
 .header-cell .day-name {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  font-weight: 700;
 }
 
 .header-cell .day-number {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .header-cell.today .day-number {

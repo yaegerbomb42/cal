@@ -174,7 +174,8 @@ const CalCharacter = ({
         : { viewBox: "0 0 100 130", width: 140, height: 182 };
 
     return (
-        <div className={`cal-character-procedural ${isMini ? 'cal-mini' : ''}`}>
+        <div className={`cal-character-procedural ${isMini ? 'cal-mini' : ''} ${emotion === 'thinking' || emotion === 'scanning' ? 'data-pulse' : ''}`}>
+            {!isMini && <div className="hud-scan-line" />}
             <svg
                 viewBox={dimensions.viewBox}
                 xmlns="http://www.w3.org/2000/svg"

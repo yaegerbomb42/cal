@@ -50,7 +50,7 @@ const WeekView = () => {
 
   const weekGridRef = useRef(null);
   const [draggedEvent, setDraggedEvent] = useState(null);
-  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 24, fitToViewport: true });
+  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 32, fitToViewport: false, minPixels: 60 });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
 
@@ -204,10 +204,10 @@ const WeekView = () => {
                     const eventStart = new Date(event.start);
                     const minutesFromDayStart = (eventStart.getHours() * 60) + eventStart.getMinutes();
                     const durationMinutes = (new Date(event.end) - eventStart) / (1000 * 60);
-                    const rowStart = minutesFromDayStart + 1;
-                    const rowSpan = Math.max(15, durationMinutes);
-                    const showLocation = durationMinutes >= 45;
-                    const isLongEvent = durationMinutes > 60;
+                    const rowStart = Math.max(1, (minutesFromDayStart || 0) + 1);
+                    const rowSpan = Math.max(15, Math.ceil(durationMinutes || 0));
+                    const showLocation = (durationMinutes || 0) >= 45;
+                    const isLongEvent = (durationMinutes || 0) > 60;
                     const eventColor = event.color || getEventColor(event.category);
 
                     return (
@@ -217,10 +217,10 @@ const WeekView = () => {
                         style={{
                           '--event-color': eventColor,
                           borderLeft: event.priority === 'high' ? '4px solid #ef4444' : event.priority === 'medium' ? '4px solid #f97316' : `4px solid ${eventColor}`,
-                          gridColumnStart: column + 1,
-                          gridColumnEnd: column + 2,
+                          gridColumnStart: (column || 0) + 1,
+                          gridColumnEnd: (column || 0) + 2,
                           gridRow: `${rowStart} / span ${rowSpan}`,
-                          zIndex: 5 + column,
+                          zIndex: 5 + (column || 0),
                           cursor: 'grab'
                         }}
                         onClick={(e) => handleEventClick(event, e)}

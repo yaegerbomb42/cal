@@ -1,3 +1,98 @@
+.cal-character-procedural {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-user-select: none;
+    user-select: none;
+    filter: drop-shadow(0 4px 16px rgba(99, 102, 241, 0.25));
+}
+
+/* ── Holographic HUD Ring ── */
+.cal-character-procedural::before {
+    content: '';
+    position: absolute;
+    width: 130%;
+    height: 130%;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 229, 255, 0.15);
+    animation: hud-rotate 12s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.cal-character-procedural::after {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    border-radius: 50%;
+    border: 1px dashed rgba(139, 92, 246, 0.12);
+    animation: hud-rotate 18s linear infinite reverse;
+    pointer-events: none;
+    z-index: -1;
+}
+
+@keyframes hud-rotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Scanning sweep line ── */
+.cal-character-procedural .hud-scan-line {
+    position: absolute;
+    width: 120%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.5), transparent);
+    top: 50%;
+    left: -10%;
+    animation: scan-sweep 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.6;
+}
+
+@keyframes scan-sweep {
+    0%, 100% { top: 20%; opacity: 0; }
+    10%      { opacity: 0.6; }
+    50%      { top: 80%; opacity: 0.6; }
+    90%      { opacity: 0; }
+}
+
+/* ── Data pulse ring (triggered by .data-pulse class) ── */
+.cal-character-procedural.data-pulse::before {
+    border-color: rgba(0, 229, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+    animation: hud-pulse 1.5s ease-out, hud-rotate 12s linear infinite;
+}
+
+@keyframes hud-pulse {
+    0%   { transform: scale(1) rotate(0deg); border-color: rgba(0, 229, 255, 0.6); }
+    50%  { transform: scale(1.15) rotate(180deg); border-color: rgba(139, 92, 246, 0.4); }
+    100% { transform: scale(1) rotate(360deg); border-color: rgba(0, 229, 255, 0.15); }
+}
+
+/* ── Mini variant: Subtler effects ── */
+.cal-character-procedural.cal-mini {
+    filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.2));
+}
+
+.cal-character-procedural.cal-mini::before {
+    width: 140%;
+    height: 140%;
+    border-width: 1.5px;
+    animation-duration: 8s;
+}
+
+.cal-character-procedural.cal-mini::after {
+    display: none;
+}
+
+.cal-character-procedural.cal-mini .hud-scan-line {
+    display: none;
+}
+
+/* Legacy fallback container */
 .cal-character-container {
     width: 140px;
     height: 182px;
@@ -5,6 +100,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-user-select: none;
     user-select: none;
     filter: drop-shadow(0 8px 24px rgba(255, 215, 0, 0.2));
 }
@@ -15,13 +111,6 @@
     filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.15)) !important;
 }
 
-.cal-character-container canvas {
-    outline: none;
-    pointer-events: none;
-    /* Let clicks pass through if it's just a display object */
-}
-
-/* Fallback while loading */
 .cal-loading-fallback {
     width: 80%;
     height: 80%;
@@ -32,18 +121,7 @@
 }
 
 @keyframes pulse {
-    0% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-
-    50% {
-        transform: scale(1.05);
-        opacity: 1;
-    }
-
-    100% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
+    0%   { transform: scale(0.95); opacity: 0.8; }
+    50%  { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
 }
