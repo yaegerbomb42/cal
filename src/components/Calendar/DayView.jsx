@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, addDays, subDays } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -17,7 +17,7 @@ import './DayView.css';
 
 
 const DayView = () => {
-  const { currentDate, openEventModal, isArchiveMode } = useCalendar();
+  const { currentDate, setCurrentDate, openEventModal, isArchiveMode } = useCalendar();
   const { getEventsForDate, updateEvent, archiveEvent } = useEvents();
 
   const MotionDiv = motion.div;
@@ -76,6 +76,36 @@ const DayView = () => {
     }
   };
 
+  const handleDropOnZone = (direction, e) => {
+    e.preventDefault();
+    if (!draggedEvent) return;
+
+    try {
+      const originalEvent = draggedEvent;
+      const originalStart = new Date(originalEvent.start);
+      const originalEnd = new Date(originalEvent.end);
+      const duration = originalEnd.getTime() - originalStart.getTime();
+
+      const newDate = direction === 'tomorrow' ? addDays(currentDate, 1) : subDays(currentDate, 1);
+      
+      const newStart = new Date(newDate);
+      newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+      const newEnd = new Date(newStart.getTime() + duration);
+
+      updateEvent(originalEvent.id, {
+        start: newStart.toISOString(),
+        end: newEnd.toISOString()
+      });
+      
+      // Navigate to the new date so user sees the change
+      setCurrentDate(newDate);
+    } catch (err) {
+      console.error('Failed to shift event date:', err);
+    } finally {
+      setDraggedEvent(null);
+    }
+  };
+
   return (
     <MotionDiv
       initial={{ opacity: 0, x: 20 }}
@@ -98,6 +128,23 @@ const DayView = () => {
         </div>
 
         <div className="day-grid-body">
+          {/* Cross-Day Drop Zones */}
+          <div 
+            className={cn('day-drop-zone top-zone', draggedEvent && 'active')}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDropOnZone('yesterday', e)}
+          >
+            <span>Yesterday</span>
+          </div>
+
+          <div 
+            className={cn('day-drop-zone bottom-zone', draggedEvent && 'active')}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDropOnZone('tomorrow', e)}
+          >
+            <span>Tomorrow</span>
+          </div>
+
           {dayHours.map((hour) => {
             const handleSlotClick = () => {
               const startTime = new Date(currentDate);

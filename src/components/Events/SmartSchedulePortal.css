@@ -1,4 +1,4 @@
-.smart-schedule-panel.mini-week-mode {
+.smart-schedule-panel.portal-mode {
   position: absolute;
   top: 0;
   left: 0;
@@ -14,6 +14,25 @@
   overflow: hidden;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: 0;
+}
+
+.smart-schedule-panel.inline-mode {
+  position: relative;
+  background: transparent;
+  backdrop-filter: none;
+  border: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.smart-schedule-panel.inline-mode .panel-header {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+}
+
+.smart-schedule-panel.inline-mode .portal-close {
+  display: none; /* Already have a toggle button in the modal */
 }
 
 .panel-header {

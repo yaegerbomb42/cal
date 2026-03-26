@@ -233,3 +233,60 @@
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
   }
 }
+
+/* Cross-Day Drop Zones */
+.day-drop-zone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.day-drop-zone.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.day-drop-zone:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: var(--accent);
+  color: white;
+}
+
+.top-zone {
+  top: 0;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  transform: translateY(-100%);
+}
+
+.top-zone.active {
+  transform: translateY(0);
+}
+
+.bottom-zone {
+  bottom: 0;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  transform: translateY(100%);
+}
+
+.bottom-zone.active {
+  transform: translateY(0);
+}

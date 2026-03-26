@@ -12,6 +12,55 @@ import { EventsContext } from './eventsContext';
 
 const STORAGE_KEY = 'calendar-events';
 
+/**
+ * Normalizes an event object to ensure it has all required fields and valid dates.
+ * This prevents grid layout crashes (NaN values) and ensures consistency between
+ * Google, Firebase, and local state.
+ */
+const normalizeEvent = (event) => {
+  if (!event) return null;
+  
+  const now = new Date();
+  let start = event.start;
+  let end = event.end;
+  
+  try {
+    const startDate = new Date(start);
+    let endDate = new Date(end);
+    
+    // Fallback for invalid start date
+    if (isNaN(startDate.getTime())) {
+      logger.warn('Invalid start date detected, defaulting to now', { title: event.title });
+      startDate.setTime(now.getTime());
+      startDate.setMinutes(0, 0, 0);
+    }
+    
+    // Fallback for invalid end date or end before start
+    if (isNaN(endDate.getTime()) || endDate <= startDate) {
+      endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Default to 1 hour
+    }
+    
+    start = startDate.toISOString();
+    end = endDate.toISOString();
+  } catch (e) {
+    logger.error('Critical error normalizing event dates', { event, error: e });
+    start = now.toISOString();
+    end = new Date(now.getTime() + 3600000).toISOString();
+  }
+
+  return {
+    ...event,
+    id: event.id || (Date.now().toString() + Math.random().toString(36).substr(2, 9)),
+    title: (event.title || 'Untitled Event').trim(),
+    category: event.category || 'other',
+    start,
+    end,
+    isArchived: !!event.isArchived,
+    completed: !!event.completed
+  };
+};
+
+
 export const EventsProvider = ({ children, initialEvents }) => {
   const [events, setEvents] = useState(initialEvents ?? []);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,29 +129,21 @@ export const EventsProvider = ({ children, initialEvents }) => {
         // Try to load from Firebase first
         const firebaseEvents = await firebaseService.getEvents();
 
-        if (firebaseEvents && firebaseEvents.length > 0) {
-          setEvents(firebaseEvents);
-          // Sync to localStorage as backup
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(firebaseEvents));
+        if (firebaseEvents && Array.isArray(firebaseEvents) && firebaseEvents.length > 0) {
+          const normalized = firebaseEvents.map(normalizeEvent).filter(Boolean);
+          setEvents(normalized);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         } else {
-          // Fallback to localStorage:
-          // If Firebase returns empty (could be no auth provided yet), we try to keep local data
           const localEvents = localStorage.getItem(STORAGE_KEY);
           const parsedEvents = localEvents ? JSON.parse(localEvents) : [];
-
-          if (parsedEvents.length > 0) {
-            setEvents(parsedEvents);
-            // Optional: Try to sync back to Firebase if we think we are logged in?
-            // Leaving passive for now to avoid overwriting cloud with stale data if cloud was purposely empty.
-          } else {
-            setEvents([]);
-          }
+          const normalized = parsedEvents.map(normalizeEvent).filter(Boolean);
+          setEvents(normalized);
         }
       } catch (error) {
-        logger.warn('Firebase not available, using localStorage', { error });
-        // Fallback to localStorage only
+        logger.warn('Firebase context load failed, fallback to local', { error });
         const localEvents = localStorage.getItem(STORAGE_KEY);
-        setEvents(localEvents ? JSON.parse(localEvents) : []);
+        const parsedEvents = localEvents ? JSON.parse(localEvents) : [];
+        setEvents(parsedEvents.map(normalizeEvent).filter(Boolean));
       }
 
       setIsLoading(false);
@@ -173,11 +214,10 @@ export const EventsProvider = ({ children, initialEvents }) => {
       }
     }
 
-    const newEvent = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    const newEvent = normalizeEvent({
+      ...event,
       createdAt: new Date().toISOString(),
-      ...event
-    };
+    });
 
     setEvents(prev => [...prev, newEvent]);
     if (!options.silent) {
@@ -219,7 +259,7 @@ export const EventsProvider = ({ children, initialEvents }) => {
       return;
     }
 
-    const updatedEvent = { ...existingEvent, ...updates };
+    const updatedEvent = normalizeEvent({ ...existingEvent, ...updates });
     const validation = validateEvent(updatedEvent);
 
     if (!validation.isValid) {

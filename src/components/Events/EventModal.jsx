@@ -113,7 +113,6 @@ const EventModal = ({ isAIChatOpen }) => {
 
   // ... useEffects ... (Keep existing logic)
   const [isEditing, setIsEditing] = useState(false);
-  const [validationErrors, setValidationErrors] = useState([]);
   const [isSmartScheduleOpen, setIsSmartScheduleOpen] = useState(false);
 
   // Live overlap detection
@@ -192,7 +191,6 @@ const EventModal = ({ isAIChatOpen }) => {
       reminder: null,
       recurring: { type: RECURRENCE_TYPES.NONE }
     });
-    setValidationErrors([]);
   }, [selectedEvent, isEventModalOpen]);
 
   // ... handlers ... (Keep existing updateDateTime, handleSubmit, etc)
@@ -305,7 +303,7 @@ const EventModal = ({ isAIChatOpen }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           onClick={(e) => e.stopPropagation()}
-          className={`event-modal glass-card single-screen ${isSmartScheduleOpen ? 'expanded' : ''} ${isAIChatOpen ? 'shifted-left' : ''}`}
+          className={`event-modal glass-card ${isSmartScheduleOpen ? 'smart-active' : ''} ${isAIChatOpen ? 'shifted-left' : ''}`}
         >
           {/* Header */}
           <div className="modal-header compact">
@@ -335,10 +333,14 @@ const EventModal = ({ isAIChatOpen }) => {
           </div>
 
           <div className="modal-body-wrapper" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-            <form onSubmit={handleSubmit} className="modal-content-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.1fr 1.1fr' }}>
+            <form onSubmit={handleSubmit} className="modal-content-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr' }}>
 
-              {/* Left Column: Details */}
-              <div className="modal-col left-col">
+              {/* Panel 1: Details */}
+              <div className="modal-col details-panel">
+                <div className="panel-header">
+                  <MessageSquare size={16} /> <span>Details</span>
+                </div>
+                
                 <input
                   id="title"
                   type="text"
@@ -346,30 +348,25 @@ const EventModal = ({ isAIChatOpen }) => {
                   onChange={(e) => handleChange('title', e.target.value)}
                   className="title-input"
                   placeholder="Event Title"
-                  style={{ marginBottom: '1rem', padding: '0.5rem 0' }}
                   autoFocus
                 />
 
-                <div className="form-row">
-                  <div className="form-group flex-1">
-                    <label><Tag size={12} /> Category</label>
-                    <CustomSelect
-                      options={categories}
-                      value={formData.category}
-                      onChange={(val) => {
-                        const category = val;
-                        const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
-                        handleChange('category', category);
-                        handleChange('color', color);
-                      }}
-                    />
-                  </div>
+                <div className="form-group">
+                  <label><Tag size={12} /> Category</label>
+                  <CustomSelect
+                    options={categories}
+                    value={formData.category}
+                    onChange={(val) => {
+                      const category = val;
+                      const color = categories.find(c => c.value === category)?.color || getEventColor('personal');
+                      handleChange('category', category);
+                      handleChange('color', color);
+                    }}
+                  />
                 </div>
 
-                <div className="form-group location-group">
-                  <label>
-                    <span className="flex-center gap-2"><MapPin size={12} /> Location</span>
-                  </label>
+                <div className="form-group">
+                  <label><MapPin size={12} /> Location</label>
                   <div className="location-input-wrapper">
                     <Autocomplete
                       apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
@@ -382,159 +379,177 @@ const EventModal = ({ isAIChatOpen }) => {
                           handleChange('location', place.name);
                         }
                       }}
-                      options={{
-                        types: ['establishment', 'geocode']
-                      }}
+                      options={{ types: ['establishment', 'geocode'] }}
                       className="input compact"
                       placeholder="Search location..."
                     />
-                    {formData.location && (
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formData.location)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="location-map-link"
-                      >
-                        <ExternalLink size={12} />
-                        Open in Maps
-                      </a>
-                    )}
                   </div>
                 </div>
 
-                <div className="form-group description-group">
-                  <label><MessageSquare size={12} /> Description</label>
+                <div className="form-group">
+                  <label><MessageSquare size={12} /> Notes</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     className="textarea compact description-textarea"
-                    placeholder="Add notes, links, or details..."
-                    rows={3}
+                    placeholder="Add details..."
+                    rows={4}
                   />
                 </div>
-
-                <div className="recurrence-compact" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}><Repeat size={12} /> Repeat &nbsp;</label>
-                  <select value={formData.recurring?.type} onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} className="select compact" style={{ flex: 1 }}>
-                    {Object.values(RECURRENCE_TYPES).map(t => <option key={t} value={t}>{formatRecurrenceText({ type: t })}</option>)}
-                  </select>
-                </div>
-
-                {formData.recurring?.type === 'custom' && (
-                  <CustomRecurrenceEditor
-                    value={formData.recurring}
-                    onChange={(rec) => handleChange('recurring', rec)}
-                  />
-                )}
-
-                {/* Overlap Warning */}
-                {overlappingEvents.length > 0 && (
-                  <div className="overlap-warning" style={{
-                    marginTop: '0.75rem',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(251, 191, 36, 0.1)',
-                    border: '1px solid rgba(251, 191, 36, 0.3)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontSize: '0.8rem',
-                    color: '#fbbf24'
-                  }}>
-                    <AlertTriangle size={14} />
-                    <span>
-                      Overlaps with {overlappingEvents.length === 1
-                        ? `"${overlappingEvents[0].title || 'Untitled'}"`
-                        : `${overlappingEvents.length} events`}
-                    </span>
-                  </div>
-                )}
-
-                {validationErrors.length > 0 && (
-                  <div className="validation-errors" role="alert" style={{ marginTop: '0.5rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '0.5rem' }}>
-                    {validationErrors.map((error, idx) => (
-                      <div key={idx} className="error-message" style={{ color: '#fca5a5', fontSize: '0.8rem' }}>{error}</div>
-                    ))}
-                  </div>
-                )}
               </div>
 
-              {/* Right Column: Time & Clocks */}
-              <div className="modal-col right-col" style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Schedule</h4>
+              {/* Panel 2: Schedule */}
+              <div className="modal-col schedule-panel">
+                <div className="panel-header">
+                  <Clock size={16} /> <span>Schedule</span>
                 </div>
 
-                <div className="date-pickers-row" style={{ display: 'block', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', width: '100%' }}>
-                    <div style={{ flex: 1 }}>
+                <div className="date-pickers-row">
+                  <div className="date-inputs-flex">
+                    <div className="date-box">
+                      <label>From</label>
                       <SmartDateInput
                         value={formData.start ? new Date(formData.start) : new Date()}
                         onChange={(date) => updateDateTime('start', 'date', date)}
-                        compact
                       />
                     </div>
-                    <span className="arrow-sep" style={{ opacity: 0.5 }}>→</span>
-                    <div style={{ flex: 1 }}>
+                    <div className="date-sep">
+                      <ChevronRight size={14} />
+                    </div>
+                    <div className="date-box">
+                      <label>To</label>
                       <SmartDateInput
                         value={formData.end ? new Date(formData.end) : new Date()}
                         onChange={(date) => updateDateTime('end', 'date', date)}
-                        compact
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="iso-clocks-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-around', position: 'relative' }}>
+                <div className="iso-clocks-container">
                   <IsometricClock
-                    label="Start Time"
+                    label="Start"
                     value={formData.start ? new Date(formData.start) : new Date()}
                     onChange={(d) => updateDateTime('start', 'time', d)}
                   />
                   <IsometricClock
-                    label="End Time"
+                    label="End"
                     value={formData.end ? new Date(formData.end) : new Date()}
                     onChange={(d) => updateDateTime('end', 'time', d)}
                   />
                 </div>
 
-                <div className="duration-pills" style={{ marginTop: '1rem' }}>
-                  {[15, 30, 60, 90].map(m => (
+                <div className="duration-pills">
+                  {[15, 30, 60, 90, 120].map(m => (
                     <button key={m} type="button" onClick={() => handleDurationChange(m)} className="pill-btn">+{m}m</button>
                   ))}
                 </div>
+                
+                {overlappingEvents.length > 0 && (
+                  <div className="overlap-warning">
+                    <AlertTriangle size={14} />
+                    <span>Overlaps with {overlappingEvents.length} events</span>
+                  </div>
+                )}
               </div>
 
-              {/* Footer Actions (Moved INSIDE form) */}
-              <div className="modal-footer" style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', background: 'rgba(15, 23, 42, 0.4)' }}>
-                {isEditing ? <button type="button" onClick={handleDelete} className="btn-icon danger" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'none' }}><Trash2 size={16} /> Delete</button> : <div />}
-                <div className="flex-gap">
-                  <button type="button" onClick={closeEventModal} className="btn text-only" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px' }}>Cancel</button>
-                  <button type="submit" className="btn primary" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px' }}>Save Event</button>
+              {/* Panel 3: Preferences / Smart */}
+              <div className="modal-col preferences-panel">
+                <div className="panel-header">
+                  <Zap size={16} /> <span>Intelligence</span>
+                </div>
+
+                <div className="preferences-section">
+                  <label><Repeat size={12} /> Recurrence</label>
+                  <select 
+                    value={formData.recurring?.type} 
+                    onChange={(e) => handleChange('recurring', { ...formData.recurring, type: e.target.value })} 
+                    className="select-modern"
+                  >
+                    {Object.values(RECURRENCE_TYPES).map(t => (
+                      <option key={t} value={t}>{formatRecurrenceText({ type: t })}</option>
+                    ))}
+                  </select>
+                  
+                  {formData.recurring?.type === 'custom' && (
+                    <div className="custom-rec-mini">
+                      <CustomRecurrenceEditor
+                        value={formData.recurring}
+                        onChange={(rec) => handleChange('recurring', rec)}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="preferences-section">
+                  <label><Bell size={12} /> Reminder</label>
+                  <select 
+                    value={formData.reminder || ''} 
+                    onChange={(e) => handleChange('reminder', e.target.value)}
+                    className="select-modern"
+                  >
+                    <option value="">None</option>
+                    <option value="5">5 minutes before</option>
+                    <option value="15">15 minutes before</option>
+                    <option value="30">30 minutes before</option>
+                    <option value="60">1 hour before</option>
+                    <option value="1440">1 day before</option>
+                  </select>
+                </div>
+
+                <div className="smart-planning-area">
+                  <button
+                    type="button"
+                    onClick={() => setIsSmartScheduleOpen(!isSmartScheduleOpen)}
+                    className={`smart-action-btn ${isSmartScheduleOpen ? 'active' : ''}`}
+                  >
+                    <Sparkles size={16} />
+                    {isSmartScheduleOpen ? 'Hide Suggestions' : 'Find Best Slot'}
+                  </button>
+                  
+                  {isSmartScheduleOpen && (
+                    <div className="smart-inline-portal">
+                      <SmartSchedulePortal
+                        isOpen={true}
+                        inline={true}
+                        onClose={() => setIsSmartScheduleOpen(false)}
+                        onSelectSlot={(start, end) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            start: toLocalInputValue(start),
+                            end: toLocalInputValue(end)
+                          }));
+                        }}
+                        eventTitle={formData.title}
+                        existingEvents={events}
+                        preferredDate={formData.start ? new Date(formData.start) : new Date()}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="modal-footer">
+                <div className="footer-left">
+                  {isEditing && (
+                    <button type="button" onClick={handleDelete} className="btn-danger-minimal">
+                      <Trash2 size={16} /> <span>Delete</span>
+                    </button>
+                  )}
+                </div>
+                <div className="footer-right">
+                  <button type="button" onClick={closeEventModal} className="btn-secondary-minimal">Cancel</button>
+                  <button type="submit" className="btn-primary-glow">
+                    <Save size={16} /> {isEditing ? 'Update Event' : 'Create Event'}
+                  </button>
                 </div>
               </div>
             </form>
-
-            {/* Smart Schedule Panel */}
-            <SmartSchedulePortal
-              isOpen={isSmartScheduleOpen}
-              onClose={() => setIsSmartScheduleOpen(false)}
-              onSelectSlot={(start, end) => {
-                setFormData(prev => ({
-                  ...prev,
-                  start: toLocalInputValue(start),
-                  end: toLocalInputValue(end)
-                }));
-              }}
-              eventTitle={formData.title}
-              existingEvents={events}
-              preferredDate={formData.start ? new Date(formData.start) : new Date()}
-            />
-
-          </div> {/* Closes modal-body-wrapper */}
+          </div>
         </MotionDiv>
-      </MotionDiv >
-    </AnimatePresence >
+      </MotionDiv>
+    </AnimatePresence>
   );
 };
 

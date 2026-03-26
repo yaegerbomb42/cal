@@ -14,7 +14,6 @@ const MotionButton = motion.button;
  * SmartSchedulePortal - AI-powered time slot suggestions
  * Shows suggested time slots based on event title and existing events
  */
-// Embedded Smart Schedule Component
 const SmartSchedulePortal = ({
     isOpen,
     onClose,
@@ -22,7 +21,8 @@ const SmartSchedulePortal = ({
     eventTitle = '',
     existingEvents = [],
     preferredDate,
-    autoPlanPreview = null // Array of { todo, slot }
+    autoPlanPreview = null, // Array of { todo, slot }
+    inline = false
 }) => {
     // Ensure we have a valid date object and prevent infinite loops from unstable default props
     const timestamp = (preferredDate instanceof Date && !isNaN(preferredDate)) ? preferredDate.getTime() : 0;
@@ -84,11 +84,11 @@ const SmartSchedulePortal = ({
 
     return (
         <MotionDiv
-            className="smart-schedule-panel mini-week-mode"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: '100%' }}
-            exit={{ opacity: 0, height: 0 }}
-            style={{ width: '100%' }}
+            className={`smart-schedule-panel ${inline ? 'inline-mode' : 'portal-mode'} mini-week-mode`}
+            initial={{ opacity: 0, scale: inline ? 1 : 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: inline ? 1 : 0.95 }}
+            style={{ width: '100%', height: inline ? '100%' : 'auto' }}
         >
             <div className="panel-header">
                 <div className="portal-title">

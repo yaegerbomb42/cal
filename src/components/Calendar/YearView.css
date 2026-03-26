@@ -56,47 +56,48 @@
    Classic Monthly Grid
    ══════════════════════════════════════ */
 
+/* Mini Month Grid */
 .year-months-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  width: 100%;
-  max-width: 960px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 2rem 1.5rem;
+    padding-bottom: 2rem;
 }
 
 .year-mini-month {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: transform 0.3s, border-color 0.3s;
+}
+
+.year-mini-month:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.2);
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .year-mini-month-header {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-align: center;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  letter-spacing: 0.03em;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
 }
 
 .year-mini-month-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
 }
 
 .year-day-cell {
-  aspect-ratio: 1;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.1s ease;
-  position: relative;
-  display: flex;
   align-items: flex-start;
   justify-content: flex-end;
   padding: 1px 2px 0 0;
