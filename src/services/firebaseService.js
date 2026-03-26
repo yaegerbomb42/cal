@@ -32,6 +32,7 @@ class FirebaseService {
     this.auth = null;
     this.isInitialized = false;
     this.userId = null;
+    this.missingConfigLogged = false;
 
     // Auto-initialize with safety
     try {
@@ -43,6 +44,15 @@ class FirebaseService {
 
   initialize() {
     if (this.isInitialized) return true;
+    
+    if (!firebaseConfig.apiKey) {
+      if (!this.missingConfigLogged) {
+        logger.warn('Firebase config missing (VITE_FIREBASE_API_KEY). Running in local-only mode.');
+        this.missingConfigLogged = true;
+      }
+      return false;
+    }
+
     try {
       this.app = initializeApp(firebaseConfig);
       this.db = getFirestore(this.app);
@@ -50,7 +60,10 @@ class FirebaseService {
       this.isInitialized = true;
       return true;
     } catch (error) {
-      logger.error('Failed to initialize Firebase', { error });
+      if (!this.missingConfigLogged) {
+        logger.error('Failed to initialize Firebase', { error });
+        this.missingConfigLogged = true;
+      }
       this.isInitialized = false;
       return false;
     }
