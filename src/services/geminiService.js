@@ -36,7 +36,7 @@ export class GeminiService {
   }
 
   initialize(apiKey) {
-    const FALLBACK_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const FALLBACK_KEY = import.meta.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
     const finalKey = apiKey || FALLBACK_KEY;
 
     if (!finalKey) {

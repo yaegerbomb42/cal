@@ -369,7 +369,7 @@ const EventModal = ({ isAIChatOpen }) => {
                   <label><MapPin size={12} /> Location</label>
                   <div className="location-input-wrapper">
                     <Autocomplete
-                      apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
+                      apiKey={import.meta.env.GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''}
                       value={formData.location}
                       onChange={(e) => handleChange('location', e.target.value)}
                       onPlaceSelected={(place) => {

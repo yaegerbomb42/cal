@@ -2,8 +2,8 @@
 
 import { logger } from '../utils/logger';
 
-const CLIENT_ID = import.meta.env.VITE_GCAL_CLIENT_ID;
-const API_KEY = import.meta.env.VITE_GCAL_API_KEY;
+const CLIENT_ID = import.meta.env.GCAL_CLIENT_ID || import.meta.env.VITE_GCAL_CLIENT_ID;
+const API_KEY = import.meta.env.GCAL_API_KEY || import.meta.env.VITE_GCAL_API_KEY;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/calendar';
 

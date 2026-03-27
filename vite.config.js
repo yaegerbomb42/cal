@@ -17,6 +17,7 @@ const getGitInfo = () => {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  envPrefix: ['VITE_', 'FIREBASE_', 'GCAL_', 'GEMINI_', 'GOOGLE_', 'ADSENSE_'],
   define: {
     __APP_VERSION__: JSON.stringify(getGitInfo())
   },
