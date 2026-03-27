@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ProceduralAnimationController, ContinuousParticleSystem } from '../../utils/ProceduralAnimationController';
@@ -15,7 +16,8 @@ import './CalCharacter.css';
 const CalCharacter = ({
     isTalking = false,
     emotion = 'idle',
-    size = 'normal'
+    size = 'normal',
+    isFocus = false
 }) => {
     // Animation state
     const [animState, setAnimState] = useState({
@@ -41,6 +43,12 @@ const CalCharacter = ({
 
     const isMini = size === 'mini';
 
+    // Track emotion for requestAnimationFrame closure
+    const emotionRef = useRef(emotion);
+    useEffect(() => {
+        emotionRef.current = emotion;
+    }, [emotion]);
+
     // Initialize controllers
     useEffect(() => {
         animController.current = new ProceduralAnimationController();
@@ -51,20 +59,23 @@ const CalCharacter = ({
             setAnimState(state);
         });
 
-        // Continuous particle update
+        return () => {
+            if (animController.current) animController.current.stop();
+        };
+    }, []);
+
+    // Continuous particle update
+    useEffect(() => {
         const updateParticles = () => {
             if (particleSystem.current) {
-                setParticles(particleSystem.current.getPositions(60, 80));
+                setParticles(particleSystem.current.getPositions(60, 80, emotion === 'processing', isFocus));
             }
             particleAnimFrame.current = requestAnimationFrame(updateParticles);
         };
         updateParticles();
 
-        return () => {
-            if (animController.current) animController.current.stop();
-            if (particleAnimFrame.current) cancelAnimationFrame(particleAnimFrame.current);
-        };
-    }, []);
+        return () => cancelAnimationFrame(particleAnimFrame.current);
+    }, [emotion, isFocus]);
 
     // Handle talking state changes
     useEffect(() => {
@@ -82,6 +93,25 @@ const CalCharacter = ({
         if (!animController.current) return;
         animController.current.setEmotion(emotion);
     }, [emotion]);
+
+    // Listen for TTS Voice AI Events to sync mouth automatically
+    useEffect(() => {
+        const handleSpeechStart = () => animController.current?.startTalking();
+        const handleSpeechEnd = () => animController.current?.stopTalking();
+        const handleWord = () => {
+            if (animController.current) animController.current.updateTalkingMouth();
+        };
+
+        window.addEventListener('calai-speech-start', handleSpeechStart);
+        window.addEventListener('calai-speech-end', handleSpeechEnd);
+        window.addEventListener('calai-speech-word', handleWord);
+
+        return () => {
+            window.removeEventListener('calai-speech-start', handleSpeechStart);
+            window.removeEventListener('calai-speech-end', handleSpeechEnd);
+            window.removeEventListener('calai-speech-word', handleWord);
+        };
+    }, []);
 
     // Eye rendering - fixed positioning inside head
     const renderEye = useCallback((state, offset, baseX, baseY) => {
@@ -174,7 +204,7 @@ const CalCharacter = ({
         : { viewBox: "0 0 100 130", width: 140, height: 182 };
 
     return (
-        <div className={`cal-character-procedural ${isMini ? 'cal-mini' : ''} ${emotion === 'thinking' || emotion === 'scanning' ? 'data-pulse' : ''}`}>
+        <div className={`cal-character-procedural ${isMini ? 'cal-mini' : ''} ${emotion === 'processing' ? 'processing' : ''} ${isFocus ? 'focus-sentry' : ''} ${emotion === 'thinking' || emotion === 'scanning' ? 'data-pulse' : ''}`}>
             {!isMini && <div className="hud-scan-line" />}
             <svg
                 viewBox={dimensions.viewBox}

@@ -647,7 +647,7 @@ RESPONSE RULES:
 
   /**
    * AI-powered slot picker - suggests optimal time slots based on calendar context
-   * @param {Object} eventDetails - title, duration, category, preferred day
+   * @param {Object} eventDetails - title, duration, category, preferred day, userPreferences
    * @param {Array} existingEvents - current calendar events for context
    * @returns {Array} - suggested time slots with reasoning
    */
@@ -668,6 +668,7 @@ RESPONSE RULES:
     const now = new Date();
     const targetDate = eventDetails.preferredDate || now;
     const duration = eventDetails.duration || 60; // minutes
+    const prefs = eventDetails.userPreferences || {};
 
     // NEW: Handle explicitly fuzzy ranges if provided
     const rangeStart = eventDetails.rangeStart ? new Date(eventDetails.rangeStart) : targetDate;
@@ -684,6 +685,13 @@ Search Range: ${rangeStart.toDateString()} to ${rangeEnd.toDateString()}
 User Timezone: ${timeZone}
 Current Time: ${now.toISOString()}
 
+User Productivity Preferences:
+- Peak Energy: ${prefs.peakEnergyTime || 'morning'}
+- Morning Focus: ${prefs.morningFocus || 'deep_work'}
+- Afternoon Focus: ${prefs.afternoonFocus || 'meetings'}
+- Evening Focus: ${prefs.eveningFocus || 'light_tasks'}
+- Prefer Uninterrupted: ${prefs.preferUninterrupted ? 'Yes' : 'No'}
+
 Existing Events:
 ${JSON.stringify(existingEvents.slice(0, 50).map(e => ({
       title: e.title,
@@ -694,10 +702,12 @@ ${JSON.stringify(existingEvents.slice(0, 50).map(e => ({
 Task: Suggest 3-5 optimal time slots.
 Logic Principles:
 1. Avoid ALL conflicts.
-2. Context Mapping: If 'Work', prefer 9 AM - 5 PM but cluster with other work events. If 'Personal/Social', prefer early AM or after 5 PM.
+2. Context & Energy Mapping: 
+   - If Title/Category is "Deep Work" or high-effort, prioritize slots in the user's "${prefs.peakEnergyTime || 'morning'}" or designated "focus" blocks.
+   - If title is low-effort (e.g., "Check email"), prefer "light_tasks" slots.
+   - If "Meeting", prefer the user's "meetings" block.
 3. Flow Optimization: Avoid creating "Swiss Cheese" schedules (tiny 15-30 min gaps). Favor keeping deep work blocks together.
-4. Logic: If the title implies a meal (Lunch, Dinner), pick appropriate times.
-5. Reasoning: Provide a brief, "human" explanation for why this slot is good (e.g., "Gives you a solid 3-hour focus block before this").
+4. Reasoning: Provide a brief, "human" explanation for why this slot is good, EXPLICITLY MENTIONING how it fits their productivity profile (e.g., "Gives you a solid focus block during your peak morning energy").
 
 Return ONLY a JSON array:
 [

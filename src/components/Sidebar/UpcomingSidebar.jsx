@@ -325,9 +325,10 @@ const UpcomingSidebar = () => {
                     </h3>
                 </div>
 
-                {/* Unified Navigation - Centered & Reordered */}
+                {/* Unified Navigation - Centered & Premium Segmented Control */}
                 <div className="sidebar-nav-row">
                     <button
+                        className={`nav-btn-item ${viewMode === 'upcoming' ? 'active' : ''}`}
                         onClick={() => {
                             setViewMode('upcoming');
                             setIsArchiveMode(false);
@@ -358,27 +359,23 @@ const UpcomingSidebar = () => {
                     </button>
                     <button
                         className={`nav-btn-item ${isArchiveMode ? 'active archive-active' : ''}`}
-                        onClick={() => setIsArchiveMode(!isArchiveMode)}
-                        title="Archive Mode (Click events to delete)"
+                        onClick={() => {
+                            setIsArchiveMode(!isArchiveMode);
+                            if (!isArchiveMode) setViewMode('none'); // Clear other highlights
+                        }}
+                        title="Eraser Mode (Click events to delete)"
                     >
-                        <Trash2 size={18} />
+                        <History size={18} />
                     </button>
                     <button
-                        className={`nav-btn-item ${viewMode === 'bulk-trash' ? 'active' : ''}`}
+                        className={`nav-btn-item bulk-delete-btn ${viewMode === 'bulk-trash' ? 'active-bulk' : ''}`}
                         onClick={() => {
                             setViewMode('bulk-trash');
                             setIsArchiveMode(false);
                         }}
-                        title="Trash / Bulk Delete"
+                        title="Bulk Management"
                     >
-                        {/* Soul Fade Trash Icon */}
-                        <div className="nav-icon-wrapper">
-                            <img
-                                src="/bulk-delete-icon.png?v=fixed_v7"
-                                alt="Bulk Delete"
-                                className="bulk-trash-img"
-                            />
-                        </div>
+                        <Layout size={18} />
                     </button>
                 </div>
 

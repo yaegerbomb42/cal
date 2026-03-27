@@ -20,6 +20,7 @@ export const CalendarProvider = ({
   const [smartScheduleDraft, setSmartScheduleDraft] = useState(null); // Form data to return to
   const [autoPlanPreview, setAutoPlanPreview] = useState(null); // Array of { todo, slot } pairs for auto-plan preview
   const [isArchiveMode, setIsArchiveMode] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   const navigateDate = (direction) => {
     setCurrentDate(prev => {
@@ -80,7 +81,9 @@ export const CalendarProvider = ({
       autoPlanPreview,
       setAutoPlanPreview,
       isArchiveMode,
-      setIsArchiveMode
+      setIsArchiveMode,
+      isFocusMode,
+      setIsFocusMode
     }}>
       {children}
     </CalendarContext.Provider>

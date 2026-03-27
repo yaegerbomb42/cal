@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Sparkles, Clock, Check, X, Zap, Calendar } from 'lucide-react';
 import { format, startOfDay, startOfWeek, addDays } from 'date-fns';
 import { geminiService } from '../../services/geminiService';
+import { getUserPreferences } from '../../utils/userPrefs';
 import './SmartSchedulePortal.css';
 
 const MotionDiv = motion.div;
@@ -43,10 +44,12 @@ const SmartSchedulePortal = ({
             setIsLoading(true);
             const fetchSuggestions = async () => {
                 try {
+                    const userPreferences = getUserPreferences();
                     const results = await geminiService.suggestOptimalSlot({
                         title: eventTitle,
                         preferredDate: safeDate,
-                        duration: 60
+                        duration: 60,
+                        userPreferences
                     }, existingEvents);
 
                     const mapped = Array.isArray(results) ? results.map((r, i) => ({
@@ -245,6 +248,10 @@ const SmartSchedulePortal = ({
                                                         animate={{ opacity: 1, scale: 1 }}
                                                     >
                                                         <div className="mini-suggestion-glow" />
+                                                        <div className="mini-suggestion-tooltip">
+                                                            <div className="tooltip-title">{item.todo.text}</div>
+                                                            <div className="tooltip-reason">{item.slot.reason}</div>
+                                                        </div>
                                                         <span className="mini-suggestion-label">{item.todo.text}</span>
                                                     </motion.div>
                                                 );

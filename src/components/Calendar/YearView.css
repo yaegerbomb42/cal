@@ -59,9 +59,11 @@
 /* Mini Month Grid */
 .year-months-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 2rem 1.5rem;
-    padding-bottom: 2rem;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 0.5rem;
+    height: 100%;
 }
 
 .year-mini-month {
@@ -124,13 +126,13 @@
 }
 
 /* Shared intensity levels */
-.year-day-cell.level-0 { background: rgba(255, 255, 255, 0.06); }
-.year-day-cell.level-1 { background: rgba(99, 102, 241, 0.35); }
-.year-day-cell.level-2 { background: rgba(99, 102, 241, 0.55); }
-.year-day-cell.level-3 { background: rgba(99, 102, 241, 0.75); }
+.year-day-cell.level-0 { background: var(--bg-secondary); }
+.year-day-cell.level-1 { background: rgba(99, 102, 241, 0.15); }
+.year-day-cell.level-2 { background: rgba(99, 102, 241, 0.3); }
+.year-day-cell.level-3 { background: rgba(99, 102, 241, 0.5); }
 .year-day-cell.level-4 {
-  background: rgba(99, 102, 241, 1.0);
-  box-shadow: 0 0 6px var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
 }
 
 .year-day-cell.today {

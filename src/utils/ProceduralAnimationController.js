@@ -112,12 +112,26 @@ const GestureGroups = {
             { name: 'scan_right', weight: 50, parts: { eyes: 'lookRight', head: 'turnRight', mouth: 'neutral' } }
         ]
     },
+    processing: {
+        weight: 15,
+        gestures: [
+            { name: 'fast_scan', weight: 40, parts: { head: 'turnRight', eyes: 'lookLeft' } },
+            { name: 'fast_scan2', weight: 40, parts: { head: 'turnLeft', eyes: 'lookRight' } },
+            { name: 'process_tilt', weight: 20, parts: { head: 'tiltRight', eyes: 'widen' } }
+        ]
+    },
     confused: {
         weight: 10,
         gestures: [
             { name: 'huh', weight: 40, parts: { head: 'tiltLeft', eyes: 'squint', mouth: 'neutral' } },
             { name: 'what', weight: 30, parts: { head: 'turnRight', eyes: 'widen', head_tilt: 'tiltLeft' } },
             { name: 'puzzled', weight: 30, parts: { head: 'nodUp', eyes: 'lookLeft' } }
+        ]
+    },
+    focus_sentry: {
+        weight: 100, // Fixed state
+        gestures: [
+            { name: 'locked_in', weight: 100, parts: { head: 'neutral', eyes: 'neutral', mouth: 'neutral' } }
         ]
     }
 };
@@ -343,12 +357,18 @@ class ProceduralAnimationController {
 
     // Force a specific emotion/animation
     setEmotion(emotion) {
+        this.transitionSpeed = 0.15; // Reset to default smooth speed
+        
         switch (emotion) {
             case 'happy':
                 this.applyGesture(GestureGroups.excited.gestures[0]);
                 break;
             case 'thinking':
                 this.applyGesture(GestureGroups.thinking.gestures[0]);
+                break;
+            case 'processing':
+                this.transitionSpeed = 0.35; // Faster, twitchy transitions for API/thought processing
+                this.applyGesture(GestureGroups.processing.gestures[0]);
                 break;
             case 'scanning': {
                 const scan = this.selectWeightedGesture('scanning');
@@ -366,6 +386,10 @@ class ProceduralAnimationController {
                 this.targetState.rightEyeState = 'closed';
                 this.targetState.headAngle = 10;
                 break;
+            case 'focus_sentry':
+                this.targetState = this.getDefaultState();
+                this.targetState.headAngle = 0;
+                break;
             case 'idle':
             default:
                 this.targetState = this.getDefaultState();
@@ -379,7 +403,7 @@ class ProceduralAnimationController {
 // ============================================================================
 
 class ContinuousParticleSystem {
-    constructor(particleCount = 8) {
+    constructor(particleCount = 4) {
         this.particles = [];
         this.startTime = Date.now();
 
@@ -405,22 +429,31 @@ class ContinuousParticleSystem {
     }
 
     // Get current positions for all particles (continuous, no reset)
-    getPositions(centerX = 60, centerY = 80) {
+    getPositions(centerX = 60, centerY = 80, isProcessing = false, isFocus = false) {
         const elapsed = Date.now() - this.startTime;
+        
+        // Speed logic: Processing is hyper (6.5x), Focus is calm but intense (0.75x)
+        let speedMult = isProcessing ? 6.5 : (isFocus ? 0.75 : 1.0);
+        
+        // Breathing pulse for focus mode
+        const focusPulse = isFocus ? (1.05 + 0.05 * Math.sin(elapsed * 0.0008)) : 1;
 
         return this.particles.map(p => {
             // Continuous orbital motion
-            const angle = p.orbitOffset + (elapsed * p.orbitSpeed);
-            const verticalOffset = Math.sin(elapsed * p.verticalSpeed) * p.verticalWobble * 15;
+            const angle = p.orbitOffset + (elapsed * p.orbitSpeed * speedMult);
+            const verticalOffset = Math.sin(elapsed * p.verticalSpeed * speedMult) * p.verticalWobble * 15;
+            
+            // Color logic: Focus/Processing use neon cyan
+            const color = (isFocus || isProcessing) ? '#00e5ff' : p.color;
+            const radius = (isFocus ? p.orbitRadius * 0.75 : p.orbitRadius) * focusPulse;
 
             return {
                 id: p.id,
-                x: centerX + Math.cos(angle) * p.orbitRadius,
-                y: centerY + Math.sin(angle) * p.orbitRadius * 0.6 + verticalOffset,
-                size: p.size,
-                opacity: p.opacity + Math.sin(elapsed * 0.001 + p.id) * 0.1,
-                color: p.color,
-                rotation: angle * (180 / Math.PI)
+                x: centerX + Math.cos(angle) * radius,
+                y: centerY + verticalOffset + Math.sin(angle) * (radius * 0.4),
+                size: p.size * (isFocus ? 1.2 : 1),
+                opacity: p.opacity,
+                color: color
             };
         });
     }

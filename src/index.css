@@ -3,62 +3,47 @@
   line-height: 1.6;
   font-weight: 400;
 
-  /* Colors - Lightened Dark Mode for Better Contrast */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #161618;
-  /* Lightened from #0c0c0e */
-  --bg-tertiary: #242428;
-  /* Lightened from #1c1c1e */
+  /* Colors - Pastel Calm Palette */
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F1F5F9;
 
-  /* Vibrant Accents */
-  --accent: #FF6B6B;
-  /* Lighter Red */
-  --accent-rgb: 255, 107, 107;
-  --accent-hover: #FF8787;
-  --accent-glow: rgba(255, 107, 107, 0.5);
-  /* Stronger glow */
+  /* Artistic Accents - Soft Pastels */
+  --accent: #818CF8; /* Indigo 400 */
+  --accent-rgb: 129, 140, 248;
+  --accent-hover: #6366F1;
+  --accent-glow: rgba(129, 140, 248, 0.3);
 
-  --text-primary: #F5F5F7;
-  /* Slightly softer white for better reading */
-  --text-secondary: #A8A8AD;
-  /* Lightened from #98989D for better contrast */
-  --text-muted: #737378;
-  /* Lightened from #636366 */
-  --text-disabled: #3A3A3C;
+  --text-primary: #1E293B; /* Slate 800 */
+  --text-secondary: #64748B; /* Slate 500 */
+  --text-muted: #94A3B8;
+  --text-disabled: #CBD5E1;
 
-  /* Refined Glassmorphism - Lighter */
-  --glass-bg: rgba(40, 40, 42, 0.70);
-  /* Lightened from rgba(30, 30, 32, 0.65) */
-  --glass-strong: rgba(40, 40, 42, 0.90);
-  --glass-border: rgba(255, 255, 255, 0.15);
-  /* Lighter border from 0.12 */
-  --glass-divider: rgba(255, 255, 255, 0.10);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  /* Lighter shadow */
+  /* Refined Glassmorphism - Light & Airy */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-strong: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-divider: rgba(0, 0, 0, 0.04);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
 
-  --backdrop-blur: blur(30px);
-  /* Heavy premium blur */
-  --border: rgba(255, 255, 255, 0.15);
-  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --backdrop-blur: blur(20px);
+  --border: rgba(0, 0, 0, 0.08);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
 
-  --success: #32D74B;
-  /* More vibrant Green */
-  --warning: #FF8787;
-  --error: #FF6B6B;
+  --success: #34D399; /* Emerald 400 */
+  --warning: #FBCA59; /* Amber 400 */
+  --error: #FB7185; /* Rose 400 */
 
   /* Vivid Pastels for Event Types */
-  --accent-work: #FF8787;
-  --accent-personal: #FF4D4D;
-  /* Punchier Red/Pink */
-  --accent-fun: #BF5AF2;
-  --accent-hobby: #64D2FF;
-  --accent-task: #30D158;
-  /* Bright Green */
-  --accent-todo: #FFA8A8;
-  --accent-event: #0A84FF;
-  /* Bright Blue */
-  --accent-appointment: #FF8787;
-  --accent-holiday: #32D74B;
+  --accent-work: #818CF8;
+  --accent-personal: #F472B6;
+  --accent-fun: #A78BFA;
+  --accent-hobby: #38BDF8;
+  --accent-task: #34D399;
+  --accent-todo: #FBBF24;
+  --accent-event: #60A5FA;
+  --accent-appointment: #FB7185;
+  --accent-holiday: #FDBA74;
 }
 
 /* Base Body Style */

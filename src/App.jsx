@@ -12,7 +12,7 @@ import Login from './components/Auth/Login';
 import Header from './components/Header/Header';
 import Calendar from './components/Calendar/Calendar';
 const EventModal = lazy(() => import('./components/Events/EventModal'));
-const AIChat = lazy(() => import('./components/AI/AIChat'));
+import AIChat from './components/AI/AIChat';
 const Settings = lazy(() => import('./components/Settings/Settings'));
 
 import Toast from './components/Toast/Toast';
@@ -59,7 +59,7 @@ function App() {
 
 const MainLayout = () => {
   const { user, loading } = useAuth();
-  const { autoPlanPreview, setAutoPlanPreview } = useCalendar();
+  const { autoPlanPreview, setAutoPlanPreview, isFocusMode } = useCalendar();
   const { events, addEvent } = useEvents();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
@@ -279,7 +279,7 @@ const MainLayout = () => {
 
           {/* ... existing code ... */}
 
-          {isAIChatOpen && (
+          {(isAIChatOpen || isFocusMode) && (
             <AIChat
               isOpen={isAIChatOpen}
               onClose={() => setIsAIChatOpen(false)}

@@ -72,6 +72,42 @@
     100% { transform: scale(1) rotate(360deg); border-color: rgba(0, 229, 255, 0.15); }
 }
 
+/* ── Processing cognitive state (triggered by emotion="processing") ── */
+.cal-character-procedural.processing {
+    filter: drop-shadow(0 0 25px rgba(0, 229, 255, 0.4)) drop-shadow(0 0 45px rgba(0, 229, 255, 0.2));
+}
+
+.cal-character-procedural.processing::before {
+    border-color: rgba(0, 229, 255, 0.8);
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+    animation: hud-pulse 0.8s ease-out infinite, hud-rotate 2s linear infinite;
+}
+
+.cal-character-procedural.processing svg {
+    animation: process-bob 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes process-bob {
+    0%   { transform: translateY(0); filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.6)); }
+    100% { transform: translateY(-4px); filter: drop-shadow(0 0 20px rgba(0, 229, 255, 1)); }
+}
+
+/* ── Focus Sentry: Intense concentration ── */
+.cal-character-procedural.focus-sentry::before {
+    border-color: rgba(0, 229, 255, 1);
+    box-shadow: 0 0 40px rgba(0, 229, 255, 0.6);
+    animation: hud-pulse 0.4s ease-in-out infinite alternate, hud-rotate 1s linear infinite;
+}
+
+.cal-character-procedural.focus-sentry svg {
+    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.8));
+    animation: sentry-breathe 4s ease-in-out infinite;
+}
+
+@keyframes sentry-breathe {
+    0%, 100% { transform: scale(1) translateY(0); filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.4)); }
+    50% { transform: scale(1.03) translateY(-1px); filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.7)); }
+}
 /* ── Mini variant: Subtler effects ── */
 .cal-character-procedural.cal-mini {
     filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.2));

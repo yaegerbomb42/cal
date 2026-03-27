@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus, Mic, MicOff, Volume2 } from 'lucide-react';
+import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus, Mic, MicOff, Volume2, VolumeX, Target } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
 import { voiceAIService } from '../../services/voiceAIService';
@@ -39,8 +39,10 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [isLocalMode] = useState(localBrainService.getPreferLocal());
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [listenMode, setListenMode] = useState(false); // STT Toggle
-  const [, setIsSpeaking] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false); // eslint-disable-line no-unused-vars -- tracked for future speaking-state glow
   const [speakResponse, setSpeakResponse] = useState(false); // TTS Toggle
+  const [fullSpeechText, setFullSpeechText] = useState('');
+  const [currentSpeechIndex, setCurrentSpeechIndex] = useState(0);
   const [lastProcessedInput, setLastProcessedInput] = useState(null);
   const [calEmotion, setCalEmotion] = useState('idle');
   const [showProof, setShowProof] = useState(false);
@@ -49,7 +51,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const { events, addEvent } = useEvents();
-  const { openEventModal } = useCalendar();
+  const { openEventModal, isFocusMode, setIsFocusMode } = useCalendar();
 
 
 
@@ -140,7 +142,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     if (hours >= 22 || hours <= 5) {
       addMessage('ai', "🌙 This is a bit late/early, Dave. Are you sure you want this on your schedule?");
     }
-  }, [addMessage, addEvent]);
+  }, [addMessage]);
 
   const processClarification = useCallback(async (text) => {
     if (!clarificationState) return;
@@ -301,7 +303,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [clarificationState, events, speakResponse, addMessage, handleAIResponse, processClarification, addEvent]);
+  }, [clarificationState, events, speakResponse, addMessage, handleAIResponse, processClarification, addEvent, chatHistory]);
 
   // Process initial message from prop (race condition fix)
   useEffect(() => {
@@ -365,21 +367,35 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     const handleVoiceEnd = () => {
         if (!listenMode) setIsVoiceListening(false);
     };
-    const handleSpeechStart = () => setIsSpeaking(true);
-    const handleSpeechEnd = () => setIsSpeaking(false);
+    const handleSpeechStart = (e) => {
+        setIsSpeaking(true);
+        setFullSpeechText(e.detail?.text || '');
+        setCurrentSpeechIndex(0);
+    };
+    const handleSpeechEnd = () => {
+        setIsSpeaking(false);
+        setTimeout(() => setFullSpeechText(''), 1000); // Hold for 1s after speaking
+    };
+    const handleWord = (e) => {
+        if (e.detail?.charIndex !== undefined) {
+             setCurrentSpeechIndex(e.detail.charIndex + e.detail.charLength);
+        }
+    };
 
     window.addEventListener('calai-voice-result', handleVoiceResult);
     window.addEventListener('calai-voice-end', handleVoiceEnd);
     window.addEventListener('calai-speech-start', handleSpeechStart);
     window.addEventListener('calai-speech-end', handleSpeechEnd);
+    window.addEventListener('calai-speech-word', handleWord);
 
     return () => {
       window.removeEventListener('calai-voice-result', handleVoiceResult);
       window.removeEventListener('calai-voice-end', handleVoiceEnd);
       window.removeEventListener('calai-speech-start', handleSpeechStart);
       window.removeEventListener('calai-speech-end', handleSpeechEnd);
+      window.removeEventListener('calai-speech-word', handleWord);
     };
-  }, []);
+  }, [addMessage, listenMode, processInput]);
 
   // Global keyboard capture - focus input and prepend typed character
   const inputRef = useRef(null);
@@ -533,7 +549,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       }
       setStatus(null, null);
     }
-  }, [addMessage]); // Add dependencies if needed, but empty is safe for now as helpers are imported
+  }, [addMessage, messages]);
 
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files || []);
@@ -570,8 +586,6 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     return () => window.removeEventListener('calai-image-upload', handleExternalUpload);
   }, [processFiles]);
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
       <motion.div
@@ -584,7 +598,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Cal character floating outside drawer */}
+        {/* Holographic Voice Control & Subtitles Platform */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -594,10 +608,38 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
             right: '440px',
             bottom: '2rem',
             zIndex: 999,
-            pointerEvents: 'none'
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px'
           }}
         >
-          <CalCharacter isTalking={isLoading} emotion={calEmotion} />
+          {/* Sentry HUD Overlay: Only visible when closed but in Focus Mode */}
+          <AnimatePresence>
+            {(!isOpen && isFocusMode) && (
+              <motion.div
+                initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
+                className="cal-sentry-hud glass-card"
+                style={{
+                  position: 'absolute',
+                  right: '120px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '12px 20px',
+                  border: '1px solid rgba(0, 229, 255, 0.4)',
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  zIndex: -1
+                }}
+              >
+                <div style={{ color: '#00e5ff', fontSize: '0.6rem', fontWeight: 'bold', letterSpacing: '0.1em', marginBottom: '4px' }}>FOCUS SENTRY ACTIVE</div>
+                <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: '500' }}>Guarding your flow...</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
         </motion.div>
 
         <motion.div
@@ -635,6 +677,20 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+              <button 
+                onClick={() => setSpeakResponse(!speakResponse)} 
+                className={`header-action-btn ${speakResponse ? 'active' : ''}`}
+                title="Toggle Voice"
+              >
+                {speakResponse ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              </button>
+              <button 
+                onClick={() => setIsFocusMode(!isFocusMode)}
+                className={`header-action-btn ${isFocusMode ? 'focus-active' : ''}`}
+                title="Toggle Focus Mode"
+              >
+                <Target size={16} />
+              </button>
               <button
                 onClick={() => {
                     const newMode = !listenMode;
@@ -645,20 +701,11 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                         voiceAIService.stopListening();
                     }
                 }}
-                className={`action-btn ${listenMode ? 'active' : ''}`}
+                className={`header-action-btn ${listenMode ? 'active' : ''}`}
                 title={listenMode ? "Listening Mode Active" : "Enable Listen Mode"}
                 style={{ color: listenMode ? 'var(--accent)' : 'var(--text-muted)' }}
               >
                 {listenMode ? <Mic size={18} /> : <MicOff size={18} />}
-              </button>
-
-              <button
-                onClick={() => setSpeakResponse(!speakResponse)}
-                className={`action-btn ${speakResponse ? 'active' : ''}`}
-                title={speakResponse ? "Mute Voice" : "Enable Voice Output"}
-                style={{ color: speakResponse ? 'var(--accent)' : 'var(--text-muted)' }}
-              >
-                <Volume2 size={18} />
               </button>
 
               <button onClick={onClose} className="close-btn" aria-label="Close Cal chat">
@@ -675,6 +722,10 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
           )}
 
           <div className="chat-messages" aria-live="polite">
+            <div className="cal-character-bg">
+              <CalCharacter emotion={isLoading ? 'processing' : calEmotion} isFocus={isFocusMode} />
+            </div>
+
             {messages.map((message) => (
               <motion.div
                 key={message.id}
@@ -956,6 +1007,21 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
                 <span>.</span><span>.</span><span>.</span>
               </div>
             )}
+
+            {/* Integrated Subtitles */}
+            <AnimatePresence>
+              {fullSpeechText && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="integrated-subtitles"
+                >
+                  <span className="spoken-text">{fullSpeechText.substring(0, currentSpeechIndex)}</span>
+                  <span className="unspoken-text">{fullSpeechText.substring(currentSpeechIndex)}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div ref={messagesEndRef} />
           </div>
