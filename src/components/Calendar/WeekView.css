@@ -4,14 +4,14 @@
   height: 100%;
   background: var(--bg-primary);
   color: var(--text-primary);
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
 .week-header {
   display: grid;
   grid-template-columns: 70px repeat(7, 1fr);
   border-bottom: 1px solid var(--glass-border);
-  background: rgba(15, 23, 42, 0.4);
+  background: var(--glass-bg);
   z-index: 10;
 }
 

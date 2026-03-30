@@ -4,9 +4,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(240, 244, 248, 0.6);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,11 +29,11 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  background: rgba(15, 23, 42, 0.95) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.08);
 }
 
 .event-modal.expanded {
@@ -50,8 +50,8 @@
   font-weight: 700;
   background: transparent;
   border: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  color: #000000;
   padding: 0.5rem 0;
   margin-bottom: 1.5rem !important;
   transition: all 0.3s ease;
@@ -281,11 +281,11 @@
 /* Footer */
 .modal-footer {
   padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(240, 244, 248, 0.4);
 }
 
 .flex-gap {

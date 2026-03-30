@@ -57,7 +57,8 @@ const ArmPrimitives = {
     pointLeft: { duration: 350, angle: -30 },
     pointRight: { duration: 350, angle: -30 },
     gestureSmallLeft: { duration: 250, angle: -15 },
-    gestureSmallRight: { duration: 250, angle: -15 }
+    gestureSmallRight: { duration: 250, angle: -15 },
+    shrug: { duration: 600, angle: -10, scale: 0.98 }
 };
 
 // ============================================================================
@@ -86,7 +87,8 @@ const GestureGroups = {
             { name: 'ponder', weight: 30, parts: { head: 'tiltLeft', eyes: 'lookUp', armRight: 'gestureSmallRight' } },
             { name: 'consider', weight: 25, parts: { head: 'tiltRight', eyes: 'squint' } },
             { name: 'hmm', weight: 20, parts: { mouth: 'neutral', head: 'nodDown' } },
-            { name: 'processing', weight: 25, parts: { eyes: 'blinkSlow', body: 'swayLeft' } }
+            { name: 'processing_slow', weight: 25, parts: { eyes: 'blinkSlow', head: 'tiltRight', body: 'swayLeft' } },
+            { name: 'thoughtful_tilt', weight: 15, parts: { head: 'tiltLeft', eyes: 'lookUp' } }
         ]
     },
     talking: {

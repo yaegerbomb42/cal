@@ -85,22 +85,22 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
                 className="btn"
                 style={{
                   cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #FF3B30, #FF2D55)',
-                  color: 'white',
+                  background: 'rgba(255, 59, 48, 0.08)',
+                  color: '#FF3B30',
                   borderRadius: '24px',
-                  padding: '8px 20px',
-                  border: 'none',
+                  padding: '8px 18px',
+                  border: '1px solid rgba(255, 59, 48, 0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   fontWeight: '700',
-                  fontSize: '0.9rem',
-                  boxShadow: '0 4px 12px rgba(255, 59, 48, 0.25)',
+                  fontSize: '0.85rem',
+                  boxShadow: '0 2px 10px rgba(255, 59, 48, 0.05)',
                   letterSpacing: '-0.2px'
                 }}
                 title="Open AI Chat Sidebar"
               >
-                <Sparkles size={16} />
-                <span style={{ fontSize: '0.85rem', fontWeight: '600', marginLeft: '6px', whiteSpace: 'nowrap' }}>Chat</span>
+                <Sparkles size={14} />
+                <span style={{ fontWeight: '600', marginLeft: '6px', whiteSpace: 'nowrap' }}>Chat</span>
               </MotionButton>
               <div style={{ width: '320px' }}>
                 <AIChatInput
@@ -125,15 +125,15 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
                 onClick={() => openEventModal({ start: new Date() })}
                 className="btn"
                 style={{
-                  background: '#FFFFFF',
-                  color: '#000000',
-                  border: '1px solid var(--glass-border)',
+                  background: 'rgba(0, 122, 255, 0.08)',
+                  color: '#007AFF',
+                  border: '1px solid rgba(0, 122, 255, 0.15)',
                   borderRadius: '24px',
-                  padding: '8px 20px',
+                  padding: '8px 18px',
                   display: 'flex', alignItems: 'center', gap: '8px',
                   fontWeight: '700',
-                  fontSize: '0.9rem',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                  fontSize: '0.85rem',
+                  boxShadow: '0 2px 10px rgba(0, 122, 255, 0.05)'
                 }}
                 title="Create New Event (Ctrl+N)"
               >

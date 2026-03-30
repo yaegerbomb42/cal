@@ -81,7 +81,7 @@ export const sanitizeDraft = (draft) => {
   const sanitized = { ...draft };
 
   if (sanitized.category && !EVENT_CATEGORIES.includes(sanitized.category)) {
-    delete sanitized.category;
+    sanitized.category = 'other';
   }
 
   if (sanitized.start && !isValidDateString(sanitized.start)) {
