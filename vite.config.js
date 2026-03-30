@@ -14,9 +14,14 @@ const getGitInfo = () => {
   }
 };
 
+import tailwindcss from '@tailwindcss/vite'
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
   envPrefix: ['VITE_', 'FIREBASE_', 'GCAL_', 'GEMINI_', 'GOOGLE_', 'ADSENSE_'],
   define: {
     __APP_VERSION__: JSON.stringify(getGitInfo())

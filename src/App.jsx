@@ -16,9 +16,8 @@ import AIChat from './components/AI/AIChat';
 const Settings = lazy(() => import('./components/Settings/Settings'));
 
 import Toast from './components/Toast/Toast';
-import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
-import SmartSchedulePortal from './components/Events/SmartSchedulePortal';
 import ThemeBackground from './components/Common/ThemeBackground';
+import GravityField from './components/Common/GravityField';
 import { geminiService } from './services/geminiService';
 import { localBrainService } from './services/localBrainService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -263,6 +262,7 @@ const MainLayout = () => {
         className="app-container"
       >
         <ThemeBackground />
+        <GravityField />
         <Header
           onOpenSettings={() => setIsSettingsOpen(true)}
           onOpenAIChat={() => setIsAIChatOpen(true)}
