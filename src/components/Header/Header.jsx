@@ -64,10 +64,10 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
               title="Return to Today"
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}
             >
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', overflow: 'hidden', position: 'relative', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
                 <CalCharacter emotion="happy" isTalking={false} size="mini" />
               </div>
-              <div className="logo-text" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, lineHeight: 1 }}>CalAI</h1>
                 <span style={{ fontSize: '8px', opacity: 0.5, letterSpacing: '0.5px', marginTop: '2px' }}>HOME / TODAY</span>
               </div>
@@ -82,17 +82,25 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onOpenAIChat}
-                className="btn glass-btn"
+                className="btn"
                 style={{
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                  padding: '0 10px',
-                  width: 'auto'
+                  background: 'linear-gradient(135deg, #FF3B30, #FF2D55)',
+                  color: 'white',
+                  borderRadius: '24px',
+                  padding: '8px 20px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontWeight: '700',
+                  fontSize: '0.9rem',
+                  boxShadow: '0 4px 12px rgba(255, 59, 48, 0.25)',
+                  letterSpacing: '-0.2px'
                 }}
                 title="Open AI Chat Sidebar"
               >
                 <Sparkles size={16} />
-                <span style={{ fontSize: '0.75rem', fontWeight: '700', marginLeft: '6px', whiteSpace: 'nowrap' }}>Open Chat</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: '600', marginLeft: '6px', whiteSpace: 'nowrap' }}>Chat</span>
               </MotionButton>
               <div style={{ width: '320px' }}>
                 <AIChatInput
@@ -111,27 +119,27 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
           {/* Right: View Selector & Settings */}
           <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             {/* New Event Button */}
-            <MotionButton
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => openEventModal({ start: new Date() })}
-              className="btn btn-primary glass-btn"
-              style={{
-                background: 'var(--accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0 12px',
-                height: '32px',
-                display: 'flex', alignItems: 'center', gap: '6px',
-                fontWeight: '600',
-                fontSize: '0.85rem'
-              }}
-              title="Create New Event (Ctrl+N)"
-            >
-              <Plus size={16} />
-              <span>New</span>
-            </MotionButton>
+              <MotionButton
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => openEventModal({ start: new Date() })}
+                className="btn"
+                style={{
+                  background: '#FFFFFF',
+                  color: '#000000',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '24px',
+                  padding: '8px 20px',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  fontWeight: '700',
+                  fontSize: '0.9rem',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                }}
+                title="Create New Event (Ctrl+N)"
+              >
+                <Plus size={16} />
+                <span>New</span>
+              </MotionButton>
 
 
             <div className="view-selector glass-panel" style={{ background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '10px' }}>

@@ -7,7 +7,7 @@ import { GoogleGenAI } from '@google/genai';
 import { localBrainService } from './localBrainService.js';
 import { parseNaturalLanguageTime } from '../utils/dateUtils.js';
 import { parseTimeRangeToDates } from '../utils/timeParser.js';
-import { sanitizeDraft } from '../utils/eventSchema.js';
+import { EVENT_CATEGORIES, sanitizeDraft } from '../utils/eventSchema.js';
 import { AIParseError, AIServiceError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 
@@ -535,6 +535,14 @@ RESPONSE RULES:
   normalizeParsedEvent(parsedEvent, originalText) {
     if (!parsedEvent || !parsedEvent.start) {
       return parsedEvent;
+    }
+
+    // Force valid category to prevent UI crashes downstream
+    if (parsedEvent.category) {
+      const cat = String(parsedEvent.category).toLowerCase().trim();
+      parsedEvent.category = EVENT_CATEGORIES.includes(cat) ? cat : 'personal';
+    } else {
+      parsedEvent.category = 'personal';
     }
 
     const startDate = new Date(parsedEvent.start);

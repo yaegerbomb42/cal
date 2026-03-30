@@ -48,6 +48,30 @@ function App() {
               </AuthProvider>
             )}
           />
+          <Route
+            path="/day"
+            element={(
+              <AuthProvider>
+                <EventsProvider>
+                  <CalendarProvider>
+                    <MainLayout />
+                  </CalendarProvider>
+                </EventsProvider>
+              </AuthProvider>
+            )}
+          />
+          <Route
+            path="/week"
+            element={(
+              <AuthProvider>
+                <EventsProvider>
+                  <CalendarProvider>
+                    <MainLayout />
+                  </CalendarProvider>
+                </EventsProvider>
+              </AuthProvider>
+            )}
+          />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/contact" element={<Contact />} />
@@ -71,7 +95,6 @@ const MainLayout = () => {
   const [sidebarPercent, setSidebarPercent] = useState(20);
   const isResizingRef = useRef(false);
 
-  // ... (keeping existing resize logic refs)
   const sidebarRef = useRef(null);
   const calendarRef = useRef(null);
   const containerRef = useRef(null);
@@ -221,8 +244,8 @@ const MainLayout = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[#F0F4F8]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF3B30]"></div>
       </div>
     );
   }

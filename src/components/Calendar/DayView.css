@@ -140,7 +140,7 @@
 
 .day-time-column {
   display: grid;
-  grid-template-rows: repeat(24, var(--hour-height));
+  grid-template-rows: repeat(24, minmax(0, 1fr));
   border-right: 1px solid var(--border-color);
   background: var(--bg-secondary);
   height: 100%;
@@ -159,7 +159,7 @@
 .day-grid-body {
   position: relative;
   display: grid;
-  grid-template-rows: repeat(24, var(--hour-height));
+  grid-template-rows: repeat(24, minmax(0, 1fr));
   height: 100%;
 }
 

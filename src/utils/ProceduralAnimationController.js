@@ -10,12 +10,12 @@
 
 const EyePrimitives = {
     blink: { duration: 150, frames: ['closed', 'open'] },
-    blinkSlow: { duration: 300, frames: ['closed', 'open'] },
+    blinkSlow: { duration: 450, frames: ['closed', 'open'] },
     lookLeft: { duration: 400, offset: -5 },
     lookRight: { duration: 400, offset: 5 },
-    lookUp: { duration: 400, offset: 0, variant: 'wide' },
-    squint: { duration: 600, variant: 'squint' },
-    widen: { duration: 300, variant: 'wide' }
+    lookUp: { duration: 800, offset: 0, variant: 'wide' },
+    squint: { duration: 1200, variant: 'squint' },
+    widen: { duration: 600, variant: 'wide' }
 };
 
 const MouthPrimitives = {
@@ -68,14 +68,16 @@ const GestureGroups = {
     idle: {
         weight: 40,
         gestures: [
-            { name: 'subtle_look', weight: 25, parts: { eyes: 'lookLeft', head: 'tiltLeft' } },
-            { name: 'subtle_look_right', weight: 25, parts: { eyes: 'lookRight', head: 'tiltRight' } },
-            { name: 'gentle_sway', weight: 20, parts: { body: 'swayLeft' } },
-            { name: 'gentle_sway_right', weight: 20, parts: { body: 'swayRight' } },
+            { name: 'subtle_look', weight: 20, parts: { eyes: 'lookLeft', head: 'tiltLeft' } },
+            { name: 'subtle_look_right', weight: 20, parts: { eyes: 'lookRight', head: 'tiltRight' } },
+            { name: 'gentle_sway', weight: 15, parts: { body: 'swayLeft' } },
+            { name: 'gentle_sway_right', weight: 15, parts: { body: 'swayRight' } },
             { name: 'blink_pause', weight: 30, parts: { eyes: 'blink' } },
-            { name: 'curious_tilt', weight: 15, parts: { head: 'tiltRight', eyes: 'widen' } },
-            { name: 'small_nod', weight: 10, parts: { head: 'nodDown' } },
-            { name: 'return_center', weight: 20, parts: { head: 'center', body: 'center' } }
+            { name: 'curious_tilt', weight: 20, parts: { head: 'tiltRight', eyes: 'widen' } },
+            { name: 'small_nod', weight: 15, parts: { head: 'nodDown' } },
+            { name: 'happy_wiggle', weight: 10, parts: { body: 'bounce', head: 'tiltLeft' } },
+            { name: 'slow_blink_dream', weight: 10, parts: { eyes: 'blinkSlow' } },
+            { name: 'return_center', weight: 25, parts: { head: 'center', body: 'center' } }
         ]
     },
     thinking: {

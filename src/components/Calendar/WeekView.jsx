@@ -50,7 +50,7 @@ const WeekView = () => {
 
   const weekGridRef = useRef(null);
   const [draggedEvent, setDraggedEvent] = useState(null);
-  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 32, fitToViewport: false, minPixels: 60 });
+  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 32, fitToViewport: true, minPixels: 60 });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
 

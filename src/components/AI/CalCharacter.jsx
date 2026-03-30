@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ProceduralAnimationController, ContinuousParticleSystem } from '../../utils/ProceduralAnimationController';
+import { ProceduralAnimationController } from '../../utils/ProceduralAnimationController';
 import './CalCharacter.css';
 
 /**
@@ -33,13 +33,8 @@ const CalCharacter = ({
         bodyScale: 1
     });
 
-    // Particle positions
-    const [particles, setParticles] = useState([]);
-
     // Controllers
     const animController = useRef(null);
-    const particleSystem = useRef(null);
-    const particleAnimFrame = useRef(null);
 
     const isMini = size === 'mini';
 
@@ -52,7 +47,6 @@ const CalCharacter = ({
     // Initialize controllers
     useEffect(() => {
         animController.current = new ProceduralAnimationController();
-        particleSystem.current = new ContinuousParticleSystem(8);
 
         // Start procedural animation
         animController.current.start((state) => {
@@ -64,17 +58,9 @@ const CalCharacter = ({
         };
     }, []);
 
-    // Continuous particle update
+    // Particle system disabled for calm aesthetic
     useEffect(() => {
-        const updateParticles = () => {
-            if (particleSystem.current) {
-                setParticles(particleSystem.current.getPositions(60, 80, emotion === 'processing', isFocus));
-            }
-            particleAnimFrame.current = requestAnimationFrame(updateParticles);
-        };
-        updateParticles();
-
-        return () => cancelAnimationFrame(particleAnimFrame.current);
+        // No-op for continuous particle update
     }, [emotion, isFocus]);
 
     // Handle talking state changes
@@ -134,7 +120,7 @@ const CalCharacter = ({
                 initial={{ d }}
                 animate={{ d }}
                 fill="none"
-                stroke="#00e5ff"
+                stroke="#FF3B30"
                 strokeWidth="3"
                 strokeLinecap="round"
                 filter="url(#eyeGlow)"
@@ -153,13 +139,13 @@ const CalCharacter = ({
         switch (state) {
             case 'talk_open':
                 d = `M 42,60 Q 50,68 58,60 Q 50,52 42,60`;
-                fill = "#00e5ff";
+                fill = "#FF3B30";
                 strokeWidth = 0;
                 opacity = 0.9;
                 break;
             case 'talk_mid':
                 d = `M 44,60 Q 50,65 56,60 Q 50,55 44,60`;
-                fill = "#00e5ff";
+                fill = "#FF3B30";
                 strokeWidth = 0;
                 opacity = 0.9;
                 break;
@@ -190,7 +176,7 @@ const CalCharacter = ({
             <motion.path
                 initial={{ d, fill, strokeWidth, opacity }}
                 animate={{ d, fill, strokeWidth, opacity }}
-                stroke="#00e5ff"
+                stroke="#FF3B30"
                 strokeLinecap="round"
                 filter="url(#eyeGlow)"
                 transition={{ duration: 0.15 }}
@@ -205,7 +191,7 @@ const CalCharacter = ({
 
     return (
         <div className={`cal-character-procedural ${isMini ? 'cal-mini' : ''} ${emotion === 'processing' ? 'processing' : ''} ${isFocus ? 'focus-sentry' : ''} ${emotion === 'thinking' || emotion === 'scanning' ? 'data-pulse' : ''}`}>
-            {!isMini && <div className="hud-scan-line" />}
+            {/* Scan line and extra things removed for clean aesthetic */}
             <svg
                 viewBox={dimensions.viewBox}
                 xmlns="http://www.w3.org/2000/svg"
@@ -231,31 +217,18 @@ const CalCharacter = ({
 
                     {/* Body gradient */}
                     <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#a855f7" />
-                        <stop offset="50%" stopColor="#8b5cf6" />
-                        <stop offset="100%" stopColor="#06b6d4" />
+                        <stop offset="0%" stopColor="#FF3B30" />
+                        <stop offset="100%" stopColor="#FF2D55" />
                     </linearGradient>
 
                     {/* Head gradient */}
                     <linearGradient id="headGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#4338ca" />
-                        <stop offset="100%" stopColor="#2e1065" />
+                        <stop offset="0%" stopColor="#FFFFFF" />
+                        <stop offset="100%" stopColor="#E6EBF5" />
                     </linearGradient>
                 </defs>
 
-                {/* Continuous particles */}
-                {particles.map(p => (
-                    <motion.ellipse
-                        key={p.id}
-                        cx={p.x}
-                        cy={p.y}
-                        rx={p.size * (isMini ? 0.3 : 0.6)}
-                        ry={p.size * (isMini ? 0.5 : 1)}
-                        fill={p.color}
-                        opacity={p.opacity}
-                        style={{ rotate: p.rotation }}
-                    />
-                ))}
+                {/* Continuous particles removed for clean aesthetic */}
 
                 {/* Body */}
                 <motion.ellipse
@@ -315,7 +288,7 @@ const CalCharacter = ({
                         height={50}
                         rx={16}
                         fill="url(#headGrad)"
-                        stroke="#6366f1"
+                        stroke="#000000"
                         strokeWidth="2"
                         filter={!isMini ? "url(#bodyGlow)" : undefined}
                     />

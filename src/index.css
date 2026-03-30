@@ -3,47 +3,49 @@
   line-height: 1.6;
   font-weight: 400;
 
-  /* Colors - Pastel Calm Palette */
-  --bg-primary: #F8FAFC;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #F1F5F9;
+  /* Colors - Apple App Store Pastel UI */
+  --bg-primary: #F0F4F8; /* Soft pastel instead of white */
+  --bg-secondary: #E6EBF5; /* Deeper pastel for cards/overlays */
+  --bg-tertiary: #DCE3EE;
 
-  /* Artistic Accents - Soft Pastels */
-  --accent: #818CF8; /* Indigo 400 */
-  --accent-rgb: 129, 140, 248;
-  --accent-hover: #6366F1;
-  --accent-glow: rgba(129, 140, 248, 0.3);
+  /* Artistic Accents - Apple Red */
+  --accent: #FF3B30; /* App Store Red */
+  --accent-rgb: 255, 59, 48;
+  --accent-hover: #FF2D55;
+  --accent-glow: rgba(255, 59, 48, 0.3);
 
-  --text-primary: #1E293B; /* Slate 800 */
-  --text-secondary: #64748B; /* Slate 500 */
-  --text-muted: #94A3B8;
-  --text-disabled: #CBD5E1;
+  /* Text - Strictly Black, Red, or White */
+  --text-primary: #000000;
+  --text-secondary: #000000;
+  --text-muted: rgba(0, 0, 0, 0.6);
+  --text-disabled: rgba(0, 0, 0, 0.3);
 
-  /* Refined Glassmorphism - Light & Airy */
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-strong: rgba(255, 255, 255, 0.95);
+  /* Refined Glassmorphism - Light & Sleek */
+  --glass-bg: rgba(230, 235, 245, 0.75);
+  --glass-strong: rgba(230, 235, 245, 0.95);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-divider: rgba(0, 0, 0, 0.04);
-  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 
   --backdrop-blur: blur(20px);
   --border: rgba(0, 0, 0, 0.08);
-  --shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 
-  --success: #34D399; /* Emerald 400 */
-  --warning: #FBCA59; /* Amber 400 */
-  --error: #FB7185; /* Rose 400 */
+  /* Semantic Colors using Red, Black, White constraints */
+  --success: #000000; 
+  --warning: #FF3B30;
+  --error: #FF3B30;
 
-  /* Vivid Pastels for Event Types */
-  --accent-work: #818CF8;
-  --accent-personal: #F472B6;
-  --accent-fun: #A78BFA;
-  --accent-hobby: #38BDF8;
-  --accent-task: #34D399;
-  --accent-todo: #FBBF24;
-  --accent-event: #60A5FA;
-  --accent-appointment: #FB7185;
-  --accent-holiday: #FDBA74;
+  /* iOS System Colors Modded for Pastel/Red focus */
+  --accent-work: #000000;
+  --accent-personal: #FF3B30;
+  --accent-fun: #FFFFFF;
+  --accent-hobby: #000000;
+  --accent-task: #FF3B30;
+  --accent-todo: #000000;
+  --accent-event: #FF3B30;
+  --accent-appointment: #000000;
+  --accent-holiday: #FF3B30;
 }
 
 /* Base Body Style */
@@ -90,9 +92,9 @@ html {
 }
 
 .glass-card:hover {
-  background: rgba(20, 28, 52, 0.78);
+  background: var(--glass-strong);
   transform: translateY(-2px);
-  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.45);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
 /* Button styles */
@@ -116,7 +118,7 @@ html {
 }
 
 .btn:hover {
-  background: rgba(26, 35, 64, 0.6);
+  background: rgba(0, 0, 0, 0.05);
   transform: translateY(-1px);
 }
 
@@ -161,7 +163,7 @@ html {
 .input:focus {
   outline: none;
   border-color: var(--accent);
-  background: rgba(28, 28, 30, 0.95);
+  background: #FFFFFF;
 }
 
 .input::placeholder {
@@ -405,11 +407,6 @@ h6 {
 
 .bg-slate-50 {
   background-color: #f8fafc;
-}
-
-.dark .bg-slate-900,
-[data-theme="dark"] .bg-slate-900 {
-  background-color: #0f172a;
 }
 
 /* End of base theme */

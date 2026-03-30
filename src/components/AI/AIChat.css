@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .chat-title {
@@ -311,7 +311,7 @@
 
 .ai-chat-sidebar .chat-mic-btn:hover,
 .ai-chat-sidebar .action-btn:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(0, 0, 0, 0.04) !important;
   border-color: var(--accent) !important;
   color: var(--accent) !important;
 }
@@ -464,7 +464,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     color: var(--text-secondary);

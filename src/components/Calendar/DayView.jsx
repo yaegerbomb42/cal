@@ -28,7 +28,7 @@ const DayView = () => {
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
   const dayHours = getDayHours();
-  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: false, minPixels: 64 });
+  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true, minPixels: 64 });
   const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
 
   const [currentTick, setCurrentTick] = useState(Date.now());

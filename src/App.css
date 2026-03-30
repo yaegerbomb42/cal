@@ -5,8 +5,7 @@ body {
   overflow: hidden;
   margin: 0;
   padding: 0;
-  background: var(--bg-color);
-  /* Apply theme background */
+  background: var(--bg-primary);
   color: var(--text-color);
   transition: background 0.3s ease;
 }
@@ -124,18 +123,22 @@ body {
   transition: all 0.2s;
 }
 
+/* HUD rings removed for clean aesthetic */
+.cal-character-procedural::before,
+.cal-character-procedural::after {
+    display: none;
+}
+
 /* Hover/Active states */
 .resize-handle:hover::after,
 .resize-handle:active::after {
   background: var(--accent);
-  /* Highlight on interact */
   width: 2px;
-  box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .resize-handle:hover,
 .resize-handle:active {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .resize-grabber {
