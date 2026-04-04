@@ -117,11 +117,14 @@ const extractRecurrence = (input) => {
   return null;
 };
 
+const DURATION_REGEX = /\b(?:for|during|lasting)\s+(\d+(?:\.\d+)?)\s*(hour|hr|minute|min)s?\b/i;
+
 const inferTitle = (text) => {
   // 1. Strip time/date references (existing logic)
   let cleaned = text
     .replace(TIME_RANGE_REGEX, '')
     .replace(TIME_REGEX, '')
+    .replace(DURATION_REGEX, '')
     .replace(/\b(on|at|from|between|until|tomorrow|today|next|this|last)\b[\s\S]*/i, '') // Aggressive date stripping
     .replace(new RegExp(DATE_PATTERNS.map(p => p.regex.source).join('|'), 'gi'), '');
 
@@ -136,6 +139,10 @@ const inferTitle = (text) => {
     .replace(/\b(recurring|repeating|event|called|named|titled)\b/i, ''); // Remove "called" e.g. "called PAWS"
 
   cleaned = stripNoise(cleaned);
+
+  // Special case: "Max therapy" -> "Max" was being stripped if we're not careful.
+  // The aggressive date stripping above handles anything AFTER "at/on/tomorrow".
+  // Let's refine it to only strip if it's actually a date indicator and not part of a name.
 
   if (cleaned.length >= 2) {
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
@@ -155,6 +162,15 @@ const extractLocation = (input) => {
   return candidate;
 };
 
+const extractDuration = (input) => {
+  const match = input.match(DURATION_REGEX);
+  if (!match) return null;
+  const value = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  if (unit.startsWith('hour') || unit.startsWith('hr')) return value * 60;
+  return value;
+};
+
 const buildRuleBasedDraft = (input, now = new Date()) => {
   // Use graphParser for enhanced extraction
   const graphFields = extractFields(input);
@@ -162,6 +178,7 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
   const baseDate = extractExplicitDate(input, now);
   const range = extractTimeRange(input);
   const timeToken = extractTime(input);
+  const durationMinutes = extractDuration(input);
   const location = extractLocation(input);
   const recurrence = extractRecurrence(input);
 
@@ -173,13 +190,15 @@ const buildRuleBasedDraft = (input, now = new Date()) => {
     end = setMinutes(setHours(baseDate, range.end.hours), range.end.minutes);
   } else if (timeToken) {
     start = setMinutes(setHours(baseDate, timeToken.hours), timeToken.minutes);
-    end = new Date(start.getTime() + DEFAULT_DURATION_MINUTES * 60 * 1000);
+    const duration = durationMinutes || DEFAULT_DURATION_MINUTES;
+    end = new Date(start.getTime() + duration * 60 * 1000);
   } else if (graphFields.time) {
     // Fallback to graphParser time if regex-based extractTime missed it
     const graphTime = parse(graphFields.time, 'h:mm a', now);
     if (isValid(graphTime)) {
       start = setMinutes(setHours(baseDate, graphTime.getHours()), graphTime.getMinutes());
-      end = new Date(start.getTime() + DEFAULT_DURATION_MINUTES * 60 * 1000);
+      const duration = durationMinutes || DEFAULT_DURATION_MINUTES;
+      end = new Date(start.getTime() + duration * 60 * 1000);
     }
   }
 

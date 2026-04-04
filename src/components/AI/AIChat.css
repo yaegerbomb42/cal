@@ -10,20 +10,37 @@
 
 .ai-chat-sidebar {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  width: 400px;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--backdrop-blur);
-  backdrop-filter: var(--backdrop-blur);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  /* top, right, bottom, width removed to allow motion.div to control them via chatConfig */
+  background: rgba(15, 23, 42, 0.7);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   pointer-events: auto;
+  user-select: none;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.2) 50%);
+  z-index: 1001;
+}
+
+.chat-header {
+  cursor: grab;
+}
+
+.chat-header:active {
+  cursor: grabbing;
 }
 
 .chat-header {

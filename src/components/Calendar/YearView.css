@@ -61,9 +61,11 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 1rem;
-    padding: 0.5rem;
+    gap: 1.5rem;
+    padding: 1rem;
     height: 100%;
+    width: 100%;
+    max-width: 1200px;
 }
 
 .year-mini-month {
@@ -100,10 +102,13 @@
 }
 
 .year-day-cell {
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 1px 2px 0 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
 }
 
 .year-day-cell.empty {
@@ -112,9 +117,11 @@
 }
 
 .year-day-cell:not(.empty):hover {
-  transform: scale(1.25);
+  background: rgba(255, 255, 255, 0.15);
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1px;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
   z-index: 10;
-  border: 1px solid var(--accent);
 }
 
 .year-day-num {
@@ -248,9 +255,10 @@
 .contrib-cell {
   width: 14px;
   height: 14px;
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .contrib-cell.empty {
@@ -259,9 +267,11 @@
 }
 
 .contrib-cell:not(.empty):hover {
-  transform: scale(1.4);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 12px var(--accent);
   z-index: 10;
-  outline: 1px solid var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
 }
 
 /* Intensity levels */

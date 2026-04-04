@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, Check, LogOut, User, Sparkles, MessageSquare, Clock, Cpu, Zap, Globe } from 'lucide-react';
+import { X, Key, Save, Eye, EyeOff, ExternalLink, Download, Calendar as CalendarIcon, RefreshCw, CheckCircle, Check, LogOut, User, Sparkles, MessageSquare, Clock, Cpu, Zap, Globe, Bell } from 'lucide-react';
 import { CloudDownloadOutlined, EventNoteOutlined } from '@mui/icons-material';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
@@ -110,6 +110,71 @@ const Settings = ({ isOpen, onClose }) => {
     conflictResolution: 'priority' // 'priority' | 'chronological' | 'ask'
   });
 
+  // Notification State
+  const [notificationPrefs, setNotificationPrefs] = useState(() => {
+    const stored = localStorage.getItem('calai-notification-prefs');
+    return stored ? JSON.parse(stored) : {
+      emailEnabled: false,
+      smsEnabled: false,
+      ntfyEnabled: true,
+      imessageEnabled: false,
+      googlevoiceEnabled: false,
+      userEmail: '',
+      userPhone: '',
+      userIMessage: '',
+      userVoiceNumber: '',
+      userCarrier: 'verizon',
+      ntfyTopic: localStorage.getItem('calai-ntfy-room') || 'cal'
+    };
+  });
+  const [isTesting, setIsTesting] = useState(null);
+  const [voiceStatus, setVoiceStatus] = useState('offline'); // 'ready', 'offline', 'initializing'
+
+  // Poll for Google Voice Status
+  useEffect(() => {
+    let interval;
+    const checkStatus = async () => {
+      import('../../services/notificationService').then(async ({ notificationService }) => {
+        const result = await notificationService.checkGoogleVoiceStatus();
+        setVoiceStatus(result.status);
+      });
+    };
+
+    if (notificationPrefs.googlevoiceEnabled) {
+      checkStatus();
+      interval = setInterval(checkStatus, 5000);
+    }
+    
+    return () => clearInterval(interval);
+  }, [notificationPrefs.googlevoiceEnabled]);
+
+  const handleInitVoice = async () => {
+    setVoiceStatus('initializing');
+    try {
+      const { notificationService } = await import('../../services/notificationService');
+      const result = await notificationService.initGoogleVoiceSession();
+      if (result.status === 'initializing') {
+        toastService.info('🚀 Login window launched! Sign into Google Voice, then close the browser window when done.');
+      } else if (result.status === 'error' && result.message?.includes('fetch')) {
+        toastService.error('⚠️ Cal Notifier service is not running. Start it with: python cal_notifier.py (in the cal/backend folder)');
+        setVoiceStatus('offline');
+      } else {
+        toastService.error('Failed to launch setup window. Check that Cal Notifier is running on port 3004.');
+        setVoiceStatus('offline');
+      }
+    } catch {
+      toastService.error('⚠️ Cannot reach Cal Notifier on port 3004. Start the service first: cd cal/backend && python cal_notifier.py');
+      setVoiceStatus('offline');
+    }
+  };
+
+
+  const [emailConfig, setEmailConfig] = useState({
+    serviceId: localStorage.getItem('calai-email-service-id') || '',
+    templateId: localStorage.getItem('calai-email-template-id') || '',
+    publicKey: localStorage.getItem('calai-email-public-key') || ''
+  });
+
   // Load priority preferences on mount
   useEffect(() => {
     const loadPriorityPrefs = async () => {
@@ -145,6 +210,82 @@ const Settings = ({ isOpen, onClose }) => {
     savePriorityPrefs(newPrefs);
   };
 
+  const updateNotificationPref = (key, value) => {
+    const newPrefs = { ...notificationPrefs, [key]: value };
+    setNotificationPrefs(newPrefs);
+    localStorage.setItem('calai-notification-prefs', JSON.stringify(newPrefs));
+    if (key === 'ntfyTopic') {
+      localStorage.setItem('calai-ntfy-room', value);
+    }
+  };
+
+  const updateEmailConfig = (key, value) => {
+    const newConfig = { ...emailConfig, [key]: value };
+    setEmailConfig(newConfig);
+    localStorage.setItem(`calai-email-${key.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}`, value);
+  };
+
+  const handleTestNotification = async (type) => {
+    setIsTesting(type);
+    const { notificationService } = await import('../../services/notificationService');
+    const title = '🔔 CalAI Test';
+    const message = `This is a test ${type} notification from your CalAI assistant.`;
+
+    try {
+      let success = false;
+      const config = {
+        serviceId: localStorage.getItem('calai-email-service-id'),
+        templateId: localStorage.getItem('calai-email-template-id'),
+        publicKey: localStorage.getItem('calai-email-public-key'),
+        bridgeUrl: localStorage.getItem('calai-notifier-url') || 'http://localhost:3008'
+      };
+
+      if (type === 'ntfy') {
+        success = await notificationService.sendPhoneNotification(title, message, 'high');
+      } else if (type === 'email') {
+        success = await notificationService.sendEmailNotification(notificationPrefs.userEmail, title, message, config);
+      } else if (type === 'sms') {
+        success = await notificationService.sendSMSNotification(notificationPrefs.userPhone, notificationPrefs.userCarrier, message, config);
+      } else if (type === 'imessage') {
+        import('../../services/notificationService').then(async ({ notificationService }) => {
+          const result = await notificationService.sendOracleIMessage(
+            notificationPrefs.userIMessage,
+            `CalAI Test Alert: This is a test from your Oracle bridge!`
+          );
+          if (result.status === 'success') {
+            toastService.success(`iMessage Sent! (${result.platform})`);
+          } else {
+            toastService.error(`Failed: ${result.message || 'Unknown error'}`);
+          }
+        });
+      } else if (type === 'voice') {
+        import('../../services/notificationService').then(async ({ notificationService }) => {
+          const result = await notificationService.sendOracleVoiceMessage(
+            notificationPrefs.userVoiceNumber,
+            `CalAI Test Alert: This is a test from your Google Voice background agent!`
+          );
+          if (result.status === 'success') {
+            toastService.success('Google Voice SMS Sent!');
+          } else {
+            toastService.error(`Failed: ${result.message || 'Unknown error'}`);
+          }
+        });
+      }
+
+      if (success) {
+        // Simple visual feedback instead of alert if possible
+        alert(`${type.toUpperCase()} test sent successfully!`);
+      } else {
+        alert(`Failed to send ${type} test. Check your console and Oracle server.`);
+      }
+    } catch (error) {
+      console.error(`Test notification error:`, error);
+      alert(`Error sending ${type} test: ${error.message}`);
+    } finally {
+      setIsTesting(null);
+    }
+  };
+
   const { events, addEvent, deleteEventsByFilter } = useEvents();
 
   const tabs = [
@@ -152,6 +293,7 @@ const Settings = ({ isOpen, onClose }) => {
     { id: 'ai', label: 'Intelligence', icon: Cpu, color: '#8b5cf6' },
     { id: 'preferences', label: 'Config', icon: Zap, color: '#f59e0b' },
     { id: 'packs', label: 'Packs', icon: CalendarIcon, color: '#10b981' },
+    { id: 'notifications', label: 'Alerts', icon: Bell, color: '#f59e0b' },
     { id: 'sync', label: 'Sync', icon: RefreshCw, color: '#06b6d4' },
     { id: 'data', label: 'Data', icon: Download, color: '#f43f5e' },
     { id: 'about', label: 'About', icon: Sparkles, color: '#ec4899' }
@@ -544,6 +686,172 @@ const Settings = ({ isOpen, onClose }) => {
                         <Key size={12} style={{ color: 'var(--text-muted)' }} />
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>••••••••••••••••{savedApiKeyRef.current?.slice(-4) || 'TEST'}</span>
                       </div>
+                      {/* iMessage / Oracle Bridge Section */}
+                      <div className="notification-card glass">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="icon-wrapper blue">
+                              <MessageSquare size={18} />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-sm">iMessage (Cal Notifier)</h4>
+                              <p className="text-xs text-muted">Native messages via your local Cal Notifier service</p>
+                            </div>
+                          </div>
+                          <label className="ios-toggle">
+                            <input
+                              type="checkbox"
+                              checked={notificationPrefs.imessageEnabled || false}
+                              onChange={(e) => setNotificationPrefs(prev => ({ ...prev, imessageEnabled: e.target.checked }))}
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </div>
+                        {notificationPrefs.imessageEnabled && (
+                          <div className="space-y-3 mt-4">
+                            <div className="info-box neutral mb-3" style={{ fontSize: '0.8rem', padding: '12px' }}>
+                              <Zap size={14} style={{ marginRight: '8px' }} />
+                              <span>Requires the <strong>Cal Notifier</strong> service running on port 3004.</span>
+                            </div>
+                            <div className="setting-input-group">
+                              <label className="text-xs font-semibold text-muted block">Recipient iMessage (Phone or Email)</label>
+                              <input
+                                type="text"
+                                className="settings-input w-full"
+                                placeholder="+17087124405 or email@icloud.com"
+                                value={notificationPrefs.userIMessage || ''}
+                                onChange={(e) => setNotificationPrefs(prev => ({ ...prev, userIMessage: e.target.value }))}
+                              />
+                            </div>
+                            <div className="setting-input-group">
+                              <label className="text-xs font-semibold text-muted block">Cal Notifier URL</label>
+                              <input
+                                type="text"
+                                className="settings-input w-full"
+                                placeholder="http://localhost:3004"
+                                value={localStorage.getItem('calai-notifier-url') || 'http://localhost:3004'}
+                                onChange={(e) => localStorage.setItem('calai-notifier-url', e.target.value)}
+                              />
+                            </div>
+                            <button 
+                              className="btn btn-secondary w-full flex items-center justify-center gap-2 mt-2"
+                              onClick={() => handleTestNotification('imessage')}
+                              disabled={isTesting === 'imessage'}
+                            >
+                              {isTesting === 'imessage' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                              Test iMessage
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Google Voice Section */}
+                      <div className="notification-card glass mt-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="icon-wrapper green">
+                              <Globe size={18} />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-sm">Google Voice (Background Agent)</h4>
+                                <div className={`status-tag ${voiceStatus}`}>
+                                  {voiceStatus === 'ready' ? 'Ready' : voiceStatus === 'initializing' ? 'Setting up...' : 'Offline'}
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted">Autonomous SMS via your Google Voice account</p>
+                            </div>
+                          </div>
+                          <label className="ios-toggle">
+                            <input
+                              type="checkbox"
+                              checked={notificationPrefs.googlevoiceEnabled || false}
+                              onChange={(e) => setNotificationPrefs(prev => ({ ...prev, googlevoiceEnabled: e.target.checked }))}
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </div>
+                        {notificationPrefs.googlevoiceEnabled && (
+                          <div className="space-y-4 mt-4">
+                            {voiceStatus !== 'ready' ? (
+                              <div className="setup-wizard-box">
+                                <div className="flex items-start gap-3 mb-3">
+                                  <div className="step-number" style={{ opacity: voiceStatus === 'offline' ? 1 : 0.4 }}>1</div>
+                                  <div>
+                                    <h5 className="text-sm font-semibold">Start Cal Notifier Service</h5>
+                                    <p className="text-xs text-muted" style={{ marginTop: '4px' }}>
+                                      Open a terminal and run:
+                                    </p>
+                                    <code className="text-xs" style={{
+                                      display: 'block', marginTop: '6px', padding: '8px 12px',
+                                      background: 'rgba(0,0,0,0.3)', borderRadius: '6px',
+                                      color: 'var(--accent)', fontFamily: 'monospace', fontSize: '0.75rem',
+                                      border: '1px solid rgba(99,102,241,0.2)'
+                                    }}>
+                                      cd cal/backend && pip install -r requirements.txt && python cal_notifier.py
+                                    </code>
+                                  </div>
+                                </div>
+                                <div className="flex items-start gap-3 mb-3" style={{ marginTop: '16px' }}>
+                                  <div className="step-number" style={{ opacity: voiceStatus === 'offline' ? 0.4 : 1 }}>2</div>
+                                  <div>
+                                    <h5 className="text-sm font-semibold">Sign into Google Voice</h5>
+                                    <p className="text-xs text-muted" style={{ marginTop: '4px' }}>
+                                      A Chrome window will open. Log into your Google account, then close the window when done. Session saves automatically.
+                                    </p>
+                                  </div>
+                                </div>
+                                <button 
+                                  className="premium-btn w-full flex items-center justify-center gap-2"
+                                  onClick={handleInitVoice}
+                                  disabled={voiceStatus === 'initializing'}
+                                >
+                                  {voiceStatus === 'initializing' ? (
+                                    <>
+                                      <RefreshCw size={16} className="animate-spin" />
+                                      Waiting for Google login...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Zap size={16} />
+                                      Launch Google Voice Login
+                                    </>
+                                  )}
+                                </button>
+                                {voiceStatus === 'initializing' && (
+                                  <p className="text-xs text-muted" style={{ marginTop: '8px', textAlign: 'center' }}>
+                                    Auto-detecting session... this checks every 5 seconds.
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="info-box success" style={{ fontSize: '0.8rem', padding: '12px' }}>
+                                <CheckCircle size={14} style={{ marginRight: '8px' }} />
+                                <span>Google Voice is <strong>connected</strong> and ready to send SMS notifications.</span>
+                              </div>
+                            )}
+
+                            <div className="setting-input-group">
+                              <label className="text-xs font-semibold text-muted block">Target Phone Number</label>
+                              <input
+                                type="text"
+                                className="settings-input w-full"
+                                placeholder="+17087124405"
+                                value={notificationPrefs.userVoiceNumber || ''}
+                                onChange={(e) => setNotificationPrefs(prev => ({ ...prev, userVoiceNumber: e.target.value }))}
+                              />
+                            </div>
+                            <button 
+                              className="btn btn-secondary w-full flex items-center justify-center gap-2 mt-2"
+                              onClick={() => handleTestNotification('voice')}
+                              disabled={isTesting === 'voice' || voiceStatus !== 'ready'}
+                            >
+                              {isTesting === 'voice' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                              Test Google Voice SMS
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -797,6 +1105,183 @@ const Settings = ({ isOpen, onClose }) => {
                             <EventNoteOutlined /> ICS
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'notifications' && (
+                    <div className="content-section">
+                      <div className="glass-card padding-lg">
+                        <h3>Notification Channels</h3>
+                        <p className="text-muted">Configure how CalAI reaches you for reminders and alerts.</p>
+                      </div>
+
+                      {/* ntfy Section */}
+                      <div className="glass-card padding-lg mt-3">
+                        <div className="row-between mb-3">
+                          <div className="flex-row gap-md">
+                            <Bell size={20} color="#f59e0b" />
+                            <div>
+                              <h4>Ntfy Push Alerts</h4>
+                              <p className="text-xs text-muted">Free push notifications via ntfy.sh app</p>
+                            </div>
+                          </div>
+                          <div className="toggle-switch">
+                            <input
+                              type="checkbox"
+                              id="ntfy-toggle"
+                              checked={notificationPrefs.ntfyEnabled}
+                              onChange={(e) => updateNotificationPref('ntfyEnabled', e.target.checked)}
+                            />
+                            <label htmlFor="ntfy-toggle"></label>
+                          </div>
+                        </div>
+                        {notificationPrefs.ntfyEnabled && (
+                          <div className="setting-input-group mt-3">
+                            <label className="text-xs font-semibold uppercase tracking-wider text-muted mb-1 block">Ntfy Topic (Slug)</label>
+                            <div className="flex-row gap-sm">
+                              <input
+                                type="text"
+                                className="glass-input flex-1"
+                                placeholder="e.g. my-private-cal-room"
+                                value={notificationPrefs.ntfyTopic}
+                                onChange={(e) => updateNotificationPref('ntfyTopic', e.target.value)}
+                              />
+                              <button className="btn btn-sm btn-outline" onClick={() => handleTestNotification('ntfy')}>Test</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Email Section */}
+                      <div className="glass-card padding-lg mt-3">
+                        <div className="row-between mb-3">
+                          <div className="flex-row gap-md">
+                            <Globe size={20} color="#6366f1" />
+                            <div>
+                              <h4>Email Notifications</h4>
+                              <p className="text-xs text-muted">Powered by EmailJS (Client-side)</p>
+                            </div>
+                          </div>
+                          <div className="toggle-switch">
+                            <input
+                              type="checkbox"
+                              id="email-toggle"
+                              checked={notificationPrefs.emailEnabled}
+                              onChange={(e) => updateNotificationPref('emailEnabled', e.target.checked)}
+                            />
+                            <label htmlFor="email-toggle"></label>
+                          </div>
+                        </div>
+                        {notificationPrefs.emailEnabled && (
+                          <div className="space-y-3 mt-4">
+                            <div className="info-box neutral mb-3" style={{ fontSize: '0.8rem', padding: '12px' }}>
+                              <Sparkles size={14} style={{ marginRight: '8px' }} />
+                              <span>To enable free Email/SMS, create a free account at <strong>emailjs.com</strong> and link your email provider.</span>
+                            </div>
+                            <div className="setting-input-group">
+                              <label className="text-xs font-semibold text-muted block">Your Email Address</label>
+                              <input
+                                type="email"
+                                className="glass-input w-full"
+                                placeholder="you@example.com"
+                                value={notificationPrefs.userEmail}
+                                onChange={(e) => updateNotificationPref('userEmail', e.target.value)}
+                              />
+                            </div>
+                            
+                            <div className="email-config-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                              <div className="setting-input-group">
+                                <label className="text-xs font-semibold text-muted block">EmailJS Service ID</label>
+                                <input
+                                  type="text"
+                                  className="glass-input w-full"
+                                  value={emailConfig.serviceId}
+                                  onChange={(e) => updateEmailConfig('serviceId', e.target.value)}
+                                />
+                              </div>
+                              <div className="setting-input-group">
+                                <label className="text-xs font-semibold text-muted block">EmailJS Template ID</label>
+                                <input
+                                  type="text"
+                                  className="glass-input w-full"
+                                  value={emailConfig.templateId}
+                                  onChange={(e) => updateEmailConfig('templateId', e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="setting-input-group mt-2">
+                              <label className="text-xs font-semibold text-muted block">EmailJS Public Key</label>
+                              <div className="flex-row gap-sm">
+                                <input
+                                  type="text"
+                                  className="glass-input flex-1"
+                                  value={emailConfig.publicKey}
+                                  onChange={(e) => updateEmailConfig('publicKey', e.target.value)}
+                                />
+                                <button className="btn btn-sm btn-outline" onClick={() => handleTestNotification('email')}>Test</button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* SMS Section */}
+                      <div className="glass-card padding-lg mt-3">
+                        <div className="row-between mb-3">
+                          <div className="flex-row gap-md">
+                            <MessageSquare size={20} color="#10b981" />
+                            <div>
+                              <h4>SMS Notifications</h4>
+                              <p className="text-xs text-muted">Free via Email-to-SMS Gateways</p>
+                            </div>
+                          </div>
+                          <div className="toggle-switch">
+                            <input
+                              type="checkbox"
+                              id="sms-toggle"
+                              checked={notificationPrefs.smsEnabled}
+                              onChange={(e) => updateNotificationPref('smsEnabled', e.target.checked)}
+                            />
+                            <label htmlFor="sms-toggle"></label>
+                          </div>
+                        </div>
+                        {notificationPrefs.smsEnabled && (
+                          <div className="space-y-3 mt-4">
+                            <div className="flex-row gap-sm">
+                              <div className="setting-input-group flex-1">
+                                <label className="text-xs font-semibold text-muted block">Phone Number</label>
+                                <input
+                                  type="tel"
+                                  className="glass-input w-full"
+                                  placeholder="5551234567"
+                                  value={notificationPrefs.userPhone}
+                                  onChange={(e) => updateNotificationPref('userPhone', e.target.value)}
+                                />
+                              </div>
+                              <div className="setting-input-group" style={{ width: '120px' }}>
+                                <label className="text-xs font-semibold text-muted block">Carrier</label>
+                                <select 
+                                  className="glass-input w-full" 
+                                  style={{ padding: '8px' }}
+                                  value={notificationPrefs.userCarrier}
+                                  onChange={(e) => updateNotificationPref('userCarrier', e.target.value)}
+                                >
+                                  <option value="verizon">Verizon</option>
+                                  <option value="att">AT&T</option>
+                                  <option value="tmobile">T-Mobile</option>
+                                  <option value="googlefi">Google Fi</option>
+                                  <option value="xfinity">Xfinity (Comcast)</option>
+                                  <option value="sprint">Sprint</option>
+                                </select>
+                              </div>
+                              <div className="flex-col justify-end" style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: '4px' }}>
+                                <button className="btn btn-sm btn-outline" onClick={() => handleTestNotification('sms')}>Test</button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted italic">Note: Requires EmailJS configuration above.</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

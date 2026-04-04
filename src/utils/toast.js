@@ -12,12 +12,17 @@ class ToastService {
     };
   }
 
-  notify(message, type = 'info', duration = 3000) {
+  notify(message, type = 'info', options = {}) {
+    // Handle legacy duration parameter or options object
+    const duration = typeof options === 'number' ? options : (options.duration || (type === 'error' ? 5000 : 3000));
+    const action = typeof options === 'object' ? options.action : null;
+
     const toast = {
       id: Date.now() + Math.random(),
       message,
       type,
-      duration
+      duration,
+      action
     };
     
     this.toasts.push(toast);
@@ -32,20 +37,20 @@ class ToastService {
     return toast.id;
   }
 
-  success(message, duration = 3000) {
-    return this.notify(message, 'success', duration);
+  success(message, options = 1800) {
+    return this.notify(message, 'success', options);
   }
 
-  error(message, duration = 5000) {
-    return this.notify(message, 'error', duration);
+  error(message, options = 5000) {
+    return this.notify(message, 'error', options);
   }
 
-  warning(message, duration = 4000) {
-    return this.notify(message, 'warning', duration);
+  warning(message, options = 2500) {
+    return this.notify(message, 'warning', options);
   }
 
-  info(message, duration = 3000) {
-    return this.notify(message, 'info', duration);
+  info(message, options = 1800) {
+    return this.notify(message, 'info', options);
   }
 
   remove(id) {

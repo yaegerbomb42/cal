@@ -14,6 +14,10 @@ import Calendar from './components/Calendar/Calendar';
 const EventModal = lazy(() => import('./components/Events/EventModal'));
 import AIChat from './components/AI/AIChat';
 const Settings = lazy(() => import('./components/Settings/Settings'));
+import UpcomingSidebar from './components/Sidebar/UpcomingSidebar';
+import SmartSchedulePortal from './components/Events/SmartSchedulePortal';
+import DesignStudio from './components/DesignStudio/DesignStudio';
+
 
 import Toast from './components/Toast/Toast';
 import ThemeBackground from './components/Common/ThemeBackground';
@@ -86,6 +90,7 @@ const MainLayout = () => {
   const { events, addEvent } = useEvents();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isDesignStudioOpen, setIsDesignStudioOpen] = useState(false);
   const [initialChatMessage, setInitialChatMessage] = useState(null);
   const MotionDiv = motion.div;
 
@@ -237,8 +242,19 @@ const MainLayout = () => {
       }, 100);
     };
 
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setIsDesignStudioOpen(prev => !prev);
+      }
+    };
+
     window.addEventListener('keydown', handleGlobalKeydown);
-    return () => window.removeEventListener('keydown', handleGlobalKeydown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeydown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isAIChatOpen]);
 
   if (loading) {
@@ -260,6 +276,7 @@ const MainLayout = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         className="app-container"
+        style={{ '--sidebar-percent': `${sidebarPercent}%` }}
       >
         <ThemeBackground />
         <GravityField />
@@ -271,7 +288,6 @@ const MainLayout = () => {
         <main
           className="main-content"
           ref={containerRef}
-          style={{ '--sidebar-percent': `${sidebarPercent}%` }}
         >
           <div
             className="sidebar-container"
@@ -317,6 +333,11 @@ const MainLayout = () => {
               onClose={() => setIsSettingsOpen(false)}
             />
           )}
+
+          <DesignStudio 
+            isOpen={isDesignStudioOpen} 
+            onClose={() => setIsDesignStudioOpen(false)} 
+          />
 
           {autoPlanPreview && (
             <SmartSchedulePortal

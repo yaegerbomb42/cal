@@ -321,18 +321,11 @@ const EventModal = ({ isAIChatOpen }) => {
               )}
             </div>
             <div style={{ display: 'flex', gap: '8px', position: 'relative', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={() => setIsSmartScheduleOpen(!isSmartScheduleOpen)}
-                className={`smart-schedule-btn ${isSmartScheduleOpen ? 'active' : ''}`}
-              >
-                <Zap size={14} /> Smart Schedule
-              </button>
-              <button onClick={closeEventModal} className="close-btn"><X size={18} /></button>
+              <button onClick={closeEventModal} className="close-btn" title="Close"><X size={18} /></button>
             </div>
           </div>
 
-          <div className="modal-body-wrapper" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          <div className="modal-body">
             <form onSubmit={handleSubmit} className="modal-content-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr' }}>
 
               {/* Panel 1: Details */}
@@ -379,9 +372,13 @@ const EventModal = ({ isAIChatOpen }) => {
                           handleChange('location', place.name);
                         }
                       }}
-                      options={{ types: ['establishment', 'geocode'] }}
+                      options={{ 
+                        types: ['geocode', 'establishment'],
+                        fields: ['formatted_address', 'geometry', 'name']
+                      }}
                       className="input compact"
                       placeholder="Search location..."
+                      style={{ width: '100%' }}
                     />
                   </div>
                 </div>
@@ -504,28 +501,10 @@ const EventModal = ({ isAIChatOpen }) => {
                     className={`smart-action-btn ${isSmartScheduleOpen ? 'active' : ''}`}
                   >
                     <Sparkles size={16} />
-                    {isSmartScheduleOpen ? 'Hide Suggestions' : 'Find Best Slot'}
+                    {isSmartScheduleOpen ? 'Close Schedule' : 'Smart Schedule'}
                   </button>
                   
-                  {isSmartScheduleOpen && (
-                    <div className="smart-inline-portal">
-                      <SmartSchedulePortal
-                        isOpen={true}
-                        inline={true}
-                        onClose={() => setIsSmartScheduleOpen(false)}
-                        onSelectSlot={(start, end) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            start: toLocalInputValue(start),
-                            end: toLocalInputValue(end)
-                          }));
-                        }}
-                        eventTitle={formData.title}
-                        existingEvents={events}
-                        preferredDate={formData.start ? new Date(formData.start) : new Date()}
-                      />
-                    </div>
-                  )}
+                  {/* Full Modal Overlay Version handled below */}
                 </div>
               </div>
 
@@ -547,6 +526,36 @@ const EventModal = ({ isAIChatOpen }) => {
               </div>
             </form>
           </div>
+
+          <AnimatePresence>
+            {isSmartScheduleOpen && (
+              <MotionDiv
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="smart-schedule-overlay"
+              >
+                <div className="smart-overlay-content">
+                  <SmartSchedulePortal
+                    isOpen={true}
+                    inline={false}
+                    onClose={() => setIsSmartScheduleOpen(false)}
+                    onSelectSlot={(start, end) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        start: toLocalInputValue(start),
+                        end: toLocalInputValue(end)
+                      }));
+                      setIsSmartScheduleOpen(false);
+                    }}
+                    eventTitle={formData.title}
+                    existingEvents={events}
+                    preferredDate={formData.start ? new Date(formData.start) : new Date()}
+                  />
+                </div>
+              </MotionDiv>
+            )}
+          </AnimatePresence>
         </MotionDiv>
       </MotionDiv>
     </AnimatePresence>

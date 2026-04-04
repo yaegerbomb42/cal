@@ -154,6 +154,7 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
 }
 
 .day-grid-body {
@@ -168,10 +169,22 @@
   width: 100%;
   transition: background 0.15s ease;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .day-hour-cell:hover {
   background: rgba(99, 102, 241, 0.06);
+}
+
+.day-event-card.completed {
+  opacity: 0.4 !important;
+  filter: grayscale(1);
+  pointer-events: auto;
+}
+
+.day-event-card.completed .event-title,
+.day-event-card.completed .event-snippet {
+  text-decoration: line-through;
 }
 
 .day-events-layer {

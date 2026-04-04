@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { startOfYear, endOfYear, eachDayOfInterval, getDay, getDaysInMonth, format, isToday, startOfWeek, getWeek } from 'date-fns';
+import { startOfYear, endOfYear, eachDayOfInterval, getDay, getDaysInMonth, format, isToday } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { LayoutGrid, GitBranch } from 'lucide-react';
@@ -39,7 +39,9 @@ const MiniMonth = ({ year, monthIndex, getEventsForDate, openEventModal }) => {
 
   return (
     <div className="year-mini-month">
-      <div className="year-mini-month-header">{MONTH_NAMES[monthIndex]}</div>
+      <div className="year-mini-month-header">
+        <span>{MONTH_NAMES[monthIndex]}</span>
+      </div>
       <div className="year-mini-month-grid">
         {cells.map((cell) =>
           cell.empty ? (

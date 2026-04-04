@@ -9,6 +9,7 @@
 // ============================================================================
 
 const EyePrimitives = {
+    neutral: { duration: 400, offset: 0 },
     blink: { duration: 150, frames: ['closed', 'open'] },
     blinkSlow: { duration: 450, frames: ['closed', 'open'] },
     lookLeft: { duration: 400, offset: -5 },
@@ -30,21 +31,25 @@ const MouthPrimitives = {
 };
 
 const HeadPrimitives = {
+    neutral: { duration: 400, angle: 0 },
+    center: { duration: 400, angle: 0 },
     tiltLeft: { duration: 600, angle: -8 },
     tiltRight: { duration: 600, angle: 8 },
     nodDown: { duration: 300, angle: 10 },
     nodUp: { duration: 300, angle: -5 },
     turnLeft: { duration: 500, angle: -12 },
     turnRight: { duration: 500, angle: 12 },
-    center: { duration: 400, angle: 0 }
+    intenseTilt: { duration: 700, angle: 22 },
+    perkUp: { duration: 300, angle: -12 }
 };
 
 const BodyPrimitives = {
+    center: { duration: 500, angle: 0 },
     swayLeft: { duration: 800, angle: -3 },
     swayRight: { duration: 800, angle: 3 },
     bounce: { duration: 400, scale: 1.02 },
     lean: { duration: 600, angle: 5 },
-    center: { duration: 500, angle: 0 }
+    stretch: { duration: 800, scale: 1.05 }
 };
 
 const ArmPrimitives = {
@@ -69,16 +74,15 @@ const GestureGroups = {
     idle: {
         weight: 40,
         gestures: [
-            { name: 'subtle_look', weight: 20, parts: { eyes: 'lookLeft', head: 'tiltLeft' } },
-            { name: 'subtle_look_right', weight: 20, parts: { eyes: 'lookRight', head: 'tiltRight' } },
-            { name: 'gentle_sway', weight: 15, parts: { body: 'swayLeft' } },
-            { name: 'gentle_sway_right', weight: 15, parts: { body: 'swayRight' } },
+            { name: 'curious_tilt', weight: 45, parts: { head: 'intenseTilt', eyes: 'widen' } },
+            { name: 'peek_left', weight: 25, parts: { head: 'tiltLeft', eyes: 'lookLeft', body: 'lean' } },
+            { name: 'peek_right', weight: 25, parts: { head: 'tiltRight', eyes: 'lookRight', body: 'lean' } },
             { name: 'blink_pause', weight: 30, parts: { eyes: 'blink' } },
-            { name: 'curious_tilt', weight: 20, parts: { head: 'tiltRight', eyes: 'widen' } },
             { name: 'small_nod', weight: 15, parts: { head: 'nodDown' } },
-            { name: 'happy_wiggle', weight: 10, parts: { body: 'bounce', head: 'tiltLeft' } },
+            { name: 'bouncy_idle', weight: 35, parts: { body: 'bounce', head: 'perkUp' } },
+            { name: 'happy_wiggle', weight: 20, parts: { body: 'stretch', head: 'tiltLeft' } },
             { name: 'slow_blink_dream', weight: 10, parts: { eyes: 'blinkSlow' } },
-            { name: 'return_center', weight: 25, parts: { head: 'center', body: 'center' } }
+            { name: 'return_center', weight: 35, parts: { head: 'center', body: 'center' } }
         ]
     },
     thinking: {
@@ -128,7 +132,7 @@ const GestureGroups = {
         weight: 10,
         gestures: [
             { name: 'huh', weight: 40, parts: { head: 'tiltLeft', eyes: 'squint', mouth: 'neutral' } },
-            { name: 'what', weight: 30, parts: { head: 'turnRight', eyes: 'widen', head_tilt: 'tiltLeft' } },
+            { name: 'what', weight: 30, parts: { head: 'turnRight', eyes: 'widen' } },
             { name: 'puzzled', weight: 30, parts: { head: 'nodUp', eyes: 'lookLeft' } }
         ]
     },
@@ -174,7 +178,9 @@ class ProceduralAnimationController {
 
     // Weighted random selection - avoids repeating recent gestures
     selectWeightedGesture(group) {
-        const gestures = GestureGroups[group].gestures;
+        const groupData = GestureGroups[group];
+        if (!groupData) return null;
+        const gestures = groupData.gestures;
         const totalWeight = gestures.reduce((sum, g) => {
             // Reduce weight if recently used
             const penalty = this.gestureHistory.includes(g.name) ? 0.3 : 1;
@@ -212,53 +218,58 @@ class ProceduralAnimationController {
 
     // Apply gesture parts to target state
     applyGesture(gesture) {
+        if (!gesture || !gesture.parts) return;
         const { parts } = gesture;
 
         if (parts.eyes) {
             const eye = EyePrimitives[parts.eyes];
-            if (eye.offset !== undefined) {
-                this.targetState.leftEyeOffset = eye.offset;
-                this.targetState.rightEyeOffset = eye.offset;
-            }
-            if (eye.frames) {
-                this.targetState.leftEyeState = eye.frames[0];
-                this.targetState.rightEyeState = eye.frames[0];
-                // Schedule eye open
-                setTimeout(() => {
-                    this.targetState.leftEyeState = 'open';
-                    this.targetState.rightEyeState = 'open';
-                }, eye.duration);
-            }
-            if (eye.variant) {
-                this.targetState.leftEyeState = eye.variant;
-                this.targetState.rightEyeState = eye.variant;
+            if (eye) {
+                if (eye.offset !== undefined) {
+                    this.targetState.leftEyeOffset = eye.offset;
+                    this.targetState.rightEyeOffset = eye.offset;
+                }
+                if (eye.frames) {
+                    this.targetState.leftEyeState = eye.frames[0];
+                    this.targetState.rightEyeState = eye.frames[0];
+                    // Schedule eye open
+                    setTimeout(() => {
+                        this.targetState.leftEyeState = 'open';
+                        this.targetState.rightEyeState = 'open';
+                    }, eye.duration);
+                }
+                if (eye.variant) {
+                    this.targetState.leftEyeState = eye.variant;
+                    this.targetState.rightEyeState = eye.variant;
+                }
             }
         }
 
         if (parts.mouth) {
             const mouth = MouthPrimitives[parts.mouth];
-            this.targetState.mouthState = mouth.state;
+            if (mouth) this.targetState.mouthState = mouth.state;
         }
 
         if (parts.head) {
             const head = HeadPrimitives[parts.head];
-            this.targetState.headAngle = head.angle;
+            if (head) this.targetState.headAngle = head.angle;
         }
 
         if (parts.body) {
             const body = BodyPrimitives[parts.body];
-            if (body.angle !== undefined) this.targetState.bodyAngle = body.angle;
-            if (body.scale !== undefined) this.targetState.bodyScale = body.scale;
+            if (body) {
+                if (body.angle !== undefined) this.targetState.bodyAngle = body.angle;
+                if (body.scale !== undefined) this.targetState.bodyScale = body.scale;
+            }
         }
 
         if (parts.armLeft) {
             const arm = ArmPrimitives[parts.armLeft];
-            this.targetState.leftArmAngle = arm.angle;
+            if (arm) this.targetState.leftArmAngle = arm.angle;
         }
 
         if (parts.armRight) {
             const arm = ArmPrimitives[parts.armRight];
-            this.targetState.rightArmAngle = arm.angle;
+            if (arm) this.targetState.rightArmAngle = arm.angle;
         }
     }
 

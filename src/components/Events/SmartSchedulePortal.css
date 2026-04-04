@@ -214,16 +214,56 @@
     position: absolute;
     left: 2px;
     right: 2px;
-    border-radius: 3px;
-    background: rgba(99, 102, 241, 0.3);
-    border: 1px dashed var(--accent);
+    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.4);
+    border: 1.5px solid var(--accent);
     z-index: 5;
-    animation: aiSlotPulse 2s ease-in-out infinite;
     cursor: pointer;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mini-suggestion.blinking {
+    animation: blinkingGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    border-color: #fff;
+    background: rgba(99, 102, 241, 0.6);
+}
+
+.mini-suggestion.focus-block {
+    border: 2px solid #fbbf24; /* Amber for Focus Mode */
+    background: rgba(251, 191, 36, 0.1);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
+}
+
+.mini-suggestion-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.mini-suggestion:hover .mini-suggestion-glow {
+    opacity: 1;
+}
+
+@keyframes blinkingGlow {
+    0%, 100% {
+        box-shadow: 0 0 5px var(--accent);
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 25px #fff;
+        opacity: 0.9;
+        transform: scale(1.02);
+        background: rgba(255, 255, 255, 0.2);
+    }
 }
 
 .mini-suggestion-label {
@@ -276,14 +316,11 @@
 }
 
 @keyframes aiSlotPulse {
-
-    0%,
-    100% {
+    0%, 100% {
         box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2);
     }
-
     50% {
-        box-shadow: 0 0 8px 2px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 0 12px 4px rgba(99, 102, 241, 0.5);
     }
 }
 

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useRef, useState, useEffect } from 'react';
-import { format, addDays, subDays } from 'date-fns';
+import { format, addDays, subDays, isSameDay } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
 import { cn, getEventColor } from '../../utils/helpers';
@@ -28,7 +28,7 @@ const DayView = () => {
   const dayEvents = sortEventsByStart(getEventsForDate(currentDate));
   const now = new Date();
   const dayHours = getDayHours();
-  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true, minPixels: 64 });
+  const pixelsPerHour = useHourScale({ containerRef: dayGridRef, offset: 24, fitToViewport: true, minPixels: 0 });
   const { items: dayLayout, maxOverlap } = getEventOverlapLayout(dayEvents);
 
   const [currentTick, setCurrentTick] = useState(Date.now());
@@ -179,7 +179,7 @@ const DayView = () => {
                 <MotionButton
                   key={event.id}
                   type="button"
-                  className={cn('day-event-card', isPastEvent && 'past')}
+                  className={cn('day-event-card', isPastEvent && 'past', event.completed && 'completed')}
                   style={{
                     gridColumnStart: (column || 0) + 1,
                     gridColumnEnd: (column || 0) + 2,
@@ -239,6 +239,8 @@ const DayView = () => {
 
             {/* Live time indicator with absolute accuracy */}
             {(() => {
+              if (!isSameDay(currentDate, new Date())) return null;
+
               const nowTick = new Date(currentTick);
               const hours = nowTick.getHours();
               const minutes = nowTick.getMinutes();
@@ -254,6 +256,16 @@ const DayView = () => {
                     style={{ top: `${exactTop}px` }}
                   >
                     <div className="current-time-line"></div>
+                    <div className="current-time-dot" style={{ 
+                      position: 'absolute', 
+                      left: '-4px', 
+                      top: '-4px', 
+                      width: '10px', 
+                      height: '10px', 
+                      backgroundColor: '#ef4444', 
+                      borderRadius: '50%',
+                      boxShadow: '0 0 10px rgba(239, 68, 68, 0.8)'
+                    }}></div>
                   </div>
                 </div>
               );

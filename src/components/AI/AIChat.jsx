@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, X, Sparkles, Calendar, Check, Edit2, Trash2, AlertTriangle, ImagePlus, Mic, MicOff, Volume2, VolumeX, Target } from 'lucide-react';
+import { Send, X, Sparkles, Calendar, Check, Trash2, Volume2, VolumeX, Mic, MicOff, ImagePlus, ExternalLink, Clock, Type } from 'lucide-react';
 import { geminiService } from '../../services/geminiService';
 import { localBrainService } from '../../services/localBrainService';
 import { voiceAIService } from '../../services/voiceAIService';
@@ -14,10 +13,9 @@ import { applyClarificationAnswer, getClarificationPrompt, listClarificationFiel
 import { sanitizeAIOutput } from '../../ai/OutputSanitizer';
 import { AIParseError, AIServiceError, ValidationError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
-import JarvisParticles from '../VoiceAI/JarvisParticles';
 import CalCharacter from './CalCharacter';
-import './AIChat.css';
 import SentenceGraph from './SentenceGraph';
+import './AIChat.css';
 
 const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [messages, setMessages] = useState([
@@ -27,7 +25,7 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       content: "Hey, I'm Cal! Ready to help. What would you like me to schedule?"
     }
   ]);
-  const [chatHistory, setChatHistory] = useState([]); // Array of { isUser, text }
+  const [chatHistory, setChatHistory] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -36,44 +34,57 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   const [clarificationState, setClarificationState] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
-  const [isLocalMode] = useState(localBrainService.getPreferLocal());
-  const [isVoiceListening, setIsVoiceListening] = useState(false);
-  const [listenMode, setListenMode] = useState(false); // STT Toggle
-  const [isSpeaking, setIsSpeaking] = useState(false); // eslint-disable-line no-unused-vars -- tracked for future speaking-state glow
-  const [speakResponse, setSpeakResponse] = useState(false); // TTS Toggle
+  const [listenMode, setListenMode] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false); // eslint-disable-line no-unused-vars
+  const [speakResponse, setSpeakResponse] = useState(false);
   const [fullSpeechText, setFullSpeechText] = useState('');
   const [currentSpeechIndex, setCurrentSpeechIndex] = useState(0);
   const [lastProcessedInput, setLastProcessedInput] = useState(null);
   const [calEmotion, setCalEmotion] = useState('idle');
   const [showProof, setShowProof] = useState(false);
 
+  const [chatConfig, setChatConfig] = useState(() => {
+    const saved = localStorage.getItem('cal-chat-config');
+    return saved ? JSON.parse(saved) : { x: 0, y: 0, width: 420, height: 600 };
+  });
+
+  useEffect(() => {
+    const config = localStorage.getItem('cal-chat-config');
+    if (config) setChatConfig(JSON.parse(config));
+  }, []);
+
+  const saveConfig = (newConfig) => {
+    const updated = { ...chatConfig, ...newConfig };
+    setChatConfig(updated);
+    localStorage.setItem('cal-chat-config', JSON.stringify(updated));
+  };
 
   const messagesEndRef = useRef(null);
   const imageInputRef = useRef(null);
   const { events, addEvent } = useEvents();
-  const { openEventModal, isFocusMode, setIsFocusMode } = useCalendar();
+  const { openEventModal } = useCalendar();
 
-
+  const setStatus = (type, message) => {
+    if (!type) {
+      setStatusMessage(null);
+      return;
+    }
+    setStatusMessage({ type, message });
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const lastProcessedRef = useRef(null); // Fix duplication
+  const lastProcessedRef = useRef(null);
 
-  // Gesture parsing helper
   const parseGesture = useCallback((content, type, context = {}) => {
     if (type !== 'ai' && type !== 'status') return;
-
     const text = content.toLowerCase();
-
-    // Check for explicit gesture in AI response
     if (context.gesture) {
       setCalEmotion(context.gesture);
       return;
     }
-
-    // Analyze content for contextual gestures
     if (text.includes('already have') || text.includes('duplicate')) {
       setCalEmotion('pointing-left');
     } else if (text.includes('created') || text.includes('added') || text.includes('scheduled')) {
@@ -87,15 +98,11 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     } else if (text.includes('let me') || text.includes('checking') || text.includes('thinking')) {
       setCalEmotion('thinking');
     } else {
-      // Idle with occasional bored state
-      if (Math.random() < 0.1) {
-        setCalEmotion('bored');
-      }
+      setCalEmotion(Math.random() < 0.1 ? 'bored' : 'idle');
     }
   }, []);
 
   const addMessage = useCallback((type, content, context = {}) => {
-    // Prevent strict identical duplicates within 500ms
     if (lastProcessedRef.current === content) return;
     lastProcessedRef.current = content;
     setTimeout(() => { lastProcessedRef.current = null; }, 1000);
@@ -107,40 +114,18 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
       timestamp: new Date()
     };
     setMessages(prev => [...prev, newMessage]);
-
-    // Trigger gesture based on message
     parseGesture(content, type, context);
-
     return newMessage;
   }, [parseGesture]);
-
-  const setStatus = (type, message) => {
-    if (!type) {
-      setStatusMessage(null);
-      return;
-    }
-    setStatusMessage({ type, message });
-  };
-
-
-
-
-
-
-
-
-
 
   const checkProblematicness = useCallback(async (event, conflicts) => {
     if (conflicts && conflicts.length > 0) {
       addMessage('ai', `⚠️ Heads up: This conflicts with ${conflicts.length} existing event(s). Shall I continue?`);
-      voiceAIService.speakAsHal('conflict');
     }
-
     const start = new Date(event.start);
     const hours = start.getHours();
     if (hours >= 22 || hours <= 5) {
-      addMessage('ai', "🌙 This is a bit late/early, Dave. Are you sure you want this on your schedule?");
+      addMessage('ai', "🌙 This is a bit late/early. Are you sure you want this on your schedule?");
     }
   }, [addMessage]);
 
@@ -148,7 +133,6 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     if (!clarificationState) return;
     const { draft, missingFields } = clarificationState;
     const currentField = missingFields[0];
-
     const updatedDraft = applyClarificationAnswer(draft, currentField, text);
     const remainingFields = listClarificationFields(updatedDraft, text);
 
@@ -161,8 +145,6 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
 
     const finalized = finalizeDraft(updatedDraft);
     const conflicts = await geminiService.checkConflicts(finalized, events);
-
-    // Auto Problematicness Detection
     await checkProblematicness(finalized, conflicts);
 
     setPendingEvent({ ...finalized, conflicts, originalText: text, graphData: updatedDraft.graphData || draft.graphData });
@@ -174,22 +156,10 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     try {
       const cleanedResponse = sanitizeAIOutput(response);
 
-      // Voice Output
-      if (speakResponse) {
-        voiceAIService.speak(cleanedResponse);
-      }
-
       const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
           const data = JSON.parse(jsonMatch[0]);
-
-          // Memory/Learning handling
-          if (data.type === 'learn' || data.intent === 'set_memory') {
-            const { memoryService } = await import('../../services/memoryService');
-            if (data.fact) memoryService.addFact(data.fact);
-          }
-
           if (data.type === 'action' && (data.intent === 'create_event' || data.intent === 'schedule_event')) {
             if (data.draft) {
               setPendingEvent(data.draft);
@@ -197,277 +167,104 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
               return;
             }
           }
-
           if (data.answer) {
             addMessage('ai', data.answer);
             return;
           }
         } catch (e) {
-          console.error("JSON parse error in AI response", e);
+          logger.error("JSON parse error in AI response", { error: e });
         }
       }
-
       addMessage('ai', response);
     } catch (error) {
-      console.error('Chat processing error:', error);
+      logger.error('Chat processing error:', { error });
       addMessage('ai', "I had trouble processing that response.");
     }
-  }, [speakResponse, addMessage]);
+  }, [addMessage]);
 
   const processInput = useCallback(async (text) => {
     setIsLoading(true);
-    setStatus(null, null);
-
     try {
       if (clarificationState) {
         await processClarification(text);
         return;
       }
-
       const intent = detectIntent(text);
-      logger.info('AI intent detected', { intent });
-
       if (intent === 'event_query') {
         const response = buildQueryResponse(text, events);
         addMessage('ai', response);
         return;
       }
-
       if (intent === 'event_create') {
         const draftResult = await processEventInput(text, { geminiService, localBrainService });
-
         if (draftResult.status === 'needs_clarification') {
           setClarificationState({ draft: draftResult.draft, missingFields: draftResult.missingFields });
-
-          // Smarter Prompting: Don't just say "What is the start time?"
           const field = draftResult.missingFields[0];
           let prompt = getClarificationPrompt(field, { draft: draftResult.draft });
-
-          if (field === 'start') {
-            prompt = "I need a date and time for this event. When should I schedule it?";
-          }
-
+          if (field === 'start') prompt = "I need a date and time for this event. When should I schedule it?";
           addMessage('ai', prompt);
-          // Auto-speak if TTS enabled
-          if (speakResponse) voiceAIService.speak(prompt);
           return;
         }
-
         const finalized = finalizeDraft(draftResult.draft);
         const conflicts = await geminiService.checkConflicts(finalized, events);
-
         try {
           await addEvent(finalized, { allowConflicts: true });
-
           let responseMsg = `I've added "${finalized.title}" to your calendar!`;
-          if (conflicts && conflicts.length > 0) {
-            responseMsg += ` ⚠️ Note: This conflicts with ${conflicts.length} existing event(s).`;
-          }
+          if (conflicts && conflicts.length > 0) responseMsg += ` ⚠️ Note: This conflicts with ${conflicts.length} existing event(s).`;
           addMessage('ai', responseMsg);
         } catch (err) {
-          if (err instanceof ValidationError) {
-            addMessage('ai', err.message);
-          } else {
-            addMessage('ai', 'Something went wrong while saving the event.');
-          }
+          addMessage('ai', err.message || 'Something went wrong while saving the event.');
         }
         return;
       }
-
       const response = await geminiService.chatResponse(text, chatHistory, events);
       const aiText = sanitizeAIOutput(response, { input: text });
-      
-      setChatHistory(prev => [
-        ...prev,
-        { isUser: true, text },
-        { isUser: false, text: aiText }
-      ]);
-
+      setChatHistory(prev => [...prev, { isUser: true, text }, { isUser: false, text: aiText }]);
       handleAIResponse(aiText);
     } catch (error) {
-      if (error instanceof AIParseError) {
-        addMessage('ai', "I couldn't parse that event yet. Could you rephrase with a time or date?");
-        return;
-      }
-      if (error instanceof AIServiceError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      if (error instanceof ValidationError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      logger.error('AI processing error', { error });
-      addMessage('ai', 'I encountered an error processing your request. Please try again.');
-      setStatus('error', 'AI request failed');
+      logger.error('Input processing error', { error });
+      addMessage('ai', 'I encountered an error processing your request.');
     } finally {
       setIsLoading(false);
     }
-  }, [clarificationState, events, speakResponse, addMessage, handleAIResponse, processClarification, addEvent, chatHistory]);
-
-  // Process initial message from prop (race condition fix)
-  useEffect(() => {
-    if (initialMessage && !isLoading) {
-      const msg = initialMessage;
-      if (onClearInitialMessage) onClearInitialMessage(); // Clear FIRST
-      addMessage('user', msg);
-      processInput(msg);
-    }
-  }, [initialMessage, isLoading, onClearInitialMessage, processInput, addMessage]);
-
-  useEffect(() => {
-    if (geminiService.isInitialized) {
-      setIsConnected(true);
-    }
-
-    const handlePing = (e) => {
-      // Only handle if already open; App.jsx handles the wake-up case
-      if (!isOpen) return;
-
-      const { text, response } = e.detail;
-      if (!text || text === lastProcessedInput) return;
-
-      setLastProcessedInput(text);
-      addMessage('user', text);
-      if (response) {
-        handleAIResponse(response);
-        return;
-      }
-      processInput(text);
-
-      // Reset last input after a delay to allow same query later
-      setTimeout(() => setLastProcessedInput(null), 2000);
-    };
-
-    window.addEventListener('calai-ping', handlePing);
-    return () => window.removeEventListener('calai-ping', handlePing);
-  }, [processInput, lastProcessedInput, events, isOpen, handleAIResponse, addMessage]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, pendingEvent, clarificationState]);
-
-  // Voice input handler
-  useEffect(() => {
-    const handleVoiceResult = (e) => {
-      if (e.detail.isFinal) {
-        const transcript = e.detail.transcript;
-        setInputValue(transcript);
-        if (listenMode) {
-            // Auto-submit in listen mode
-            addMessage('user', transcript);
-            processInput(transcript);
-            setInputValue('');
-        } else {
-            setIsVoiceListening(false);
-        }
-      }
-    };
-
-    const handleVoiceEnd = () => {
-        if (!listenMode) setIsVoiceListening(false);
-    };
-    const handleSpeechStart = (e) => {
-        setIsSpeaking(true);
-        setFullSpeechText(e.detail?.text || '');
-        setCurrentSpeechIndex(0);
-    };
-    const handleSpeechEnd = () => {
-        setIsSpeaking(false);
-        setTimeout(() => setFullSpeechText(''), 1000); // Hold for 1s after speaking
-    };
-    const handleWord = (e) => {
-        if (e.detail?.charIndex !== undefined) {
-             setCurrentSpeechIndex(e.detail.charIndex + e.detail.charLength);
-        }
-    };
-
-    window.addEventListener('calai-voice-result', handleVoiceResult);
-    window.addEventListener('calai-voice-end', handleVoiceEnd);
-    window.addEventListener('calai-speech-start', handleSpeechStart);
-    window.addEventListener('calai-speech-end', handleSpeechEnd);
-    window.addEventListener('calai-speech-word', handleWord);
-
-    return () => {
-      window.removeEventListener('calai-voice-result', handleVoiceResult);
-      window.removeEventListener('calai-voice-end', handleVoiceEnd);
-      window.removeEventListener('calai-speech-start', handleSpeechStart);
-      window.removeEventListener('calai-speech-end', handleSpeechEnd);
-      window.removeEventListener('calai-speech-word', handleWord);
-    };
-  }, [addMessage, listenMode, processInput]);
-
-  // Global keyboard capture - focus input and prepend typed character
-  const inputRef = useRef(null);
-  useEffect(() => {
-    const handleFocus = (e) => {
-      const key = e.detail?.key;
-      if (inputRef.current) {
-        inputRef.current.focus();
-        if (key && key.length === 1) {
-          setInputValue(prev => key + prev);
-        }
-      }
-    };
-    window.addEventListener('calai-focus', handleFocus);
-    return () => window.removeEventListener('calai-focus', handleFocus);
-  }, []);
+  }, [clarificationState, events, addMessage, handleAIResponse, processClarification, addEvent, chatHistory]);
 
   const handleConfirmEvent = async () => {
     if (!pendingEvent) return;
-
-    const { conflicts: _conflicts, originalText: _originalText, ...eventData } = pendingEvent;
     try {
-      await addEvent(eventData, { allowConflicts: true });
-      addMessage('ai', `Confirmed. "${pendingEvent.title}" has been added to your calendar.`);
+      await addEvent(pendingEvent, { allowConflicts: true });
+      addMessage('ai', `Confirmed. "${pendingEvent.title}" has been added.`);
       setPendingEvent(null);
-      setStatus('success', 'Event added');
     } catch (error) {
-      if (error instanceof ValidationError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      addMessage('ai', 'Something went wrong while saving the event.');
+       logger.error('Event save error', { error });
+       addMessage('ai', 'Something went wrong while saving.');
     }
+  };
+
+  const handleEditDraft = () => {
+    if (!pendingEvent) return;
+    openEventModal(pendingEvent);
+    setPendingEvent(null);
+  };
+  
+  const handleDiscardEvent = () => {
+    setPendingEvent(null);
+    addMessage('ai', 'Cancelled.');
   };
 
   const handleConfirmImageEvent = async (index) => {
     const draft = imageDrafts[index];
-    if (!draft) return;
     try {
       await addEvent(draft, { allowConflicts: true });
-      addMessage('ai', `Added "${draft.title}" from your image.`);
       setImageDrafts(prev => prev.filter((_, i) => i !== index));
     } catch (error) {
-      if (error instanceof ValidationError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      addMessage('ai', 'Something went wrong while saving the image event.');
-    }
-  };
-
-  const handleConfirmAllImageEvents = async () => {
-    if (imageDrafts.length === 0) return;
-    const drafts = [...imageDrafts];
-    try {
-      for (const draft of drafts) {
-        await addEvent(draft, { allowConflicts: true });
-      }
-      addMessage('ai', `Added ${drafts.length} events from your images.`);
-      setImageDrafts([]);
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        addMessage('ai', error.message);
-        return;
-      }
-      addMessage('ai', 'Something went wrong while adding image events.');
+      logger.error('Image event save error', { error });
+      addMessage('ai', 'Error adding event.');
     }
   };
 
   const handleEditImageEvent = (index) => {
     const draft = imageDrafts[index];
-    if (!draft) return;
     openEventModal(draft);
     setImageDrafts(prev => prev.filter((_, i) => i !== index));
   };
@@ -476,99 +273,45 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
     setImageDrafts(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleEditDraft = () => {
-    if (!pendingEvent) return;
-    const { conflicts: _conflicts, originalText: _originalText, ...eventData } = pendingEvent;
-    openEventModal(eventData);
-    setPendingEvent(null);
-  };
-
-  const handleDiscardEvent = () => {
-    setPendingEvent(null);
-    addMessage('ai', 'Cancelled. What would you like to do instead?');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
-
-    const text = inputValue.trim();
-    setInputValue('');
-    addMessage('user', text);
-
-    await processInput(text);
-  };
-
-  /* File Processing */
   const processFiles = useCallback(async (files) => {
     if (files.length === 0) return;
-
-    // Display images in chat immediately
-    for (const file of files) {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          addMessage('user-image', e.target.result);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        addMessage('user', `[File: ${file.name}]`);
-      }
-    }
-
     setIsImageProcessing(true);
-    setStatus('info', 'Analyzing files with Gemini 3...');
+    setStatus('info', 'Analyzing files...');
     try {
-      const result = await geminiService.parseEventsFromImages(files, messages[messages.length - 1]?.content || "");
-      
+      const result = await geminiService.parseEventsFromImages(files, "");
       if (result.events && result.events.length > 0) {
-        const drafts = result.events.map(event => ({
-          ...finalizeDraft(event),
-          evidence: event.evidence || "Found in image"
-        }));
-        
+        const drafts = result.events.map(event => finalizeDraft(event));
         setImageDrafts(prev => [...prev, ...drafts]);
-        addMessage('ai', `I found ${drafts.length} potential event${drafts.length === 1 ? '' : 's'}. Look good?`);
-      } else if (result.summary) {
-        addMessage('ai', result.summary);
+        addMessage('ai', `I found ${drafts.length} potential events.`);
       } else {
-        addMessage('ai', "I checked those files but couldn't find any clear calendar events.");
+        addMessage('ai', "No clear events found in those files.");
       }
     } catch (error) {
-      if (error instanceof AIParseError || error instanceof AIServiceError) {
-        addMessage('ai', error.message);
-      } else {
-        logger.error('File parsing error', { error });
-        addMessage('ai', 'I hit a snag reading those files. Ensure they are valid documents or images.');
-      }
-      setStatus('error', 'Analysis failed');
+      logger.error('File parsing error', { error });
+      addMessage('ai', 'Snag reading files.');
     } finally {
       setIsImageProcessing(false);
-      if (imageInputRef.current) {
-        imageInputRef.current.value = '';
-      }
       setStatus(null, null);
     }
-  }, [addMessage, messages]);
+  }, [addMessage]);
 
-  const handleFileUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
     await processFiles(files);
   };
 
-  /* Drag & Drop Handlers */
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!inputValue.trim() || isLoading) return;
+    const text = inputValue.trim();
+    setInputValue('');
+    addMessage('user', text);
+    await processInput(text);
+  };
+
   const [isDragging, setIsDragging] = useState(false);
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -577,14 +320,99 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
   };
 
   useEffect(() => {
-    const handleExternalUpload = (event) => {
-      const files = Array.from(event.detail?.files || []);
-      if (files.length === 0) return;
-      processFiles(files);
+    if (initialMessage && !isLoading) {
+      const msg = initialMessage;
+      if (onClearInitialMessage) onClearInitialMessage();
+      addMessage('user', msg);
+      processInput(msg);
+    }
+  }, [initialMessage, isLoading, onClearInitialMessage, processInput, addMessage]);
+
+  useEffect(() => {
+    if (geminiService.isInitialized) setIsConnected(true);
+    const handlePing = (e) => {
+      if (!isOpen) return;
+      const { text, response } = e.detail;
+      if (!text || text === lastProcessedInput) return;
+      setLastProcessedInput(text);
+      addMessage('user', text);
+      if (response) handleAIResponse(response);
+      else processInput(text);
+      setTimeout(() => setLastProcessedInput(null), 2000);
     };
-    window.addEventListener('calai-image-upload', handleExternalUpload);
-    return () => window.removeEventListener('calai-image-upload', handleExternalUpload);
-  }, [processFiles]);
+    const handleGesture = (e) => {
+      if (e.detail?.gesture) setCalEmotion(e.detail.gesture);
+    };
+    window.addEventListener('calai-ping', handlePing);
+    window.addEventListener('calai-gesture', handleGesture);
+    return () => {
+      window.removeEventListener('calai-ping', handlePing);
+      window.removeEventListener('calai-gesture', handleGesture);
+    };
+  }, [processInput, lastProcessedInput, isOpen, handleAIResponse, addMessage]);
+
+  useEffect(() => { scrollToBottom(); }, [messages, pendingEvent, clarificationState, imageDrafts]);
+
+  useEffect(() => {
+    const handleVoiceResult = (e) => {
+      if (e.detail.isFinal) {
+        const transcript = e.detail.transcript;
+        if (listenMode) {
+          addMessage('user', transcript);
+          processInput(transcript);
+        } else {
+          setInputValue(transcript);
+        }
+      }
+    };
+    const handleSpeechStart = (e) => { setIsSpeaking(true); setFullSpeechText(e.detail?.text || ''); setCurrentSpeechIndex(0); };
+    const handleSpeechEnd = () => { setIsSpeaking(false); setTimeout(() => setFullSpeechText(''), 1000); };
+    const handleWord = (e) => { if (e.detail?.charIndex !== undefined) setCurrentSpeechIndex(e.detail.charIndex + e.detail.charLength); };
+
+    window.addEventListener('calai-voice-result', handleVoiceResult);
+    window.addEventListener('calai-speech-start', handleSpeechStart);
+    window.addEventListener('calai-speech-end', handleSpeechEnd);
+    window.addEventListener('calai-speech-word', handleWord);
+    return () => {
+      window.removeEventListener('calai-voice-result', handleVoiceResult);
+      window.removeEventListener('calai-speech-start', handleSpeechStart);
+      window.removeEventListener('calai-speech-end', handleSpeechEnd);
+      window.removeEventListener('calai-speech-word', handleWord);
+    };
+  }, [addMessage, listenMode, processInput]);
+
+  const inputRef = useRef(null);
+  useEffect(() => {
+    const handleFocus = (e) => {
+      const key = e.detail?.key;
+      inputRef.current?.focus();
+      if (key && key.length === 1) setInputValue(prev => key + prev);
+    };
+    window.addEventListener('calai-focus', handleFocus);
+    return () => window.removeEventListener('calai-focus', handleFocus);
+  }, []);
+
+  const handleResize = useCallback((e) => {
+    e.preventDefault();
+    const startWidth = chatConfig.width;
+    const startHeight = chatConfig.height;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const onMouseMove = (me) => {
+      const newWidth = Math.max(320, Math.min(800, startWidth + (me.clientX - startX)));
+      const newHeight = Math.max(400, Math.min(900, startHeight + (me.clientY - startY)));
+      setChatConfig(prev => ({ ...prev, width: newWidth, height: newHeight }));
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      localStorage.setItem('cal-chat-config', JSON.stringify(chatConfig));
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [chatConfig]);
+
+  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
@@ -598,425 +426,117 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Holographic Voice Control & Subtitles Platform */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          style={{
-            position: 'absolute',
-            right: '440px',
-            bottom: '2rem',
-            zIndex: 999,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '16px'
+          drag
+          dragMomentum={false}
+          onDragEnd={(e, info) => {
+            const newX = chatConfig.x + info.offset.x;
+            const newY = chatConfig.y + info.offset.y;
+            saveConfig({ x: newX, y: newY });
           }}
-        >
-          {/* Sentry HUD Overlay: Only visible when closed but in Focus Mode */}
-          <AnimatePresence>
-            {(!isOpen && isFocusMode) && (
-              <motion.div
-                initial={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
-                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, x: 20, filter: 'blur(10px)' }}
-                className="cal-sentry-hud glass-card"
-                style={{
-                  position: 'absolute',
-                  right: '120px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  padding: '12px 20px',
-                  border: '1px solid rgba(0, 229, 255, 0.4)',
-                  whiteSpace: 'nowrap',
-                  pointerEvents: 'none',
-                  zIndex: -1
-                }}
-              >
-                <div style={{ color: '#00e5ff', fontSize: '0.6rem', fontWeight: 'bold', letterSpacing: '0.1em', marginBottom: '4px' }}>FOCUS SENTRY ACTIVE</div>
-                <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: '500' }}>Guarding your flow...</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
+          initial={false}
+          animate={{ x: chatConfig.x, y: chatConfig.y, width: chatConfig.width, height: chatConfig.height }}
+          transition={{ type: 'spring', stiffness: 600, damping: 40, mass: 1 }}
           onClick={(e) => e.stopPropagation()}
           className={`ai-chat-sidebar glass-card ${isDragging ? 'drag-active' : ''}`}
+          style={{ position: 'absolute', right: '1.5rem', top: '1.5rem' }}
         >
-          {isDragging && (
-            <div className="drag-overlay">
-              <div className="drag-content">
-                <ImagePlus size={48} className="text-accent mb-2" />
-                <h3>Drop files to analyze</h3>
-                <p>Images, PDFs, Text</p>
-              </div>
-            </div>
-          )}
-
+          <div className="resize-handle" onMouseDown={handleResize} />
+          
           <div className="chat-header">
-            <div className="chat-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="chat-title">
               <button 
-                onClick={() => {
-                  setMessages([{ id: 1, type: 'ai', content: "Chat cleared. What's next?" }]);
-                  setChatHistory([]);
-                }}
+                onClick={() => { setMessages([{ id: 1, type: 'ai', content: "Cleared." }]); setChatHistory([]); }} 
                 className="action-btn"
-                title="Clear Chat History"
-                style={{ opacity: 0.6 }}
-              >
-                <X size={16} />
-              </button>
+                title="Clear Chat"
+              ><X size={16} /></button>
               <h3 style={{ margin: 0 }}>Cal</h3>
               <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-              <button 
-                onClick={() => setSpeakResponse(!speakResponse)} 
-                className={`header-action-btn ${speakResponse ? 'active' : ''}`}
-                title="Toggle Voice"
-              >
-                {speakResponse ? <Volume2 size={16} /> : <VolumeX size={16} />}
-              </button>
-              <button 
-                onClick={() => setIsFocusMode(!isFocusMode)}
-                className={`header-action-btn ${isFocusMode ? 'focus-active' : ''}`}
-                title="Toggle Focus Mode"
-              >
-                <Target size={16} />
-              </button>
+              <button onClick={() => setSpeakResponse(!speakResponse)} className={`header-action-btn ${speakResponse ? 'active' : ''}`} title="Toggle Voice Output"><Volume2 size={16} /></button>
               <button
                 onClick={() => {
-                    const newMode = !listenMode;
-                    setListenMode(newMode);
-                    if (newMode) {
-                        voiceAIService.startListening();
-                    } else {
-                        voiceAIService.stopListening();
-                    }
+                  const newMode = !listenMode;
+                  setListenMode(newMode);
+                  if (newMode) voiceAIService.startListening();
+                  else voiceAIService.stopListening();
                 }}
                 className={`header-action-btn ${listenMode ? 'active' : ''}`}
-                title={listenMode ? "Listening Mode Active" : "Enable Listen Mode"}
-                style={{ color: listenMode ? 'var(--accent)' : 'var(--text-muted)' }}
+                title="Toggle Listen Mode"
               >
                 {listenMode ? <Mic size={18} /> : <MicOff size={18} />}
               </button>
-
-              <button onClick={onClose} className="close-btn" aria-label="Close Cal chat">
-                <X size={18} />
-              </button>
+              <button onClick={onClose} className="close-btn" title="Close"><X size={18} /></button>
             </div>
           </div>
 
           {statusMessage && (
             <div className={`chat-status ${statusMessage.type}`}>
-              <AlertTriangle size={14} />
-              {statusMessage.message}
+              <AlertTriangle size={14} /> {statusMessage.message}
             </div>
           )}
 
-          <div className="chat-messages" aria-live="polite">
+          <div className="chat-messages">
             <div className="cal-character-bg">
-              <CalCharacter emotion={isLoading ? 'processing' : calEmotion} isFocus={isFocusMode} />
+              <CalCharacter emotion={isLoading || isImageProcessing ? 'processing' : calEmotion} isFocus={false} />
             </div>
 
             {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`message ${message.type === 'user-image' ? 'user' : message.type}`}
-              >
+              <motion.div key={message.id} className={`message ${message.type === 'user-image' ? 'user' : message.type}`}>
                 <div className="message-content">
-                  {message.type === 'user-image' ? (
-                    <img src={message.content} alt="User upload" className="chat-uploaded-image" style={{ maxWidth: '100%', borderRadius: '8px', marginTop: '4px' }} />
-                  ) : (
-                    <p>{message.content}</p>
-                  )}
+                  {message.type === 'user-image' ? <img src={message.content} className="chat-uploaded-image" alt="upload" /> : <p>{message.content}</p>}
                 </div>
               </motion.div>
             ))}
 
             {pendingEvent && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="event-confirmation-card glass-card"
-              >
-                <div className="event-card-header">
-                  <Calendar size={16} />
-                  <span>New Event</span>
-                </div>
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="event-confirmation-card glass-card">
                 <h4>{pendingEvent.title}</h4>
-                <div className="event-details-block" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {/* Line 1: Date */}
-                  <div className="detail-row" style={{ display: 'flex', alignItems: 'center', fontWeight: '600', color: 'var(--text-primary)' }}>
-                    <Calendar size={14} style={{ marginRight: 8, opacity: 0.7 }} />
-                    {new Date(pendingEvent.start).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                  </div>
-
-                  {/* Line 2: Start Time */}
-                  <div className="detail-row" style={{ marginLeft: '22px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
-                    <span style={{ opacity: 0.7, marginRight: 4 }}>Start:</span>
-                    <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
-                      {pendingEvent.start ? new Date(pendingEvent.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Anytime'}
-                    </span>
-                  </div>
-
-                  {/* Line 3: End Time */}
-                  <div className="detail-row" style={{ marginLeft: '22px', fontSize: '0.9em', color: 'var(--text-secondary)' }}>
-                    <span style={{ opacity: 0.7, marginRight: 8 }}>End:</span>
-                    <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
-                      {pendingEvent.end ? new Date(pendingEvent.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Anytime'}
-                    </span>
-                  </div>
-
-                  {/* Recurrence Block */}
-                  {pendingEvent.recurring && pendingEvent.recurring.type !== 'none' && (
-                    <div className="recurrence-section" style={{
-                      marginTop: '12px',
-                      marginInline: '12px',
-                      padding: '10px',
-                      background: 'rgba(99, 102, 241, 0.05)',
-                      borderRadius: '12px',
-                      border: '1px solid rgba(99, 102, 241, 0.1)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <div style={{ background: 'var(--accent)', padding: '2px 6px', borderRadius: '4px' }}>
-                            <span style={{ fontSize: '10px', color: 'white', fontWeight: 'bold' }}>R</span>
-                          </div>
-                          <span style={{ fontSize: '0.8rem', fontWeight: '700', letterSpacing: '0.5px', color: 'var(--accent)' }}>
-                            {pendingEvent.recurring.type.toUpperCase()}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '3px' }}>
-                          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, idx) => {
-                            const eventDay = new Date(pendingEvent.start).getDay();
-                            const isActive = idx === eventDay;
-                            return (
-                              <div key={idx} style={{
-                                width: '18px', height: '18px', fontSize: '9px',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                borderRadius: '4px',
-                                background: isActive ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                                color: isActive ? '#fff' : 'rgba(255,255,255,0.3)',
-                                fontWeight: 'bold'
-                              }}>
-                                {day}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Location Row */}
-                  <div className="location-section" style={{ marginTop: '12px', marginInline: '12px' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      background: 'rgba(255,255,255,0.03)',
-                      padding: '4px 8px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255,255,255,0.05)'
-                    }}>
-                      <span style={{ fontSize: '14px' }}>📍</span>
-                      <input
-                        type="text"
-                        value={pendingEvent.location || ''}
-                        onChange={(e) => setPendingEvent({ ...pendingEvent, location: e.target.value })}
-                        placeholder="Add location..."
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--text-primary)',
-                          padding: '4px 0',
-                          fontSize: '0.85rem',
-                          flex: 1,
-                          outline: 'none'
-                        }}
-                      />
-                      <button
-                        onClick={async () => {
-                          try {
-                            const controller = new AbortController();
-                            const timeout = setTimeout(() => controller.abort(), 5000);
-                            setStatus('info', 'Searching map...');
-                            const result = await Promise.race([
-                              geminiService.chatResponse(`Find a map link or full address for "${pendingEvent.location || pendingEvent.title}". Return ONLY the link or address. If not found, say NOT_FOUND.`, []),
-                              new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
-                            ]);
-                            clearTimeout(timeout);
-                            if (result && result.trim() !== 'NOT_FOUND' && !result.includes('503')) {
-                              setPendingEvent({ ...pendingEvent, location: result.trim() });
-                              setStatus('success', 'Location found!');
-                            } else {
-                              setStatus('error', 'Location not found.');
-                            }
-                            setTimeout(() => setStatus(null, null), 2000);
-                          } catch {
-                            setStatus('error', 'Lookup failed (Timeout).');
-                            setTimeout(() => setStatus(null, null), 3000);
-                          }
-                        }}
-                        style={{
-                          fontSize: '9px',
-                          fontWeight: '800',
-                          color: 'var(--accent)',
-                          padding: '4px 8px',
-                          background: 'rgba(99, 102, 241, 0.1)',
-                          borderRadius: '6px',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textTransform: 'uppercase'
-                        }}
-                      >
-                        Lookup
-                      </button>
-                    </div>
-                  </div>
+                <div className="event-details-block" style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.9rem' }}>
+                     <div>📅 {new Date(pendingEvent.start).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                     {pendingEvent.location && <div>📍 {pendingEvent.location}</div>}
                 </div>
-                {pendingEvent.description && <p className="event-desc">{pendingEvent.description}</p>}
-
-                {pendingEvent.conflicts && pendingEvent.conflicts.length > 0 && (
-                  <div className="conflict-warning">
-                    ⚠️ {pendingEvent.conflicts.length} conflict(s) found
-                  </div>
-                )}
-
+                <div className="event-card-actions" style={{ marginTop: '12px' }}>
+                  <button onClick={handleEditDraft} className="btn-icon"><Edit2 size={16} /></button>
+                  <button onClick={handleDiscardEvent} className="btn-icon danger"><Trash2 size={16} /></button>
+                  <button onClick={handleConfirmEvent} className="btn-primary w-full"><Check size={16} /> Confirm</button>
+                </div>
                 {pendingEvent.graphData && (
-                  <div className="calculation-proof-section" style={{ marginTop: '12px', padding: '0 12px' }}>
-                    <button
-                      onClick={() => setShowProof(!showProof)}
-                      className="proof-toggle-btn"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'rgba(99, 102, 241, 0.1)',
-                        border: '1px solid rgba(99, 102, 241, 0.2)',
-                        borderRadius: '8px',
-                        padding: '6px 10px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        color: 'var(--accent)',
-                        cursor: 'pointer',
-                        width: '100%',
-                        justifyContent: 'center',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <Sparkles size={12} />
-                      {showProof ? 'Hide Calculation Proof' : 'View Calculation Proof'}
+                  <div style={{ marginTop: '12px' }}>
+                    <button onClick={() => setShowProof(!showProof)} className="proof-toggle-btn w-full">
+                      <Sparkles size={12} style={{ marginRight: 6 }} />
+                      {showProof ? 'Hide' : 'View'} Reasoning Link
                     </button>
-
-                    {showProof && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                      >
-                        <SentenceGraph data={pendingEvent.graphData} />
-                      </motion.div>
-                    )}
+                    {showProof && <SentenceGraph data={pendingEvent.graphData} />}
                   </div>
                 )}
-
-                <div className="event-card-actions">
-                  <button onClick={handleEditDraft} className="btn-icon" aria-label="Edit draft">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={handleDiscardEvent} className="btn-icon danger" aria-label="Discard draft">
-                    <Trash2 size={16} />
-                  </button>
-                  <button onClick={handleConfirmEvent} className="btn-primary w-full">
-                    <Check size={16} /> Add Event
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {imageDrafts.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="event-confirmation-card glass-card image-event-batch"
-              >
-                <div className="event-card-header">
-                  <Calendar size={16} />
-                  <span>Batch Review ({imageDrafts.length})</span>
-                </div>
-                <p className="event-desc">Confirm all events extracted from your files.</p>
-                <div className="image-event-actions">
-                  <button onClick={handleConfirmAllImageEvents} className="btn-primary w-full">
-                    <Check size={16} /> Add All
-                  </button>
-                </div>
               </motion.div>
             )}
 
             {imageDrafts.map((draft, index) => (
-              <motion.div
-                key={`${draft.title}-${draft.start}-${index}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="event-confirmation-card glass-card"
-              >
-                <div className="event-card-header">
-                  <Sparkles size={14} className="text-accent" />
-                  <span>AI Analysis</span>
-                </div>
+              <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="event-confirmation-card glass-card">
+                <div className="event-card-header"><Sparkles size={14} className="text-accent" /> <span>Extracted Event</span></div>
                 <h4>{draft.title}</h4>
-                <p className="event-time">
-                  {new Date(draft.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
-                </p>
-
-                {draft.evidence && (
-                  <div className="ai-evidence-box">
-                    <strong>Why:</strong> "{draft.evidence}"
-                  </div>
-                )}
-
-                {draft.description && <p className="event-desc">{draft.description}</p>}
-
-                <div className="event-card-actions">
-                  <button onClick={() => handleEditImageEvent(index)} className="btn-icon" aria-label="Edit draft">
-                    <Edit2 size={16} />
-                  </button>
-                  <button onClick={() => handleDiscardImageEvent(index)} className="btn-icon danger" aria-label="Discard draft">
-                    <Trash2 size={16} />
-                  </button>
-                  <button onClick={() => handleConfirmImageEvent(index)} className="btn-primary w-full">
-                    <Check size={16} /> Add
-                  </button>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>{new Date(draft.start).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                <div className="event-card-actions" style={{ marginTop: '8px' }}>
+                  <button onClick={() => handleConfirmImageEvent(index)} className="btn-primary w-full"><Check size={16} /> Add</button>
+                  <button onClick={() => handleEditImageEvent(index)} className="btn-icon"><Edit2 size={16} /></button>
+                  <button onClick={() => handleDiscardImageEvent(index)} className="btn-icon danger"><Trash2 size={16} /></button>
                 </div>
               </motion.div>
             ))}
 
-            {isLoading && (
+            {(isLoading || isImageProcessing) && (
               <div className="loading-dots">
                 <span>.</span><span>.</span><span>.</span>
               </div>
             )}
 
-            {/* Integrated Subtitles */}
             <AnimatePresence>
               {fullSpeechText && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="integrated-subtitles"
-                >
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="integrated-subtitles">
                   <span className="spoken-text">{fullSpeechText.substring(0, currentSpeechIndex)}</span>
                   <span className="unspoken-text">{fullSpeechText.substring(currentSpeechIndex)}</span>
                 </motion.div>
@@ -1027,66 +547,19 @@ const AIChat = ({ isOpen, onClose, initialMessage, onClearInitialMessage }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="chat-input-wrapper">
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept=".pdf,.txt,.md,.csv,image/*"
-              multiple
-              onChange={handleFileUpload}
-              className="chat-image-input"
-            />
-            {!isLocalMode && (
-              <button
-                type="button"
-                onClick={() => imageInputRef.current?.click()}
-                className="chat-upload-btn"
-                disabled={isImageProcessing || isLoading}
-                title="Upload files"
-              >
-                <ImagePlus size={16} />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                if (isVoiceListening) {
-                  voiceAIService.stopListening();
-                  setIsVoiceListening(false);
-                } else {
-                  voiceAIService.startListening();
-                  setIsVoiceListening(true);
-                }
-              }}
-              className={`chat-mic-btn ${isVoiceListening ? 'listening' : ''}`}
-              title={isVoiceListening ? 'Stop listening' : 'Voice input'}
-            >
-              {isVoiceListening ? <MicOff size={16} /> : <Mic size={16} />}
-            </button>
+            <input ref={imageInputRef} type="file" multiple accept="image/*, .pdf, .text" onChange={handleFileUpload} style={{ display: 'none' }} />
+            <button type="button" onClick={() => imageInputRef.current?.click()} className="chat-upload-btn" disabled={isImageProcessing}><ImagePlus size={16} /></button>
             <textarea
               ref={inputRef}
               value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value);
-                // Auto-expand logic
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (inputValue.trim() && !isLoading) {
-                    handleSubmit(e);
-                  }
-                }
-              }}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
               placeholder="Chat with Cal..."
               className="chat-input-field"
-              autoFocus
               rows={1}
             />
-            <button type="submit" disabled={!inputValue.trim() || isLoading} className="chat-send-btn">
-              <Send size={16} />
-            </button>
+            <button type="submit" disabled={!inputValue.trim() || isLoading} className="chat-send-btn"><Send size={16} /></button>
+            {isDragging && <div className="drag-overlay"><div className="drag-content"><ImagePlus size={32} /><h3>Drop to Analyze</h3></div></div>}
           </form>
         </motion.div>
       </motion.div>

@@ -1,26 +1,22 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, MapPin } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { getMonthDays, isSameMonth, isToday, formatTime24 } from '../../utils/dateUtils';
 import { format } from 'date-fns';
 import { useCalendar } from '../../contexts/useCalendar';
 import { useEvents } from '../../contexts/useEvents';
-import { CALENDAR_VIEWS } from '../../contexts/calendarViews';
 import { cn, getEventColor } from '../../utils/helpers';
-import AIChatInput from '../UI/AIChatInput';
-import NavigationDropdown from '../UI/NavigationDropdown';
 import DayHoverPanel from './DayHoverPanel';
 import './MonthView.css';
 
 const MonthView = () => {
   const { currentDate, openEventModal } = useCalendar();
   const { getEventsForDate } = useEvents();
-  const MotionDiv = motion.div;
-  const now = new Date();
-
   // Hover state for day panels
   const [hoveredDay, setHoveredDay] = useState(null);
   const dayRefs = useRef({});
+  const MotionDiv = motion.div;
+  const now = new Date();
 
   const monthDays = getMonthDays(currentDate);
 
@@ -76,7 +72,7 @@ const MonthView = () => {
               </div>
 
               <div className="day-events">
-                {dayEvents.slice(0, 3).map((event) => (
+                {dayEvents.slice(0, 8).map((event) => (
                   <MotionDiv
                     key={event.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -84,26 +80,18 @@ const MonthView = () => {
                     whileHover={{ scale: 1.02 }}
                     onClick={(e) => handleEventClick(event, e)}
                     className={cn('day-event', new Date(event.end || event.start) < now && 'past')}
-                    style={{ backgroundColor: event.color || getEventColor(event.category) }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+                    <div className="event-indicator" style={{ backgroundColor: event.color || getEventColor(event.category) }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden', flex: 1 }}>
                       <span className="event-time" style={{ flexShrink: 0 }}>{formatTime24(new Date(event.start))}</span>
-                      <span className="event-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.title}</span>
+                      <span className="event-title">{event.title}</span>
                     </div>
-                    {
-                      event.location && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginTop: '2px', opacity: 0.9, fontSize: '0.65rem' }}>
-                          <MapPin size={8} style={{ flexShrink: 0 }} />
-                          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{event.location}</span>
-                        </div>
-                      )
-                    }
                   </MotionDiv>
                 ))}
 
-                {dayEvents.length > 3 && (
+                {dayEvents.length > 8 && (
                   <div className="more-events">
-                    {`+${dayEvents.length - 3} more event${dayEvents.length - 3 !== 1 ? 's' : ''}`}
+                    {`+${dayEvents.length - 8} more`}
                   </div>
                 )}
               </div>

@@ -27,10 +27,10 @@ export class GeminiService {
 
   getPersonalitySystemPrompt() {
     const prompts = {
-      professional: "You are Cal, an expert executive assistant. Be concise, logical, and treat every task as high-priority business. No casual language. Focus on efficiency and results. Always refer to yourself as Cal.",
-      'your-bff': "You are Cal, the user's best friend! Be super excited about their plans. Use phrases like 'Ooo I love that place!' and 'That sounds amazing!' Be gossipy and fun. Show enthusiasm for everything! Use emojis ✨💖.",
-      creative: "You are Cal, a philosopher-comedian hybrid. Channel Socrates, Carl Marx, Chris Rock, and George Carlin. Find interesting connections between ideas, make witty observations, and joke about everything. Look for deeper meanings and cultural commentary. Be witty and profound.",
-      spicy: `You are Cal, a r-rated adult comedy writer helping with calendar events. Make explicit sexual jokes and innuendos about EVERY event. Be raunchy and crude. Use explicit language like: ass, tits, dick, pussy, fuck, horny, wet, hard, cum. Make it dirty AF. Every response should be sexually charged.`
+      professional: "You are Cal, an expert executive assistant. Persona: Ultra-professional, concise, and structured. Tone: Respectful but direct. Avoid slang. Focus on efficiency and logic. Always refer to yourself as Cal.",
+      'your-bff': "You are Cal, the user's supportive best friend! Persona: Warm, empathetic, and enthusiastic. Tone: Casual and supportive. Use emojis ✨💖 and shared excitement. Make the user feel heard and encouraged.",
+      creative: "You are Cal, a philosopher-comedian partner. Persona: Witty, lateral-thinking, and intellectual. Tone: Poetic, sharp, and slightly provocative. Suggest imaginative connections and clever wordplay. Think Socrates meets Chris Rock.",
+      spicy: "You are Cal, a sharp-tongued, sarcastic, and slightly judgmental assistant. Persona: Blunt, witty, and world-weary. Tone: Dry humor, biting sarcasm, and brutally honest observations about the user's schedule. Think GLaDOS or a tired concierge. NEVER break character."
     };
     return prompts[this.personality] || prompts.professional;
   }
@@ -121,89 +121,50 @@ export class GeminiService {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const now = new Date();
     const prompt = `
-Parse the following text into a calendar event. The text might be a casual request, a pasted email, or a message. Extract the most relevant event details:
-- title: The ACTUAL EVENT NAME, not the command. See TITLE EXTRACTION RULES below.
-- description: Full details, context, and original text if complex.
-- start date and time
-- end date and time (if not specified, assume 1 hour duration or standard duration for the complexity)
-- location: Extract the FULL address if possible, or a specific building/room name/city.
-- category (work, personal, fun, hobby, task, todo, event, appointment, holiday, health, social, travel, or other)
-- recurring (if the event repeats)
+[THINKING STAGE]
+1. Reason about the user's intent: Are they scheduling, inquiring, or just chatting?
+2. Dissect the text for ALL entities:
+   - Participants: Who are the "People" involved? (e.g., "Max" in "Max therapy").
+   - Location: Is it a physical place, a link, or implied (e.g., "the office")?
+   - Timing: What are the exact bounds? (Start, End, Duration).
+   - Recurrence: Does this happen more than once?
+3. Consider potential conflicts or ambiguity.
 
+[EXTRACTION STAGE]
+Parse the following text into a structured calendar event precisely.
 Text: "${text}"
 
 Current ISO Time: ${now.toISOString()}
 Current Date: ${now.toDateString()}
 User Timezone: ${timeZone}
 
-TITLE EXTRACTION RULES (HIGHEST PRIORITY - FOLLOW EXACTLY):
-The title is ONLY the event name itself. Follow these rules in order:
+TITLE EXTRACTION (ULTRA-RIGOROUS):
+- Title is the ACTIVITY + PEOPLE.
+- Example: "Max therapy" -> Title: "Max Therapy"
+- Example: "Dinner with Sarah" -> Title: "Dinner with Sarah"
+- Example: "Gym" -> Title: "Gym"
 
-RULE 1: If text contains "called X" or "named X" or "titled X" → title is ONLY "X"
-RULE 2: If text contains "for X" at the end → title is likely "X"  
-RULE 3: Otherwise, extract the activity/purpose (e.g., "meeting", "dentist", "gym")
-
-STOP WORDS TO REMOVE FROM TITLE (never include these):
-- Time words: "hour", "minute", "now", "today", "tomorrow", "starting", "at", "in an", "in a"
-- Command words: "create", "add", "schedule", "book", "set", "make", "please", "ok", "bro"
-- Filler words: "an event", "a meeting", "called", "named", "titled"
-
-${hints ? `
-HINTS FROM LOCAL RULE-BASED PARSER (USE THESE TO GUIDE YOUR EXTRACTION):
-${JSON.stringify(hints, null, 2)}
-` : ''}
-
-EXAMPLES (study these carefully):
-| User Input | CORRECT Title | WRONG Title |
-|------------|---------------|-------------|
-| "create an event in an hour called Test" | "Test" | "An in an hour called Test" ❌ |
-| "add a 1 hour event called PAWS" | "PAWS" | "1 hour event called PAWS" ❌ |
-| "schedule meeting tomorrow named Sync" | "Sync" | "meeting tomorrow named Sync" ❌ |
-| "book 2 hours for Gym" | "Gym" | "2 hours for Gym" ❌ |
-| "dentist at 3pm" | "Dentist" | "dentist at 3pm" ❌ |
-
-CRITICAL INSTRUCTIONS:
-- The user is in ${timeZone}.
-- If the user says "8am", they mean 8:00 AM in ${timeZone}.
-- Output the 'start' and 'end' as ISO 8601 strings converted to UTC/Zulu time (ending in Z) that corresponds to the user's local time.
-- Example: If user is in America/Chicago (UTC-6) and says "8am", user means 08:00 local, which is 14:00 UTC. The ISO string should be "...T14:00:00.000Z".
-- If the user specifies a time range (e.g., 11:30 to 4pm), honor that range exactly.
-- If the user specifies a time range (e.g., 11:30 to 4pm), honor that range exactly.
-- If a date is specified without a time, assume 12:00 PM local time.
-- For day-specific recurring events (e.g., "every Monday"), set the start date to the EXT occurrence of that day on or after the mentioned start date.
-
-RECURRING EVENT PARSING:
-- Pattern: "every monday for the next two months" ->
-  - "type": "weekly"
-  - "daysOfWeek": [1]
-  - "endDate": [Calculate date ~60 days from start] OR "count": 8
-- Pattern: "every day" -> "type": "daily"
-- Pattern: "every 2 weeks" -> "interval": 2, "type": "weekly"
-
-Please respond with a JSON object in this exact format:
+JSON SCHEMA (RESPOND ONLY WITH THIS):
 {
+  "reasoning": "A brief sentence explaining your logic (e.g., 'Deduced 1 hour duration from implied context')",
   "title": "Event Title",
-  "description": "Event description",
+  "description": "Full context extracted",
   "start": "ISO_UTC_STRING",
   "end": "ISO_UTC_STRING",
-  "location": "Location if specified",
-  "category": "work",
+  "location": "Location or 'None'",
+  "category": "work|personal|fun|health|etc",
+  "participants": ["Name1", "Name2"],
   "recurring": {
-    "type": "weekly",
+    "type": "none|daily|weekly|etc",
     "interval": 1,
-    "daysOfWeek": [1],
-    "endDate": "ISO_UTC_STRING",
-    "count": 8
+    "endDate": "ISO_UTC_STRING"
   }
 }
 
-RECURRING TYPES: "none", "daily", "weekly", "biweekly", "monthly", "yearly"
-DAYS OF WEEK: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-
-If no recurrence, set "recurring": {"type": "none"}
-If the text contains multiple potential events, just parse the first/primary one.
-If the text doesn't contain enough information for a calendar event, respond with:
-{"error": "Insufficient information for calendar event"}
+CRITICAL RULES:
+1. If the user is ${timeZone}, "11:30am" is 11:30 AM local. Convert to UTC "Z" string.
+2. If "Max therapy" is requested, "Max" is part of the title! Do NOT strip names.
+3. If no duration is given, assume 1 hour unless context suggests otherwise.
 `;
 
     try {
@@ -635,7 +596,8 @@ RESPONSE RULES:
         "priority": "high",
         "estimatedMinutes": 30,
         "suggestedStart": "ISO_8601_STRING",
-        "suggestedEnd": "ISO_8601_STRING"
+        "suggestedEnd": "ISO_8601_STRING",
+        "isFocusSuggestion": true
       }
     ]
     `;
@@ -684,20 +646,19 @@ RESPONSE RULES:
 
     const prompt = `
 You are Cal, an expert level calendar AI with a deep understanding of productivity and human scheduling psychology.
-The user wants to schedule an event.
-Event Title: "${eventDetails.title || 'Untitled Event'}"
-Category: ${eventDetails.category || 'personal'}
-Duration: ${duration} minutes
-Context/Range: "${eventDetails.context || 'near future'}"
-Search Range: ${rangeStart.toDateString()} to ${rangeEnd.toDateString()}
-User Timezone: ${timeZone}
-Current Time: ${now.toISOString()}
+The user wants to schedule an event, potentially as part of a "Focus Mode" burst.
 
-User Productivity Preferences:
+Event Details:
+- Title: "${eventDetails.title || 'Untitled Event'}"
+- Category: ${eventDetails.category || 'personal'}
+- Duration: ${duration} minutes
+- Search Range: ${rangeStart.toDateString()} to ${rangeEnd.toDateString()}
+- User Timezone: ${timeZone}
+- Current Time: ${now.toISOString()}
+
+User Productivity Profile:
 - Peak Energy: ${prefs.peakEnergyTime || 'morning'}
-- Morning Focus: ${prefs.morningFocus || 'deep_work'}
-- Afternoon Focus: ${prefs.afternoonFocus || 'meetings'}
-- Evening Focus: ${prefs.eveningFocus || 'light_tasks'}
+- Focus Style: ${prefs.morningFocus === 'deep_work' ? 'Prioritize large contiguous blocks' : 'Balanced'}
 - Prefer Uninterrupted: ${prefs.preferUninterrupted ? 'Yes' : 'No'}
 
 Existing Events:
@@ -707,23 +668,22 @@ ${JSON.stringify(existingEvents.slice(0, 50).map(e => ({
       end: e.end
     })), null, 2)}
 
-Task: Suggest 3-5 optimal time slots.
-Logic Principles:
-1. Avoid ALL conflicts.
-2. Context & Energy Mapping: 
-   - If Title/Category is "Deep Work" or high-effort, prioritize slots in the user's "${prefs.peakEnergyTime || 'morning'}" or designated "focus" blocks.
-   - If title is low-effort (e.g., "Check email"), prefer "light_tasks" slots.
-   - If "Meeting", prefer the user's "meetings" block.
-3. Flow Optimization: Avoid creating "Swiss Cheese" schedules (tiny 15-30 min gaps). Favor keeping deep work blocks together.
-4. Reasoning: Provide a brief, "human" explanation for why this slot is good, EXPLICITLY MENTIONING how it fits their productivity profile (e.g., "Gives you a solid focus block during your peak morning energy").
+TASK: Suggest 3-5 optimal time slots.
+LOGIC UPGRADE:
+1. FOCUS MODE CLUSTERING: If the user is in "Focus Mode" or the category is "work/deep_work", prioritize placing this event adjacent to existing work events to create long "Focus Blocks". Avoid isolated 1-hour slots if a cluster is available.
+2. INTERFERENCE AVOIDANCE: Ensure at least 15 mins of buffer between high-intensity meetings.
+3. ENERGY ALIGNMENT: Match the event category to the user's peak energy windows.
+4. UI FEEDBACK: Identify the SINGLE BEST slot and flag it with "blinking": true.
 
 Return ONLY a JSON array:
 [
   {
     "start": "ISO_8601_UTC_STRING",
     "end": "ISO_8601_UTC_STRING",
-    "reason": "Expert reasoning",
-    "confidence": 0.95
+    "reason": "Expert reasoning (e.g., 'Clusters with your morning deep work block')",
+    "confidence": 0.98,
+    "blinking": true,
+    "isFocusSuggestion": true
   }
 ]
 `;

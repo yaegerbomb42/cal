@@ -52,103 +52,84 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
       animate={{ y: 0, opacity: 1 }}
       className="header glass"
     >
-      <div className="container" style={{ maxWidth: '100%', padding: '0 16px' }}>
-        <div className="header-content">
-          {/* Left: Logo (Home Button) & AI Chat */}
-          <div className="header-left">
+      <div className="container" style={{ maxWidth: '100%', padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        
+        {/* ROW 1: TOP LEVEL NAV */}
+        <div className="header-row top-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '16px' }}>
+          
+          {/* Top Left: Logo */}
+          <div className="header-item-left" style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center' }}>
             <MotionButton
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.95 }}
-              className="logo-section"
               onClick={goToToday}
               title="Return to Today"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px', marginRight: '8px' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', overflow: 'hidden', position: 'relative', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', overflow: 'hidden', position: 'relative', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CalCharacter emotion="happy" isTalking={false} size="mini" />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <h1 style={{ fontSize: '1.2rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, lineHeight: 1 }}>CalAI</h1>
-                <span style={{ fontSize: '8px', opacity: 0.5, letterSpacing: '0.5px', marginTop: '2px' }}>HOME / TODAY</span>
-              </div>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: '700', letterSpacing: '-0.5px', margin: 0, color: 'var(--text-primary)' }}>CalAI</h1>
             </MotionButton>
+          </div>
 
-            {/* Current Time Display (Moved from right) */}
-            <LiveClock />
-
-            {/* AI Chat Input - Restored */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '0px' }}>
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onOpenAIChat}
-                className="btn"
-                style={{
-                  cursor: 'pointer',
-                  background: 'rgba(255, 59, 48, 0.08)',
-                  color: '#FF3B30',
-                  borderRadius: '24px',
-                  padding: '8px 18px',
-                  border: '1px solid rgba(255, 59, 48, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontWeight: '700',
-                  fontSize: '0.85rem',
-                  boxShadow: '0 2px 10px rgba(255, 59, 48, 0.05)',
-                  letterSpacing: '-0.2px'
-                }}
-                title="Open AI Chat Sidebar"
-              >
-                <Sparkles size={14} />
-                <span style={{ fontWeight: '600', marginLeft: '6px', whiteSpace: 'nowrap' }}>Chat</span>
-              </MotionButton>
-              <div style={{ width: '320px' }}>
-                <AIChatInput
-                  onSubmit={handleAIChatSubmit}
-                  compact={true}
-                  hideCharacter={true}
-                />
-              </div>
+          {/* Top Center: AI Search */}
+          <div className="header-item-center" style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'center', maxWidth: '600px', minWidth: '200px' }}>
+            <div style={{ width: '100%' }}>
+              <AIChatInput
+                onSubmit={handleAIChatSubmit}
+                compact={true}
+                hideCharacter={true}
+              />
             </div>
           </div>
 
-          <div className="header-center" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <DateNavigator />
+          {/* Top Right: Core Actions */}
+          <div className="header-item-right" style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <MotionButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => openEventModal({ start: new Date() })}
+              className="btn header-new-btn"
+              title="Create New Event (Ctrl+N)"
+              style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            >
+              <Plus size={16} />
+              <span className="btn-text" style={{ marginLeft: '4px' }}>New</span>
+            </MotionButton>
+
+            <MotionButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onOpenSettings}
+              className="settings-btn"
+              title="Settings"
+            >
+              <Settings size={18} />
+            </MotionButton>
           </div>
 
-          {/* Right: View Selector & Settings */}
-          <div className="header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {/* New Event Button */}
-              <MotionButton
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => openEventModal({ start: new Date() })}
-                className="btn"
-                style={{
-                  background: 'rgba(0, 122, 255, 0.08)',
-                  color: '#007AFF',
-                  border: '1px solid rgba(0, 122, 255, 0.15)',
-                  borderRadius: '24px',
-                  padding: '8px 18px',
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  fontWeight: '700',
-                  fontSize: '0.85rem',
-                  boxShadow: '0 2px 10px rgba(0, 122, 255, 0.05)'
-                }}
-                title="Create New Event (Ctrl+N)"
-              >
-                <Plus size={16} />
-                <span>New</span>
-              </MotionButton>
+        </div>
 
+        {/* ROW 2: BOTTOM LEVEL CONTEXT */}
+        <div className="header-row bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '16px', paddingLeft: '40px' }}>
+          
+          {/* Bottom Left: Time Context */}
+          <div className="header-item-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <DateNavigator />
+            <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>
+              <LiveClock />
+            </div>
+          </div>
 
-            <div className="view-selector glass-panel" style={{ background: 'rgba(255,255,255,0.03)', padding: '2px', borderRadius: '10px' }}>
+          {/* Bottom Right: Layout Context */}
+          <div className="header-item-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div className="view-selector">
               {viewButtons.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setView(key)}
                   className={`view-btn ${view === key ? 'active' : ''}`}
-                  style={{ padding: '4px 12px', fontSize: '0.85rem' }}
                 >
                   {label}
                 </button>
@@ -158,22 +139,18 @@ const Header = ({ onOpenSettings, onOpenAIChat }) => {
             <MotionButton
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={onOpenSettings}
-              className="btn settings-btn icon-only"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Settings"
+              onClick={onOpenAIChat}
+              className="btn header-chat-btn"
+              title="Open AI Chat Sidebar"
+              style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             >
-              <Settings size={18} />
+              <Sparkles size={14} />
+              <span className="btn-text" style={{ marginLeft: '4px' }}>Chat Engine</span>
             </MotionButton>
           </div>
+
         </div>
+
       </div>
     </MotionHeader>
   );

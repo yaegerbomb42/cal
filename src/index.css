@@ -48,6 +48,7 @@
   --accent-event: #FF3B30;
   --accent-appointment: #000000;
   --accent-holiday: #FF3B30;
+  --border-radius: 16px;
 }
 
 /* Base Body Style */
@@ -80,6 +81,7 @@ html {
   backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+  border-radius: var(--border-radius);
 }
 
 .glass-card {
@@ -88,7 +90,7 @@ html {
   backdrop-filter: var(--backdrop-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  border-radius: 16px;
+  border-radius: var(--border-radius);
   padding: 1.5rem;
   transition: all 0.3s ease;
 }
@@ -107,7 +109,7 @@ html {
   padding: 0.75rem 1.5rem;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;

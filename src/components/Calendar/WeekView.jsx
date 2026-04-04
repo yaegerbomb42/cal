@@ -50,7 +50,7 @@ const WeekView = () => {
 
   const weekGridRef = useRef(null);
   const [draggedEvent, setDraggedEvent] = useState(null);
-  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 32, fitToViewport: true, minPixels: 60 });
+  const pixelsPerHour = useHourScale({ containerRef: weekGridRef, offset: 32, fitToViewport: true, minPixels: 0 });
 
   const [currentTick, setCurrentTick] = useState(Date.now());
 
@@ -131,11 +131,9 @@ const WeekView = () => {
       <div className="week-header glass-card">
         <div className="header-cell gutter"></div>
         {weekDays.map((day) => (
-          <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')} style={{ textAlign: 'center' }}>
-            <div className="header-date-group" style={{ justifyContent: 'center', gap: '6px' }}>
-              <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-              <span className="day-num" style={{ fontWeight: '700' }}>{day.getDate()}</span>
-            </div>
+          <div key={day.toISOString()} className={cn('header-cell', isToday(day) && 'today')}>
+            <span className="day-name">{day.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+            <span className="day-number">{day.getDate()}</span>
           </div>
         ))}
       </div>
@@ -213,7 +211,7 @@ const WeekView = () => {
                     return (
                       <MotionDiv
                         key={event.id}
-                        className={cn('week-event', isPastEvent && 'past', isLongEvent && 'long-event')}
+                        className={cn('week-event', isPastEvent && 'past', isLongEvent && 'long-event', event.completed && 'completed')}
                         style={{
                           '--event-color': eventColor,
                           borderLeft: event.priority === 'high' ? '4px solid #ef4444' : event.priority === 'medium' ? '4px solid #f97316' : `4px solid ${eventColor}`,

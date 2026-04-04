@@ -16,32 +16,27 @@
 
 /* Glassmorphism & Compact Layout Overhaul */
 /* CSS for new layout from line 18 */
+/* Enhanced Event Modal Layout */
 .event-modal {
-  width: 800px;
-  max-width: 95vw;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: auto;
-  min-height: 520px;
-  max-height: 85vh;
-  overflow: visible;
-  /* Allow content to dictate, but contained */
-  border-radius: 20px;
-  padding: 0;
+  position: relative;
+  background: rgba(15, 23, 42, 0.95);
+  -webkit-backdrop-filter: blur(25px);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  width: 95vw;
+  max-width: 1120px;
+  height: min(85vh, 760px);
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.85) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.08);
-}
-
-.event-modal.expanded {
-  width: 1120px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1001;
 }
 
 .event-modal.shifted-left {
-  transform: translateX(-200px);
+  transform: translateX(-100px);
 }
 
 .title-input {
@@ -418,20 +413,28 @@
   display: inline-block;
 }
 
+/* Main Modal & High-level Layout */
 .event-modal {
-    width: 95vw;
-    max-width: 1200px;
-    min-width: 800px;
-    height: 85vh;
-    max-height: 800px;
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid var(--glass-border);
-    border-radius: 28px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-    z-index: 1001;
+  position: relative;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  width: 95vw;
+  max-width: 1120px;
+  height: min(85vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* 3-Panel Grid Configuration */
@@ -726,4 +729,75 @@
 .custom-option.selected:hover {
   background: var(--accent);
   color: white;
+}
+
+/* Smart Schedule Overlay */
+.smart-schedule-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    background: rgba(15, 23, 42, 0.98);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    animation: overlayFadeIn 0.3s ease-out;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.smart-schedule-overlay .portal-header {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem 1.50rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.smart-overlay-close {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.smart-overlay-close:hover {
+    background: rgba(255, 59, 48, 0.2);
+    color: #FF3B30;
+    transform: rotate(90deg);
+}
+
+.smart-overlay-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+}
+
+/* Scrollbar Cleanup for 3-Column Layout */
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar:horizontal { height: 0; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb { 
+    background: rgba(255, 255, 255, 0.1); 
+    border-radius: 10px;
+}
+.modal-body::-webkit-scrollbar-thumb:hover { 
+    background: rgba(255, 255, 255, 0.2); 
 }

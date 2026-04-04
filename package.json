@@ -34,7 +34,8 @@
     "react-dom": "^19.1.0",
     "react-google-autocomplete": "^2.7.5",
     "react-router-dom": "^6.26.2",
-    "three": "^0.183.1"
+    "three": "^0.183.1",
+    "@emailjs/browser": "^4.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

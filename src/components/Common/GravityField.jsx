@@ -99,7 +99,10 @@ const GravityField = () => {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, pointerEvents: 'none' }}>
-      <Canvas shadows camera={{ position: [0, 0, 12], fov: 35 }}>
+      <Canvas 
+        shadows={{ type: THREE.PCFShadowMap }} 
+        camera={{ position: [0, 0, 12], fov: 35 }}
+      >
         <Suspense fallback={null}>
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1} castShadow />

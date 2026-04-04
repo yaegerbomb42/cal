@@ -22,7 +22,7 @@ const LiveClock = () => {
                 border: '1px solid rgba(0,0,0,0.05)'
             }}
         >
-            {time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+            {time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
         </div>
     );
 };

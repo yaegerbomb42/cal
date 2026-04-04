@@ -57,7 +57,9 @@ const SmartSchedulePortal = ({
                         start: new Date(r.start),
                         end: new Date(r.end),
                         confidence: r.confidence || (0.95 - (i * 0.1)),
-                        reason: r.reason || 'AI optimized slot'
+                        reason: r.reason || 'AI optimized slot',
+                        blinking: r.blinking || false,
+                        isFocusSuggestion: r.isFocusSuggestion || false
                     })).filter(r => !isNaN(r.start.getTime()) && !isNaN(r.end.getTime())) : [];
 
                     if (mapped.length > 0) {
@@ -236,12 +238,12 @@ const SmartSchedulePortal = ({
                                                 return (
                                                     <motion.div
                                                         key={`bulk-${idx}`}
-                                                        className="mini-suggestion bulk-preview"
+                                                        className={`mini-suggestion bulk-preview ${item.slot.isFocusSuggestion ? 'focus-block' : ''}`}
                                                         style={{
                                                             top: `${(startMins / (1440)) * 100}%`,
                                                             height: `${(duration / (1440)) * 100}%`,
-                                                            backgroundColor: 'rgba(99, 102, 241, 0.4)',
-                                                            border: '2px dashed var(--accent)',
+                                                            backgroundColor: item.slot.isFocusSuggestion ? 'rgba(251, 191, 36, 0.1)' : 'rgba(99, 102, 241, 0.4)',
+                                                            border: item.slot.isFocusSuggestion ? '2px solid #fbbf24' : '2px dashed var(--accent)',
                                                             zIndex: 15
                                                         }}
                                                         initial={{ opacity: 0, scale: 0.9 }}
@@ -265,7 +267,7 @@ const SmartSchedulePortal = ({
                                                 return (
                                                     <motion.div
                                                         key={`sug-${idx}`}
-                                                        className="mini-suggestion"
+                                                        className={`mini-suggestion ${slot.blinking ? 'blinking' : ''} ${slot.isFocusSuggestion ? 'focus-block' : ''}`}
                                                         style={{
                                                             top: `${(startMins / (1440)) * 100}%`,
                                                             height: `${(duration / (1440)) * 100}%`

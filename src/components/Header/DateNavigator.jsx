@@ -72,6 +72,7 @@ const DateNavigator = () => {
                     panRef.current = 0;
                 }}
                 onPan={(e, info) => {
+                    if (!info || !info.delta || !info.offset) return;
                     panRef.current += info.delta.x;
                     const absOffset = Math.abs(info.offset.x);
 

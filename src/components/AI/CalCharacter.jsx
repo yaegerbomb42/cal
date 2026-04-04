@@ -199,16 +199,18 @@ const CalCharacter = ({
             >
                 <defs>
                     {/* Glow filters */}
-                    <filter id="eyeGlow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="1" result="glow" />
+                    <filter id="eyeGlow" x="-100%" y="-100%" width="300%" height="300%">
+                        <feGaussianBlur stdDeviation="2.5" result="glow" />
+                        <feColorMatrix type="matrix" values="0 0 0 0 1   0 0 0 0 0.2   0 0 0 0 0.1  0 0 0 1 0" />
                         <feMerge>
+                            <feMergeNode in="glow" />
                             <feMergeNode in="glow" />
                             <feMergeNode in="SourceGraphic" />
                         </feMerge>
                     </filter>
 
-                    <filter id="bodyGlow" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="3" result="glow" />
+                    <filter id="bodyGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="5" result="glow" />
                         <feMerge>
                             <feMergeNode in="glow" />
                             <feMergeNode in="SourceGraphic" />

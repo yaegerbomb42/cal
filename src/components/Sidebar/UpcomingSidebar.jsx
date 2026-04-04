@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEvents } from '../../contexts/useEvents';
 import { useCalendar } from '../../contexts/useCalendar';
 import { Calendar, Trash2, Archive, History, X, Search, Edit2, Zap, CheckCircle, Circle, Plus, AlertCircle, ChevronDown, Check, Sparkles, MapPin, Clock, Layout } from 'lucide-react';
@@ -151,25 +152,32 @@ const UpcomingSidebar = () => {
     // Removed toggleFocusMode as it is now part of viewMode
 
     // --- Helpers ---
-    const now = useMemo(() => new Date(), []); // Stable reference for memoization
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 10000); // 10s interval for better precision
+        return () => clearInterval(timer);
+    }, []);
 
     const getTimeLabel = (date) => {
-        const diff = new Date(date) - now;
+        const eventDate = new Date(date);
+        const diff = eventDate - now;
         const isPast = diff < 0;
         const absDiff = Math.abs(diff);
 
         const mins = Math.floor(absDiff / (1000 * 60));
         const hours = Math.floor(absDiff / (1000 * 60 * 60));
         const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
-        const years = Math.floor(days / 365);
+
+        if (absDiff < 60000) {
+            return isPast ? 'Just now' : 'Starting soon';
+        }
 
         if (isPast) {
-            if (years >= 1) return `${years}y ago`;
             if (days >= 1) return `${days}d ago`;
             if (hours >= 1) return `${hours}h ago`;
             return `${mins}m ago`;
         } else {
-            if (years >= 1) return `${years}y+`;
             if (days >= 1) return `${days}d til`;
             if (hours >= 1) return `${hours}h til`;
             return `${mins}m til`;
@@ -202,7 +210,7 @@ const UpcomingSidebar = () => {
                 const dateB = new Date(b.start);
                 return viewMode === 'upcoming' ? dateA - dateB : dateB - dateA;
             });
-    }, [events, viewMode, categoryFilters, now]); // removed 'now' to prevent re-calc every second if parent rerenders, though 'now' is local constant so it changes every render anyway. Ideally 'now' should be stable or just new Date() inside.
+    }, [events, viewMode, categoryFilters, now]);
     // Actually, since 'UpcomingSidebar' renders, 'now' is new. If we include 'now' in deps, it breaks memo. 
     // We should capture 'now' effectively or just accept it. 
     // Better: use a reference time that updates less frequently if needed, or just let it slide since events change rarely.
@@ -264,8 +272,10 @@ const UpcomingSidebar = () => {
             if (previewSlots.length > 0) {
                 setAutoPlanPreview(previewSlots);
                 toastService.success(`AI found slots for ${previewSlots.length} tasks`);
+                window.dispatchEvent(new CustomEvent('calai-gesture', { detail: { type: 'celebrating' } }));
             } else {
                 toastService.info('No optimal space found for remaining tasks today');
+                window.dispatchEvent(new CustomEvent('calai-gesture', { detail: { type: 'thinking' } }));
             }
         } catch (error) {
             console.error("Auto Plan Error:", error);
@@ -280,6 +290,7 @@ const UpcomingSidebar = () => {
     const handleDeleteClick = (id) => {
         if (window.confirm('Delete this event?')) {
             deleteEvent(id);
+            window.dispatchEvent(new CustomEvent('calai-gesture', { detail: { type: 'thinking' } }));
         }
     };
 
@@ -288,6 +299,7 @@ const UpcomingSidebar = () => {
         if (window.confirm(`Permanently delete all events titled "${deleteSearch}"? This cannot be undone.`)) {
             deleteEventsByName(deleteSearch);
             setDeleteSearch('');
+            window.dispatchEvent(new CustomEvent('calai-gesture', { detail: { type: 'thinking' } }));
         }
     };
 
@@ -533,21 +545,31 @@ const UpcomingSidebar = () => {
                         />
                     </div>
 
-                    <div className="upcoming-list">
-                        {displayEvents.length === 0 ? (
-                            <div className="no-events">
-                                {viewMode === 'upcoming' ? <Calendar size={32} /> : <Archive size={32} />}
-                                <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
-                            </div>
-                        ) : (
-                            paginatedEvents.map(event => {
-                                const isPastEvent = new Date(event.end || event.start) < now;
-                                return (
-                                    <div
-                                        key={event.id}
-                                        className={`upcoming-event-item ${isPastEvent ? 'past-event' : ''}`}
-                                        style={{ '--category-color': getEventColor(event.category) }}
+                        <div className="upcoming-list">
+                            <AnimatePresence mode="popLayout">
+                                {displayEvents.length === 0 ? (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="no-events"
                                     >
+                                        {viewMode === 'upcoming' ? <Calendar size={32} /> : <Archive size={32} />}
+                                        <p>{viewMode === 'upcoming' ? 'No upcoming events' : 'No past events'}</p>
+                                    </motion.div>
+                                ) : (
+                                    paginatedEvents.map((event, index) => {
+                                        const isPastEvent = new Date(event.end || event.start) < now;
+                                        return (
+                                            <motion.div
+                                                key={event.id}
+                                                layout
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ delay: index * 0.05 }}
+                                                className={`upcoming-event-item ${isPastEvent ? 'past-event' : ''}`}
+                                                style={{ '--category-color': getEventColor(event.category) }}
+                                            >
                                         <div className="event-date-badge">
                                             <span className="month">
                                                 {new Date(event.start).toLocaleString('default', { month: 'short' })}
@@ -558,16 +580,19 @@ const UpcomingSidebar = () => {
                                         </div>
 
                                         <div className="event-info">
-                                            {/* Single line attempt: Title ... Meta */}
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', width: '100%' }}>
-                                                <span className={`event-title ${event.completed ? 'strikethrough' : ''}`}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden', flex: 1 }}>
+                                                <span className={`event-title ${event.completed ? 'strikethrough' : ''}`} style={{ fontSize: '0.9rem', fontWeight: '600' }}>
                                                     {event.title}
                                                 </span>
 
-                                                <div className="event-meta-inline">
-                                                    <span className="time-til">{getTimeLabel(event.start)}</span>
+                                                <div className="event-meta-inline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span className="time-til" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                                                        {getTimeLabel(event.start)}
+                                                    </span>
                                                     {event.category && (
-                                                        <span className="category-tag">{event.category}</span>
+                                                        <span className="category-tag" style={{ flexShrink: 0 }}>
+                                                            {event.category}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
@@ -607,7 +632,10 @@ const UpcomingSidebar = () => {
                                         <div className="event-actions">
                                             {viewMode === 'archive' ? (
                                                 <button
-                                                    onClick={() => unarchiveEvent(event.id)}
+                                                    onClick={() => {
+                                                        unarchiveEvent(event.id);
+                                                        window.dispatchEvent(new CustomEvent('calai-gesture', { detail: { type: 'celebrating' } }));
+                                                    }}
                                                     className="action-btn edit"
                                                     title="Restore event"
                                                     style={{ color: '#22c55e' }}
@@ -635,11 +663,12 @@ const UpcomingSidebar = () => {
                                                     <Trash2 size={14} />
                                                 </button>
                                         </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
+                                            </motion.div>
+                                        );
+                                    })
+                                )}
+                            </AnimatePresence>
+                        </div>
 
                     {displayEvents.length > pageSize && (
                         <div className="pagination-controls" role="navigation" aria-label="Upcoming events pagination">

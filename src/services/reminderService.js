@@ -62,26 +62,8 @@ class ReminderService {
 
   async triggerReminder(event, minutesBefore) {
     try {
-      // Browser notification
       const { notificationService } = await import('./notificationService');
       await notificationService.sendEventReminder(event, minutesBefore);
-
-      // ntfy.sh push notification for cross-device alerts
-      const eventTime = new Date(event.start).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      await fetch('https://ntfy.sh/cal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: 'cal',
-          title: `⏰ ${event.title}`,
-          message: `Starting in ${minutesBefore} minutes at ${eventTime}`,
-          tags: ['calendar', 'reminder'],
-          priority: minutesBefore <= 5 ? 5 : 3
-        })
-      }).catch(error => logger.warn('ntfy.sh notification failed', { error }));
     } catch (error) {
       logger.error('Error sending reminder', { error });
     }
